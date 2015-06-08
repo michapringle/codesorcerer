@@ -24,6 +24,8 @@ public class Main {
 
     /**
      * Run the application, linking all producers and consumers.
+     *
+     * @param args - ignored.
      */
     public static void main(String[] args) {
         try {

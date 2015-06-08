@@ -12,7 +12,6 @@ import javax.validation.constraints.NotNull;
 
 @net.jcip.annotations.Immutable
 @net.jcip.annotations.ThreadSafe
-
 public class ConsumableTest implements Consumable {
 
     public ConsumableTest() {

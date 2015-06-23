@@ -15,7 +15,7 @@ import java.util.List;
 
 @net.jcip.annotations.Immutable
 @net.jcip.annotations.ThreadSafe
-public class SimpleBeanModel implements BeanModel {
+public final class SimpleBeanModel implements BeanModel {
 
     private final List<Annotation> annotations;
     private final String className;

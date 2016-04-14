@@ -6,9 +6,9 @@ import java.util.Map;
 import javax.annotation.Nonnull;
 
 import ca.pandp.bean.sub.FooDef;
-import ca.pandp.builder.Bean;
+import ca.pandp.builder.BeanTemplate;
 
-@Bean
+@BeanTemplate
 public interface DavidDef
 {
 	@Nonnull

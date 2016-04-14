@@ -1,8 +1,8 @@
 package ca.pandp.template;
 
-import ca.pandp.builder.Bean;
+import ca.pandp.builder.BeanTemplate;
 
-@Bean
+@BeanTemplate
 public interface BeanSubpackageDef
 {
 	public static final BeanSubpackage X = BeanSubpackage.newBeanSubpackage( "xx" );

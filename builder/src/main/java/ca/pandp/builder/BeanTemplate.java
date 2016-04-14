@@ -6,6 +6,6 @@ import java.lang.annotation.Target;
 
 @Retention( RetentionPolicy.SOURCE )
 @Target( java.lang.annotation.ElementType.TYPE )
-public @interface Bean
+public @interface BeanTemplate
 {
 }

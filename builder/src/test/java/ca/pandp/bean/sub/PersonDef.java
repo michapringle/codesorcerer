@@ -1,6 +1,6 @@
 package ca.pandp.bean.sub;
 
-import ca.pandp.builder.Bean;
+import ca.pandp.builder.BeanTemplate;
 
 import javax.annotation.Nonnull;
 
@@ -11,7 +11,7 @@ import javax.annotation.Nonnull;
  */
 
 
-@Bean
+@BeanTemplate
 public interface PersonDef {
     @Nonnull
     NameDef getName();

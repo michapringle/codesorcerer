@@ -2,12 +2,12 @@ package ca.pandp.template;
 
 import javax.annotation.Nonnull;
 
-import ca.pandp.builder.Bean;
+import ca.pandp.builder.BeanTemplate;
 
 /**
  * Test for Keywords
  */
-@Bean
+@BeanTemplate
 public interface KeywordDef
 {
 	//Special because its defined in Object

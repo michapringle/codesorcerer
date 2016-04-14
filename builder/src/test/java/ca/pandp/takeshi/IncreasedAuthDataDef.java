@@ -3,9 +3,9 @@ package ca.pandp.takeshi;
 
 import java.util.List;
 
-import ca.pandp.builder.Bean;
+import ca.pandp.builder.BeanTemplate;
 
-@Bean
+@BeanTemplate
 public interface IncreasedAuthDataDef
 {
 	IncreasedAuthImageDef getImage();

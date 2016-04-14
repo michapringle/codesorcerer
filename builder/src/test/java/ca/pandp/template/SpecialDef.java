@@ -1,6 +1,6 @@
 package ca.pandp.template;
 
-import ca.pandp.builder.Bean;
+import ca.pandp.builder.BeanTemplate;
 import ca.pandp.template.interfaces.SpecialChild;
 
 /**
@@ -9,7 +9,7 @@ import ca.pandp.template.interfaces.SpecialChild;
  */
 @javax.annotation.concurrent.Immutable
 @javax.annotation.concurrent.ThreadSafe
-@Bean
+@BeanTemplate
 public interface SpecialDef extends SpecialChild
 {
 }

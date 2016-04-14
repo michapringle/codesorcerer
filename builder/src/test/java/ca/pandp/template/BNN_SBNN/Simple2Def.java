@@ -2,9 +2,9 @@ package ca.pandp.template.BNN_SBNN;
 
 import javax.annotation.Nonnull;
 
-import ca.pandp.builder.Bean;
+import ca.pandp.builder.BeanTemplate;
 
-@Bean
+@BeanTemplate
 public interface Simple2Def
 {
 	@Nonnull

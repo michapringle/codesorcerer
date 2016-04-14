@@ -2,10 +2,10 @@ package ca.pandp.template;
 
 import javax.annotation.Nonnull;
 
-import ca.pandp.builder.Bean;
+import ca.pandp.builder.BeanTemplate;
 import ca.pandp.template.BNN_SBNN.Simple2Def;
 
-@Bean
+@BeanTemplate
 public interface Complex2Def
 {
 	@Nonnull

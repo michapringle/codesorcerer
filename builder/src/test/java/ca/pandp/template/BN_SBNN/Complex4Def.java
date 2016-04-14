@@ -1,8 +1,8 @@
 package ca.pandp.template.BN_SBNN;
 
-import ca.pandp.builder.Bean;
+import ca.pandp.builder.BeanTemplate;
 
-@Bean
+@BeanTemplate
 public interface Complex4Def
 {
 	public Simple4Def getSimple4();

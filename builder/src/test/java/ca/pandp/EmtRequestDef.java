@@ -4,9 +4,9 @@ import java.io.Serializable;
 
 import javax.annotation.Nonnull;
 
-import ca.pandp.builder.Bean;
+import ca.pandp.builder.BeanTemplate;
 
-@Bean
+@BeanTemplate
 public interface EmtRequestDef extends Serializable
 {
 	@Nonnull

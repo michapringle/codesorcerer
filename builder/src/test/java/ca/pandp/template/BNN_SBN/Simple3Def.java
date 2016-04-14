@@ -1,8 +1,8 @@
 package ca.pandp.template.BNN_SBN;
 
-import ca.pandp.builder.Bean;
+import ca.pandp.builder.BeanTemplate;
 
-@Bean
+@BeanTemplate
 public interface Simple3Def
 {
 	String getName();

@@ -2,14 +2,14 @@ package ca.pandp.template;
 
 import javax.annotation.Nonnull;
 
-import ca.pandp.builder.Bean;
+import ca.pandp.builder.BeanTemplate;
 
 /**
  * Test for primitives, and wrapped primitive type names. Includes String and Object, as those are so commonly used.
  * <p/>
  * Created by Micha "Micha did it!" Pringle on December 12, 2014.
  */
-@Bean
+@BeanTemplate
 public interface PrimitiveDef
 {
     @Nonnull

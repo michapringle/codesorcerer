@@ -1,6 +1,6 @@
 package ca.pandp.bean.sub;
 
-import ca.pandp.builder.Bean;
+import ca.pandp.builder.BeanTemplate;
 
 import javax.annotation.Nonnull;
 
@@ -9,7 +9,7 @@ import javax.annotation.Nonnull;
  * <p>
  * .
  */
-@Bean
+@BeanTemplate
 public interface AddressDef {
 
     @Nonnull

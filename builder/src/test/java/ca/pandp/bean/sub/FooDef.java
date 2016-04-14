@@ -1,8 +1,8 @@
 package ca.pandp.bean.sub;
 
-import ca.pandp.builder.Bean;
+import ca.pandp.builder.BeanTemplate;
 
-@Bean
+@BeanTemplate
 public interface FooDef
 {
 	public String getStringX();

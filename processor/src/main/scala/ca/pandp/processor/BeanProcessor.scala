@@ -13,11 +13,11 @@ import scala.util.Try
 import javax.lang.model.`type`.ErrorType
 import javax.tools.Diagnostic
 
-@SupportedAnnotationTypes(Array("ca.pandp.builder.Bean"))
+@SupportedAnnotationTypes(Array("ca.pandp.builder.BeanTemplate"))
 @SupportedSourceVersion(SourceVersion.RELEASE_6)
 class BeanProcessor extends AbstractProcessor {
 
-  val ANNOTATION_CLASS = "ca.pandp.builder.Bean"
+  val ANNOTATION_CLASS = "ca.pandp.builder.BeanTemplate"
 
   override def process(annotations: java.util.Set[_ <: TypeElement], env: RoundEnvironment): Boolean = {
     try {
@@ -274,7 +274,7 @@ case class info(
                            | */
                            |@Immutable
                            |@ThreadSafe
-                           |@Generated( "BeautifulBeanBuilder" )
+                           |@Generated( "BeanBuilder" )
                            |@SuppressWarnings("all")
                            |public final class ${classNameGuava}
                            |{
@@ -459,7 +459,7 @@ case class info(
     }
 
     def postInit() = {
-      s""" final Set<ConstraintViolation<${className}>> constraintViolations = BeautifulBeanValidator.validator.validate( this );
+      s""" final Set<ConstraintViolation<${className}>> constraintViolations = BeanValidator.validator.validate( this );
              Preconditions.checkArgument(constraintViolations.isEmpty(), constraintViolations);"""
     }
 
@@ -492,7 +492,7 @@ case class info(
             		  			   |
             		  			   |import org.apache.commons.lang3.builder.EqualsBuilder;
             		  			   |
-            		  			   |import ca.pandp.builder.BeautifulBeanValidator;
+            		  			   |import ca.pandp.builder.BeanValidator;
             		  			   |import ca.pandp.builder.Buildable;
             		  			   |import ca.pandp.builder.Doneable;
             		  			   |import ca.pandp.builder.Callback;
@@ -505,7 +505,7 @@ case class info(
                            | */
                            |@Immutable
                            |@ThreadSafe
-                           |@Generated( "BeautifulBeanBuilder" )
+                           |@Generated( "BeanBuilder" )
                            |@SuppressWarnings("all")
                            |
                            |public final class ${className} ${if (!e.getKind().isInterface()) s" extends ${e.getQualifiedName.toString}" else ""} implements Serializable ${if (e.getKind().isInterface()) s", ${e.getQualifiedName.toString}" else ""}
@@ -863,7 +863,7 @@ ${ws(abstracts)(i => s"""  |             .add( "${i.nameUpper}", ${i.nameMangled
                            |/**
                            | * GENERATED - GENERATED - GENERATED - GENERATED - GENERATED - GENERATED<br>
                            | */
-                           |@Generated( "BeautifulBeanBuilder" )
+                           |@Generated( "BeanBuilder" )
                            |@SuppressWarnings("all")
                            |${classAnnotation}  """)
       w(s"""              |public final class ${classNameMutable} implements Serializable

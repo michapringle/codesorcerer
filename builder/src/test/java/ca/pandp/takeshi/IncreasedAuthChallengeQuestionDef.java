@@ -3,9 +3,9 @@ package ca.pandp.takeshi;
 
 import java.util.Locale;
 
-import ca.pandp.builder.Bean;
+import ca.pandp.builder.BeanTemplate;
 
-@Bean
+@BeanTemplate
 public interface IncreasedAuthChallengeQuestionDef
 {
 	String getActualAnswer();

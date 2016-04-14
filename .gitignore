@@ -1,7 +1,10 @@
 .idea
-*iml
+.DS_Store
+.cache
+*.iml
 *.class
 target
+
 
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/

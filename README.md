@@ -3,7 +3,7 @@
 Welcome to BeanBuilder, a tool to build fluent immutable beans from templates.
 
 ## Motivation
-There are numerous advantages to writing immutable classes, but apart from the simplest classes, implementation requires a lot of code, and for complex classes, updates are verbose. The result is a low signal-to-noise ratio, which is really a nuisance when you are being conscientious and following best practices. This tool allows one use an interface to define a template for a bean, and then generates an immutable implementation with a fluent API.
+There are numerous advantages to writing immutable classes, but apart from the simplest classes, implementation requires a lot of code, and for complex classes, updates are verbose. The result is a low signal-to-noise ratio, which is really a nuisance when you are being conscientious and following best practices. This tool allows one to define a template for a bean, and then generates an immutable implementation with a fluent API.
 
 **1 Advantages of BeanBuilder Objects**
 - Requires very little code to define a bean.
@@ -98,16 +98,16 @@ This is not supported yet. Any takers?
 
 ### What Is Generated
 The bean builder generates several classes based on your template. Suppose you name your template FooDef. Then the  following classes are generated:
-- Foo - This is the immutable implementation from the template
-- FooMutable - This is a mutable implementation from the template, so you can play nice with frameworks that require mutable beans
-- FooGuava - Stuck on Java7 or under? This class provides pseudo-functional code a la Google Guava
+- Foo - This is the immutable implementation from the template.
+- FooMutable - This is a mutable implementation from the template, so you can play nice with frameworks that require mutable beans. Methods are provided in Foo to easily convert to and from FooMutable.
+- FooGuava - Stuck on Java7 or under? This class provides pseudo-functional code a la Google Guava.
 
 ### Tutorial
-This section uses a continuing example to show how to use this tool. It is recommended to read it once in its entirety, and in future refer to the sections of interest directly.
+This section has a continuing example to show how to use this tool. It is recommended to read it once in its entirety, and in future refer to the sections of interest directly.
 
 #### Creating a simple bean
 David requires a person class for a project he is working on. Initially his person is very simple, having only 3 fields. He chooses the BeanBuilder tool because he expects his class to get more complex as the project grows.
-```
+```java
 @BeanTemplate
 public interface PersonDef
 {
@@ -123,15 +123,36 @@ public interface PersonDef
 There are several requirements here to make this class function as expected. David uses an inteface to define the **getters** for his new class. The interface must be annotated with the @BeanTemplate annotation, and the name of the interface must end with Def. Every method that has a required argument in the implementation must be annotated with @javax.annotation.Nonnull. 
 
 Once David completes his template, he compiles the code, and can use the generated implementation. He can use a static factory that requires all fields to be supplied. He can do this because the PersonDef has 3 getter methods defined. With 4 or more getters, the static factory method is not available. This choice is appropriate when all fields are present.
-```
+```java
 final Person p = Person.newPerson( "Bob", "Rip", "Ross");
 ```
+Notice that the order of the method arguments are as defined in the BeanTemplate.
 
-When David creates another person without a middle name, he uses the fluent interface. This is the right choice when the person has no middle name.
-```
+David creates another person using the fluent interface. This is the right choice when the person has no middle name.
+```java
 final Person jd = Person.buildPerson()
                 .firstName( "Judy" )
                 .lastName( "Dench" )
              .build();
 ```
+If you try this example, you will notice that the tool forces the @Nonnull fields to be specified first, in the order defined in the BeanTemplate.
 
+David could use the fluent interface to create Bob Ross, we recommend the static factory.
+```java
+final Person p = Person.buildPerson()
+                .firstName( "Bob" )
+                .lastName( "Ross" )
+                .middleName( "Rip" )
+             .build();
+```
+Notice the middle name appears after all the required fields in the interface.
+
+**Never add a Nonnull parameter more than once.** The BeanTemplate tool cannot control how many times you can add an optional parameter, therefore, you should be careful that you specify optional parameters only once.
+```java
+final Person p = Person.buildPerson()
+                .firstName( "Bob" )
+                .lastName( "Ross" )
+                .middleName( "Rip" )
+                .middleName( "Drat" )
+             .build();
+```

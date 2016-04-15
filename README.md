@@ -175,7 +175,7 @@ public interface PersonDef
     String getOccupation();
 }
 ```
-Notice that subbeans that are built using this tool must be refered to by the template name, for example, NameDef instead of Name.
+Notice that subbeans that are built using this tool must be referred to by the template name, for example, NameDef instead of Name.
 
 Since there are more than 3 parameters, the tool allows only 1 way to create a new Person.
 ```java
@@ -195,7 +195,6 @@ Notice that the occupation is optional, and was not included in this instantiati
 #### Creating an inheritance hierarchy
 David decides he wants to model adults and children differently. He refactors his code.
 ```java
-@BeanTemplate
 public interface Person
 {
      @Nonnull
@@ -218,7 +217,7 @@ public interface ChildDef extends Person
     @Nonnull
     AdultDef getFather();
 
-    Long getCavities();
+    int getCavities();
 }
 
 @BeanTemplate
@@ -229,3 +228,8 @@ public interface AdultDef extends Person
     List<? extends ChildDef> getChildren(); //We also need the ? extends syntax.
 }
 ```
+David has removed the @BeanTemplate annotation from the PersonDef, and turned it into a Person interface. He has created an AdultDef and ChildDef that are BeanTemplates. David can fluently create the child's mother. This principle applies no matter how deeply nested the hierarchy of BeanTemplates is.
+
+As expected, David cannot create a Person given the current class definitions. If David wanted to allow Person instances to exist, he could have kept the Person interface as a BeanTemplate.
+
+Notice the return type of getChildren is List<? extends ChildDef>. This is necessary since getChildren is a producer (PECS) of ChildDef's.

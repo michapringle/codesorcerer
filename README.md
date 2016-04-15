@@ -3,25 +3,22 @@
 Welcome to BeanBuilder, a tool to build fluent immutable beans from templates.
 
 ## Motivation
-There are numerous advantages to writing immutable classes, but apart from the simplest classes, implementation
-requires a lot of code, and for complex classes, updates are verbose. The result is a low signal-to-noise ratio, which
-is really a nuisance when you are being conscientious and following best practices. This tool allows one use an
-interface to define a template for a bean, and then generates an immutable implementation with a fluent API.
+There are numerous advantages to writing immutable classes, but apart from the simplest classes, implementation requires a lot of code, and for complex classes, updates are verbose. The result is a low signal-to-noise ratio, which is really a nuisance when you are being conscientious and following best practices. This tool allows one use an interface to define a template for a bean, and then generates an immutable implementation with a fluent API.
 
 **1 Advantages of BeanBuilder Objects**
 - Requires very little code to define a bean.
 - Fast implementation (no reflection).
-- They are immutable.
-  - Immutable objects are simple (EJ Item 15)
+- Immutable.
+  - Immutable objects are simple. (EJ Item 15)
   - Immutable objects are inherently thread-safe; they require no synchronization. (EJ Item 15)
   - Immutable objects can be shared freely. (EJ Item 15)
   - The internals of immutable objects can be shared freely. (EJ Item 15)
-  - Immutable objects make great building blocks for other objects (EJ Item 15)
+  - Immutable objects make great building blocks for other objects. (EJ Item 15)
 - Create new immutable objects fluently.
 - Create updated copies of immutable objects fluently.
 - Support inheritance of immutable objects.
 - Support for composed immutable objects.
-- Eliminates accidental setting of required fields more than once.
+- Enforces setting of required fields exactly once.
 - Support for custom methods.
 - Support for [Javax validation] (http://docs.oracle.com/javaee/6/api/javax/validation/package-summary.html).
 - Support for [Guava equivalence] (http://docs.guava-libraries.googlecode.com/git/javadoc/index.html).
@@ -33,14 +30,10 @@ interface to define a template for a bean, and then generates an immutable imple
 - They require a separate object for each distinct value. (EJ Item 15)
 
 ## Usage
-This tool is intended for generating implementations of beans, pojo's, or data classes. It can be used for simple [value
- classes] (https://docs.oracle.com/javase/8/docs/api/java/lang/doc-files/ValueBased.html), it should not be used for
- service classes, classes designed to provide business logic or algorithms, or any other type of class that is 
-  not a (mostly) pure data object.
+This tool is intended for generating implementations of beans, pojo's, or data classes. It can be used for simple [value classes] (https://docs.oracle.com/javase/8/docs/api/java/lang/doc-files/ValueBased.html), it should not be used for service classes, classes designed to provide business logic or algorithms, or any other type of class that is not a (mostly) pure data object.
   
 ### Getting started with Maven
-Include the following dependencies in your project. When you deploy your artifact(s), the actual overhead of the 
-BeanBuilder jar is about 4k.
+Include the following dependencies in your project. When you deploy your artifact(s), the actual overhead of the BeanBuilder jar is about 4k.
 ``` 
 <dependency>
    <groupId>ca.pandp</groupId>
@@ -104,8 +97,41 @@ This additional configuration may not be necessary. Need to investigate.
 This is not supported yet. Any takers?
 
 ### What Is Generated
-The bean builder generates several classes based on your template. Suppose you name your template FooDef. Then the 
-following classes are generated:
+The bean builder generates several classes based on your template. Suppose you name your template FooDef. Then the  following classes are generated:
 - Foo - This is the immutable implementation from the template
 - FooMutable - This is a mutable implementation from the template, so you can play nice with frameworks that require mutable beans
 - FooGuava - Stuck on Java7 or under? This class provides pseudo-functional code a la Google Guava
+
+### Tutorial
+This section uses a continuing example to show how to use this tool. It is recommended to read it once in its entirety, and in future refer to the sections of interest directly.
+
+#### Creating a simple bean
+David requires a person class for a project he is working on. Initially his person is very simple, having only 3 fields. He chooses the BeanBuilder tool because he expects his class to get more complex as the project grows.
+```
+@BeanTemplate
+public interface PersonDef
+{
+    @Nonnull
+    String getFirstName();
+    
+    String getMiddleName();
+
+    @Nonnull
+    String getLastName();
+}
+```
+There are several requirements here to make this class function as expected. David uses an inteface to define the **getters** for his new class. The interface must be annotated with the @BeanTemplate annotation, and the name of the interface must end with Def. Every method that has a required argument in the implementation must be annotated with @javax.annotation.Nonnull. 
+
+Once David completes his template, he compiles the code, and can use the generated implementation. He can use a static factory that requires all fields to be supplied. He can do this because the PersonDef has 3 getter methods defined. With 4 or more getters, the static factory method is not available. This choice is appropriate when all fields are present.
+```
+final Person p = Person.newPerson( "Bob", "Rip", "Ross");
+```
+
+When David creates another person without a middle name, he uses the fluent interface. This is the right choice when the person has no middle name.
+```
+final Person jd = Person.buildPerson()
+                .firstName( "Judy" )
+                .lastName( "Dench" )
+             .build();
+```
+

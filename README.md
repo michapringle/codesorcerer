@@ -156,3 +156,76 @@ final Person p = Person.buildPerson()
                 .middleName( "Drat" )
              .build();
 ```
+
+#### Creating a larger bean
+David decides that he wants to extract the name to a composed bean (subbean), add an Address subbean, add a Sex represented by an enum (Male, Female), and an occupation. He updates his PersonDef template as below.
+```java
+@BeanTemplate
+public interface PersonDef
+{
+    @Nonnull
+    NameDef getName();
+
+    @Nonnull
+    AddressDef getAddress();
+
+    @Nonnull
+    Sex getSex();
+
+    String getOccupation();
+}
+```
+Notice that subbeans that are built using this tool must be refered to by the template name, for example, NameDef instead of Name.
+
+Since there are more than 3 parameters, the tool allows only 1 way to create a new Person.
+```java
+Person p = Person.buildPerson()
+				.newName()
+					.firstName("Sherlocke")
+					.lastName("Holmes")
+				.done()
+				.newAddress()
+					.streetAddress("221B Baker Street")
+				.done()
+				.sex(Sex.MALE)
+			.build();
+```
+Notice that the occupation is optional, and was not included in this instantiation.
+
+#### Creating an inheritance hierarchy
+David decides he wants to model adults and children differently. He refactors his code.
+```java
+@BeanTemplate
+public interface Person
+{
+     @Nonnull
+     NameDef getName();
+ 
+     @Nonnull
+     AddressDef getAddress();
+ 
+     @Nonnull
+     Sex getSex();
+
+}
+
+@BeanTemplate
+public interface ChildDef extends Person
+{
+    @Nonnull
+    AdultDef getMother();
+  
+    @Nonnull
+    AdultDef getFather();
+
+    Long getCavities();
+}
+
+@BeanTemplate
+public interface AdultDef extends Person
+{
+    String getOccupation();
+    
+    List<? extends ChildDef> getChildren(); //We also need the ? extends syntax.
+}
+```

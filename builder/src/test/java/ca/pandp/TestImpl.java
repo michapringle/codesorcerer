@@ -3,7 +3,6 @@ package ca.pandp;
 import java.io.Serializable;
 
 import ca.pandp.bean.sub.Person;
-import ca.pandp.bean.sub.PersonMutable;
 import ca.pandp.bean.sub.Sex;
 import ca.pandp.template.BeanAllNullable;
 import org.junit.Assert;

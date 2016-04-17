@@ -2,12 +2,30 @@
 ## Introduction
 Welcome to BeanBuilder, a tool to build fluent immutable beans from templates.
 
+## Table of Contents
+- Motivation
+  - Advantages of BeanBuilder Objects
+  - Disadvantages of BeanBuilder Objects
+- Usage
+- Getting started
+  - With Maven
+  - With Gradle
+- Tutorial
+  - What Is Generated
+  - Creating a simple bean
+  - Creating a larger bean
+  - Creating an inheritance hierarchy
+  - More coming ...
+- Alternative Tools
+- Authors  
+
+
 ## Motivation
 There are numerous advantages to writing immutable classes, but apart from the simplest classes, implementation requires a lot of code, and for complex classes, updates are verbose. The result is a low signal-to-noise ratio, which is really a nuisance when you are being conscientious and following best practices. This tool allows one to define a template for a bean, and then generates an immutable implementation with a fluent API.
 
-**1 Advantages of BeanBuilder Objects**
+### Advantages of BeanBuilder Objects
 - Requires very little code to define a bean.
-- Fast implementation (no reflection).
+- Fast implementation (no reflection or synchronization).
 - Immutable.
   - Immutable objects are simple. (EJ Item 15)
   - Immutable objects are inherently thread-safe; they require no synchronization. (EJ Item 15)
@@ -26,13 +44,14 @@ There are numerous advantages to writing immutable classes, but apart from the s
 - Support for [Guava functions] (http://docs.guava-libraries.googlecode.com/git/javadoc/index.html).
 - Support for [Guava orderings] (http://docs.guava-libraries.googlecode.com/git/javadoc/index.html).
 
-**2 Disadvantages of BeanBuilder Objects**
+### Disadvantages of BeanBuilder Objects
 - They require a separate object for each distinct value. (EJ Item 15)
 
 ## Usage
 This tool is intended for generating implementations of beans, pojo's, or data classes. It can be used for simple [value classes] (https://docs.oracle.com/javase/8/docs/api/java/lang/doc-files/ValueBased.html), it should not be used for service classes, classes designed to provide business logic or algorithms, or any other type of class that is not a (mostly) pure data object.
   
-### Getting started with Maven
+## Getting started
+### With Maven
 Include the following dependencies in your project. When you deploy your artifact(s), the actual overhead of the BeanBuilder jar is about 4k.
 ``` 
 <dependency>
@@ -93,8 +112,11 @@ This additional configuration may not be necessary. Need to investigate.
 </build>
 ```
 
-### Getting started with Gradle
+### With Gradle
 This is not supported yet. Any takers?
+
+## Tutorial
+This section has a continuing example to show how to use this tool. It is recommended to read it once in its entirety, and in future refer to the sections of interest directly.
 
 ### What Is Generated
 The bean builder generates several classes based on your template. Suppose you name your template FooDef. Then the  following classes are generated:
@@ -102,10 +124,7 @@ The bean builder generates several classes based on your template. Suppose you n
 - FooMutable - This is a mutable implementation from the template, so you can play nice with frameworks that require mutable beans. Methods are provided in Foo to easily convert to and from FooMutable.
 - FooGuava - Stuck on Java7 or under? This class provides pseudo-functional code a la Google Guava.
 
-### Tutorial
-This section has a continuing example to show how to use this tool. It is recommended to read it once in its entirety, and in future refer to the sections of interest directly.
-
-#### Creating a simple bean
+### Creating a simple bean
 David requires a person class for a project he is working on. Initially his person is very simple, having only 3 fields. He chooses the BeanBuilder tool because he expects his class to get more complex as the project grows.
 ```java
 @BeanTemplate
@@ -157,7 +176,7 @@ final Person p = Person.buildPerson()
              .build();
 ```
 
-#### Creating a larger bean
+### Creating a larger bean
 David decides that he wants to extract the name to a composed bean (subbean), add an Address subbean, add a Sex represented by an enum (Male, Female), and an occupation. He updates his PersonDef template as below.
 ```java
 @BeanTemplate
@@ -192,7 +211,7 @@ Person p = Person.buildPerson()
 ```
 Notice that the occupation is optional, and was not included in this instantiation.
 
-#### Creating an inheritance hierarchy
+### Creating an inheritance hierarchy
 David decides he wants to model adults and children differently. He refactors his code.
 ```java
 public interface Person
@@ -233,3 +252,10 @@ David has removed the @BeanTemplate annotation from the PersonDef, and turned it
 As expected, David cannot create a Person given the current class definitions. If David wanted to allow Person instances to exist, he could have kept the Person interface as a BeanTemplate.
 
 Notice the return type of getChildren is List<? extends ChildDef>. This is necessary since getChildren is a producer (PECS) of ChildDef's.
+
+## Alternative Tools
+[Lombok] (https://projectlombok.org)
+
+## Authors (in alphabetical order)
+David P Phillips
+Micha J Pringle

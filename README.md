@@ -15,7 +15,11 @@ Welcome to BeanBuilder, a tool to build fluent immutable beans from templates.
   - Creating a simple bean
   - Creating a larger bean
   - Creating an inheritance hierarchy
-  - More coming ...
+  - Creating a Cyclic Bean
+  - Updating an Existing Instance
+  
+  
+  
 - Alternative Tools
 - Authors  
 
@@ -116,7 +120,7 @@ This additional configuration may not be necessary. Need to investigate.
 This is not supported yet. Any takers?
 
 ## Tutorial
-This section has a continuing example to show how to use this tool. It is recommended to read it once in its entirety, and in future refer to the sections of interest directly.
+This section has a continuing example to show how to use this tool. The examples in this tutorial can be cut/paste into your own test project, and run to test the tool. We recommend reading this section once in its entirety, and in future refer to the sections of interest directly.
 
 ### What Is Generated
 The bean builder generates several classes based on your template. Suppose you name your template FooDef. Then the  following classes are generated:
@@ -139,9 +143,9 @@ public interface PersonDef
     String getLastName();
 }
 ```
-There are several requirements here to make this class function as expected. David uses an inteface to define the **getters** for his new class. The interface must be annotated with the @BeanTemplate annotation, and the name of the interface must end with Def. Every method that has a required argument in the implementation must be annotated with @javax.annotation.Nonnull. 
+There are several requirements here to make this class function as expected. David uses an inteface to define the **getters** for his new class. The interface must be annotated with the `@BeanTemplate` annotation, and the name of the interface must end with Def. Every method that has a required argument in the implementation must be annotated with @javax.annotation.Nonnull. 
 
-Once David completes his template, he compiles the code, and can use the generated implementation. He can use a static factory that requires all fields to be supplied. He can do this because the PersonDef has 3 getter methods defined. With 4 or more getters, the static factory method is not available. This choice is appropriate when all fields are present.
+Once David completes his template, he compiles the code, and can use the generated implementation. He can use a static factory that requires all fields to be supplied. He can do this because the `PersonDef` has 3 getter methods defined. With 4 or more getters, the static factory method is not available. This choice is appropriate when all fields are present.
 ```java
 final Person p = Person.newPerson( "Bob", "Rip", "Ross");
 ```
@@ -177,7 +181,7 @@ final Person p = Person.buildPerson()
 ```
 
 ### Creating a larger bean
-David decides that he wants to extract the name to a composed bean (subbean), add an Address subbean, add a Sex represented by an enum (Male, Female), and an occupation. He updates his PersonDef template as below.
+David decides that he wants to extract the name to a composed bean (sub-bean), add an `Address` sub-bean, add a `Sex` represented by an enum (Male, Female), and an occupation. He updates his `PersonDef` template as below.
 ```java
 @BeanTemplate
 public interface PersonDef
@@ -194,11 +198,11 @@ public interface PersonDef
     String getOccupation();
 }
 ```
-Notice that subbeans that are built using this tool must be referred to by the template name, for example, NameDef instead of Name.
+Notice that sub-beans that are built using this tool must be referred to by the template name, for example, `NameDef` instead of `Name`.
 
-Since there are more than 3 parameters, the tool allows only 1 way to create a new Person.
+Since there are more than 3 parameters, the tool allows only 1 way to create a `new Person`.
 ```java
-Person p = Person.buildPerson()
+final Person p = Person.buildPerson()
 				.newName()
 					.firstName("Sherlocke")
 					.lastName("Holmes")
@@ -244,14 +248,87 @@ public interface AdultDef extends Person
 {
     String getOccupation();
     
-    List<? extends ChildDef> getChildren(); //We also need the ? extends syntax.
+    List<? extends ChildDef> getChildren();
 }
 ```
-David has removed the @BeanTemplate annotation from the PersonDef, and turned it into a Person interface. He has created an AdultDef and ChildDef that are BeanTemplates. David can fluently create the child's mother. This principle applies no matter how deeply nested the hierarchy of BeanTemplates is.
+David has removed the `@BeanTemplate` annotation from the `PersonDef`, and turned it into a `Person` interface. He has created an `AdultDef` and `ChildDef` that are BeanTemplates. Notice the return type of getChildren is `List<? extends ChildDef>`. This is necessary since `getChildren()` is a producer (PECS) of ChildDef's.
 
-As expected, David cannot create a Person given the current class definitions. If David wanted to allow Person instances to exist, he could have kept the Person interface as a BeanTemplate.
+David can fluently create a `Child` or `Adult`. This principle applies no matter how deeply nested the hierarchy of BeanTemplates is.
+```java
+final Adult a = Adult.buildAdult()
+                .newName()
+                    .firstName("William")
+                    .lastName("Shakespeare")
+                .done()
+                .newAddress()
+                    .streetAddress("Stratford-upon-Avon, Warwickshire, West Midlands, England")
+                .done()
+                .sex(Sex.MALE)
+                .children(Lists.newArrayList(susanna, hamnet, judith))
+            .build();
+            
+final Child c = Child.buildChild()
+    .newName()
+        .firstName( "Hamnet" )
+        .lastName("Shakespeare")
+    .done()
+    .newAddress()
+        .streetAddress("Stratford-upon-Avon, Warwickshire, West Midlands, England")
+    .done()
+    .sex(Sex.MALE)
+    .newMother()
+        .newName()
+            .firstName("Anne")
+            .lastName("Hathaway")
+        .done()
+        .newAddress()
+            .streetAddress("Stratford-upon-Avon, Warwickshire, West Midlands, England")
+        .done()
+        .sex(Sex.FEMALE)
+    .done()
+    .newFather()
+        .newName()
+            .firstName("William")
+            .lastName("Shakespeare")
+        .done()
+        .newAddress()
+            .streetAddress("Stratford-upon-Avon, Warwickshire, West Midlands, England")
+        .done()
+        .sex(Sex.MALE)
+    .done()
+.build();          
+```
+As expected, David cannot create a `Person` given the current class definitions. If David wanted to allow `Person` instances to exist, he could have kept the `Person` interface as a `@BeanTemplate`.
 
-Notice the return type of getChildren is List<? extends ChildDef>. This is necessary since getChildren is a producer (PECS) of ChildDef's.
+Although inheritance is supported, we recommend using composition over inheritance. We do not recommend modelling Adult/Children as in the above example.
+
+## Creating a Cyclic Bean
+Never create a `@Nonnull` cycle in your `@BeanTemplate`. 
+```java
+@BeanTemplate
+public interface CycleDef
+{
+    @Nonnull
+    public CycleDef getCycle();
+}
+
+// needs an already existing cycle instance to complete
+final Cycle c = Cycle.buildCycle()
+                    .cycle(alreadyExistingCycleInstance)
+
+// needs an already existing cycle instance to complete
+final Cycle c = Cycle.buildCycle()
+                    .newCycle()
+                        .cycle(alreadyExistingCycleInstance)
+										
+// needs an already existing cycle instance to complete
+final Cycle cycle = Cycle.newCycle(alreadyExistingCycleInstance);
+```
+If you do this, then then you cannot use the `buildCycle()` method without triggering an infinite cascade of `buildCycle()` calls. You can still use the `newCycle()` method, provided you have an existing `Cycle` instance, but how can you create it?
+
+## Updating an Existing Instance
+
+
 
 ## Alternative Tools
 [Lombok] (https://projectlombok.org)

@@ -14,6 +14,7 @@ Welcome to BeanBuilder, a tool to build fluent immutable beans from templates.
   - What Is Generated
   - Creating a Simple Bean
   - Creating a Complex Bean
+  - Working with 3rd Party Tools that Require Mutable Beans
   - Creating an Inheritance Hierarchy
   - Creating a Cyclic Bean
   - Updating an Existing Instance
@@ -24,6 +25,7 @@ Welcome to BeanBuilder, a tool to build fluent immutable beans from templates.
   - Using Guava Equivalence
   - Using Guava Orderings
 - Alternative Tools
+- Wish list
 - Authors  
 
 
@@ -217,6 +219,18 @@ final Person p = Person.buildPerson()
 			.build();
 ```
 Notice that the occupation is optional, and was not included in this instantiation.
+
+## Working with 3rd Party Tools that Require Mutable Beans
+The tool offers support to convert your immutable bean to a mutable bean that plays nicely with 3rd party frameworks.
+
+David decides he needs to convert a child to a mutable instance for use with a 3rd party tool and back again.
+```java
+final PersonMutable person = p.toMutable();
+
+// 3rd party integration omitted
+
+final Person person2 = Person.fromMutable(person);
+```
 
 ### Creating an Inheritance Hierarchy
 David decides he wants to model adults and children differently. He refactors his code.

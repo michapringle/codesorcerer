@@ -12,14 +12,17 @@ Welcome to BeanBuilder, a tool to build fluent immutable beans from templates.
   - With Gradle
 - Tutorial
   - What Is Generated
-  - Creating a simple bean
-  - Creating a larger bean
-  - Creating an inheritance hierarchy
+  - Creating a Simple Bean
+  - Creating a Complex Bean
+  - Creating an Inheritance Hierarchy
   - Creating a Cyclic Bean
   - Updating an Existing Instance
-  
-  
-  
+  - Adding Custom Code
+  - Using Javax Validation Annotations
+  - Using Guava Predicates
+  - Using Guava Functions
+  - Using Guava Equivalence
+  - Using Guava Orderings
 - Alternative Tools
 - Authors  
 
@@ -128,7 +131,7 @@ The bean builder generates several classes based on your template. Suppose you n
 - FooMutable - This is a mutable implementation from the template, so you can play nice with frameworks that require mutable beans. Methods are provided in Foo to easily convert to and from FooMutable.
 - FooGuava - Stuck on Java7 or under? This class provides pseudo-functional code a la Google Guava.
 
-### Creating a simple bean
+### Creating a Simple Bean
 David requires a person class for a project he is working on. Initially his person is very simple, having only 3 fields. He chooses the BeanBuilder tool because he expects his class to get more complex as the project grows.
 ```java
 @BeanTemplate
@@ -180,7 +183,7 @@ final Person p = Person.buildPerson()
              .build();
 ```
 
-### Creating a larger bean
+### Creating a Complex Bean
 David decides that he wants to extract the name to a composed bean (sub-bean), add an `Address` sub-bean, add a `Sex` represented by an enum (Male, Female), and an occupation. He updates his `PersonDef` template as below.
 ```java
 @BeanTemplate
@@ -215,7 +218,7 @@ final Person p = Person.buildPerson()
 ```
 Notice that the occupation is optional, and was not included in this instantiation.
 
-### Creating an inheritance hierarchy
+### Creating an Inheritance Hierarchy
 David decides he wants to model adults and children differently. He refactors his code.
 ```java
 public interface Person
@@ -328,11 +331,21 @@ If you do this, then then you cannot use the `buildCycle()` method without trigg
 
 ## Updating an Existing Instance
 
+## Adding Custom Code
 
+## Using Javax Validation Annotations
+
+## Using Guava Predicates
+
+## Using Guava Functions
+
+## Using Guava Equivalence
+
+## Using Guava Orderings
 
 ## Alternative Tools
 [Lombok] (https://projectlombok.org)
 
 ## Authors (in alphabetical order)
-David P Phillips
-Micha J Pringle
+- David P Phillips
+- Micha J Pringle

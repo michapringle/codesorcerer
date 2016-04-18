@@ -7,8 +7,6 @@ import static com.google.common.collect.Sets.union;
 import java.lang.reflect.Method;
 import java.util.Set;
 
-import ca.pandp.bean.sub.Sex;
-import ca.pandp.bean.sub.Person;
 import ca.pandp.template.BNN_SBN.Simple3;
 import ca.pandp.template.BNN_SBNN.Complex2;
 import ca.pandp.template.BNN_SBNN.Simple2;
@@ -160,29 +158,5 @@ public class TestBeanFluency {
         final Simple5.SubBeanBuildable<Complex5.BeanBuildable> s52 = s51.name("");
         final Complex5.BeanBuildable s5e = s52.done();
         final Complex5 c5e = s5e.build();
-    }
-
-    @Test
-    public void example() {
-        final Person p = Person.buildPerson()
-                    .newName()
-                        .firstName("Micha")
-                        .lastName("Pringle")
-                    .done()
-                    .newAddress()
-                        .streetAddress("221b Baker Street")
-                    .done()
-                    .sex(Sex.MALE)
-                .build();
-
-        final Person p2 = p.update()
-                    .getName()
-                        .middleName("Julian")
-                    .done()
-                .build();
-
-        System.out.println(p);
-        System.out.println(p2);
-
     }
 }

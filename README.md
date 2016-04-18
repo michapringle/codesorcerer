@@ -87,7 +87,7 @@ This additional configuration may not be necessary. Need to investigate.
          <failOnError>false</failOnError>
          <outputDiagnostics>false</outputDiagnostics>
          <processors>
-              <processor>com.central1.beautifulbeanbuilder.BeanProcessor</processor>
+              <processor>ca.pandp.processor.BeanProcessor</processor>
          </processors>
          <includes><include>**/*Def.java</include></includes>
       </configuration>
@@ -123,7 +123,7 @@ This additional configuration may not be necessary. Need to investigate.
 This is not supported yet. Any takers?
 
 ## Tutorial
-This section has a continuing example to show how to use this tool. The examples in this tutorial can be cut/paste into your own test project, and run to test the tool. We recommend reading this section once in its entirety, and in future refer to the sections of interest directly.
+This section has a continuing example to show how to use this tool. The examples in this tutorial can be cut/paste into your own test project, and run to test the tool. It is recommended to read this section once in its entirety, and in future refer to the sections of interest directly.
 
 ### What Is Generated
 The bean builder generates several classes based on your template. Suppose you name your template FooDef. Then the  following classes are generated:
@@ -163,7 +163,7 @@ final Person jd = Person.buildPerson()
 ```
 If you try this example, you will notice that the tool forces the @Nonnull fields to be specified first, in the order defined in the BeanTemplate.
 
-David could use the fluent interface to create Bob Ross, we recommend the static factory.
+David could use the fluent interface to create Bob Ross, the static factory is the recommended usage.
 ```java
 final Person p = Person.buildPerson()
                 .firstName( "Bob" )
@@ -231,7 +231,6 @@ public interface Person
  
      @Nonnull
      Sex getSex();
-
 }
 
 @BeanTemplate
@@ -303,10 +302,10 @@ final Child c = Child.buildChild()
 ```
 As expected, David cannot create a `Person` given the current class definitions. If David wanted to allow `Person` instances to exist, he could have kept the `Person` interface as a `@BeanTemplate`.
 
-Although inheritance is supported, we recommend using composition over inheritance. We do not recommend modelling Adult/Children as in the above example.
+Although inheritance is supported, it is recommended to use composition over inheritance. Modelling Adult/Children as in the above example is not recommended.
 
 ## Creating a Cyclic Bean
-Never create a `@Nonnull` cycle in your `@BeanTemplate`. 
+**Never create a `@Nonnull` cycle in your `@BeanTemplate`.**
 ```java
 @BeanTemplate
 public interface CycleDef
@@ -330,21 +329,249 @@ final Cycle cycle = Cycle.newCycle(alreadyExistingCycleInstance);
 If you do this, then then you cannot use the `buildCycle()` method without triggering an infinite cascade of `buildCycle()` calls. You can still use the `newCycle()` method, provided you have an existing `Cycle` instance, but how can you create it?
 
 ## Updating an Existing Instance
+David decides he wants to update the child's mother's middle name. He starts with the update method, to indicate to the tool that he is interested in creating an altered copy of the original child.
+```java
+final Child child = c.update()
+                .getMother()
+                    .middleName("Mary")
+                .done()
+            .build();
+```
+
+When David has only 1 field to update, and an already existing Mother instance, he can use the `withMother()` method which provides the most concise syntax.
+```java
+final Child updatedChild = child.withMother(a);
+```
+
+**Think carefully before you do this.** If you update a sub-bean instead of the current instance, you are probably not doing what you want, and confusing the next developer.
+```java
+final Adult adult = child.getMother()
+                .update()
+                    .middleName( "Mary" )
+                .build();
+```
+Notice here how the adult was updated and the updated copy returned. The child class is unaffected. This usage is not recommended.
+
+Be aware of the implication of chaining `with...()` methods. The `with...()` method is shorthand for `update(). ... .build()`. Each time `with...()` is called, the entire instance is copied to a new instance with the single change.
+
+This style results in 4 copies of `Child` instance child being created. While it is legible, it is not performant.
+```java
+final Adult adult = child.getMother().withMiddleName("Mary");
+final Child avoid = child.withMother(adult).withFirstName("David" ).withMiddleName( "Bruce").withLastName( "Banner" );
+```
+
+This style results in 2 copies of the `Child` instance being created. Consider that this syntax is potentially confusing.
+```java
+final Adult adult = child.getMother().withMiddleName("Mary");
+final Child idiom2 = child.withMother(adult)
+        .update()
+            .firstName("David")
+            .middleName("Bruce")
+            .lastName("Banner")
+        .build();	
+```
+
+This style results in 1 copy of the `Adult` instance being created, and 1 copy of the `Child` instance being created. The syntax here is clear.
+```java
+final Child idiom1 = child.update()
+        .getMother()
+            .middleName("Mary")
+        .done()
+        .firstName("David")
+        .middleName("Bruce")
+        .LastName("Banner")
+    .build();
+```
+This is the recommended syntax.
 
 ## Adding Custom Code
+David decides to define some special behavior for his bean. He can do this by creating an abstract class with the custom implementation, instead of starting with an interface. Most methods defined in the abstract class are inherited by the generated implementation.
+```java
+public abstract class PersonDef {
+    @Nonnull
+    public abstract NameDef getName();
+
+    @Nonnull
+    public abstract AddressDef getAddress();
+
+    @Nonnull
+    public abstract Sex getSex();
+
+    public abstract String getOccupation();
+
+    public abstract long getBirthDate();
+
+    public void sayHi() {
+        System.out.println("Hi " + getName());
+    }
+}
+
+@BeanTemplate
+public abstract class AdultDef extends PersonDef
+{
+    public abstract String getOccupation();
+
+    public abstract List<? extends ChildDef> getChildren();
+}
+
+@BeanTemplate
+public abstract class ChildDef extends PersonDef
+{
+    @Nonnull
+    public abstract AdultDef getMother();
+
+    @Nonnull
+    public abstract AdultDef getFather();
+
+    public abstract int getCavities();
+}
+```
+Notice this approach has the usual drawbacks of using an abstract class instead of an interface. As expected, David cannot create a `Person` given the current class definitions.
+
+David now has access to a method called `sayHi()`.
+```java
+final Adult adult = Adult.buildAdult()
+// rest of adult omitted 
+
+adult.sayHello();
+```
+
+**Do not try to customize Object override methods**. Methods like `equals(Object o)`, `hashcode()` or `toString()` are never inherited, instead they are overridden by the custom implementation.
+```java
+@BeanTemplate
+public abstract class IdDef
+{
+    @Nonnull
+    public abstract Long getId();
+    
+    @Override
+    public int hashCode()
+    {
+        return 42; 
+    }
+    
+    @Override
+    public boolean equals( final Object obj )
+    {
+        return true;
+    }
+    
+    @Override
+    public String toString()
+    {
+        return "The Answer to the Ultimate Question of Life, the Universe, and Everything."
+    } 
+}
+```
+The custom implementations of the `@Override` methods are ignored by the tool, thus the output is not what one expects given this class definition.
 
 ## Using Javax Validation Annotations
+The tool incorporates [validation annotations] (http://docs.oracle.com/javaee/6/api/javax/validation/package-summary.html). A trivial example is included here.
 
+David decides a child has 0-40 cavities, and that the mother and father cannot be the same person.
+```java
+@BeanTemplate
+public abstract class ChildDef implements PersonDef
+{
+    @Nonnull
+    public abstract AdultDef getMother();
+
+    @Nonnull
+    public abstract AdultDef getFather();
+
+    @Min(0)
+    @Max(40)
+    public abstract int getCavities();
+
+    @AssertTrue(message="Class invariant violation : Mother and father cannot be the same person")
+    private boolean isValid()
+    {
+        return !getMother().equals(getFather());
+    }
+}
+```
+The `isValid()` method is automatically called at construction time in the implementation, and therefore well suited to protect the invariants of this class.
+ 
+David can now be sure that each child instance has 0-40 cavities. Instances c1 and c4 fail at runtime.
+```java
+final Child c1 = c.withCavities(-1);
+final Child c2 = c.withCavities(0);
+final Child c3 = c.withCavities(40);
+final Child c4 = c.withCavities(41);
+```
+ 
 ## Using Guava Predicates
+The tool creates a separate class with static [Predicate methods] (https://code.google.com/p/guava-libraries/wiki/FunctionalExplained#Predicates). A trivial example is included here.
+
+David can use a generated predicate to find all children with exactly 5 cavities. The predicate is created as a static method in a `ChildGuava` class.
+```java
+final List<Child> childList = Lists.newArrayList(
+        c.update().cavities(3).sex(Sex.MALE).build(),
+        c.update().cavities(2).sex(Sex.MALE).build(),
+        c.update().cavities(0).sex(Sex.FEMALE).build(),
+        c.update().cavities(2).sex(Sex.FEMALE).build());
+
+final List<Child> filteredList = Lists.newArrayList(Iterables.filter(childList, ChildGuava.byCavities(5)));
+```
 
 ## Using Guava Functions
+The tool creates a separate class with static [Function methods] (https://code.google.com/p/guava-libraries/wiki/FunctionalExplained#Functions). A trivial example is included here.
+
+David can use a function to transform the list of children into a list of number-of-cavities. The function is created as a static method in a `ChildGuava` class.
+```java
+final List<Child> childList = Lists.newArrayList(
+        c.update().cavities(3).sex(Sex.MALE).build(),
+        c.update().cavities(2).sex(Sex.MALE).build(),
+        c.update().cavities(0).sex(Sex.FEMALE).build(),
+        c.update().cavities(2).sex(Sex.FEMALE).build());
+
+final List<Long> numberOfCavitiesList = Lists.newArrayList(Iterables.transform(childList, ChildGuava.BY_CAVITIES));
+```
 
 ## Using Guava Equivalence
+The tool creates a separate class with static [Equivalence] (http://docs.guava-libraries.googlecode.com/git/javadoc/com/google/common/base/Equivalence.html) and [Wrapper] (http://docs.guava-libraries.googlecode.com/git/javadoc/com/google/common/base/Equivalence.Wrapper.html). A trivial example is included here.
+
+David can use any of the defined equivalences in place of `equals()` and `hashcode()`.
+```java
+final List<Child> childList = Lists.newArrayList(
+        c.update().cavities(3).sex(Sex.MALE).build(),
+        c.update().cavities(2).sex(Sex.MALE).build(),
+        c.update().cavities(0).sex(Sex.FEMALE).build(),
+        c.update().cavities(2).sex(Sex.FEMALE).build());
+
+// output is 3, because 2 children have 2 cavities.
+System.out.println(Sets.newHashSet(Iterables.transform(childList, ChildGuava.EQUALS_CAVITIES_WRAPPER)).size());
+
+// output is 2, because 2 children are male, and 2 are female.
+System.out.println(Sets.newHashSet(Iterables.transform(childList, ChildGuava.EQUALS_SEX_WRAPPER)).size());
+```
 
 ## Using Guava Orderings
+The tool creates a separate class with static [Ordering methods] (https://code.google.com/p/guava-libraries/wiki/OrderingExplained). A trivial example is included here.
+
+David can sort or order lists. His `Ordering` is like a fluent replacement for `Comparator`.
+```java
+final List<Child> childList = Lists.newArrayList(
+        c.update().cavities(3).sex(Sex.MALE).build(),
+        c.update().cavities(2).sex(Sex.MALE).build(),
+        c.update().cavities(0).sex(Sex.FEMALE).build(),
+        c.update().cavities(2).sex(Sex.FEMALE).build());
+
+// prints the children sorted by cavities, smallest to largest.
+System.out.println(ChildGuava.ORDER_BY_CAVITIES.sortedCopy(childList));
+
+// prints the children sorted by sex, male, then female.
+System.out.println(ChildGuava.ORDER_BY_SEX .sortedCopy(childList));
+```
 
 ## Alternative Tools
 [Lombok] (https://projectlombok.org)
+
+## Wish list
+- Add gradle support.
+- Methods that return a `List` should have a `...` setter.
+- Rewrite in pure Java.
+- Updates should allow updating any method without required orderings, since required fields already exist for the instance.
 
 ## Authors (in alphabetical order)
 - David P Phillips

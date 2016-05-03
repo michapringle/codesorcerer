@@ -77,47 +77,50 @@ Include the following dependencies in your project. When you deploy your artifac
 </dependency>
 ```
 
-This additional configuration may not be necessary. Need to investigate.
+Although it is not strictly necessary, the following build plugins are recommended. 
+- The processor plugin is recommended to explicitly specify the output directories of the generated source.
+- The compiler plugin is recommended when you have defined BeanTemplates in other jars, and want to compose them with new BeanTemplates in your existing jar.
 ```
 <build>
-   <plugins>
-    <plugin>
-      <groupId>org.bsc.maven</groupId>
-      <artifactId>maven-processor-plugin</artifactId>
-      <version>2.2.4</version>
-      <configuration>
-         <failOnError>false</failOnError>
-         <outputDiagnostics>false</outputDiagnostics>
-         <processors>
-              <processor>ca.pandp.processor.BeanProcessor</processor>
-         </processors>
-         <includes><include>**/*Def.java</include></includes>
-      </configuration>
-      <executions>
-        <execution>
-          <id>process</id>
-          <goals>
-            <goal>process</goal>
-          </goals>
-          <phase>generate-sources</phase>
-        </execution>
-        <execution>
-          <id>process-test</id>
-          <goals>
-            <goal>process-test</goal>
-          </goals>
-          <phase>generate-test-sources</phase>
-        </execution>
-      </executions>
-    </plugin>
-    <plugin>
-       <artifactId>maven-compiler-plugin</artifactId>
-       <version>2.3.2</version>
-       <configuration>
-           <compilerArgument>-proc:none</compilerArgument>
-       </configuration>
-    </plugin>
-  </plugins>
+    <plugins>
+        <plugin>
+            <groupId>org.bsc.maven</groupId>
+            <artifactId>maven-processor-plugin</artifactId>
+            <version>3.1.0</version>
+            <configuration>
+                <failOnError>false</failOnError>
+                <outputDiagnostics>false</outputDiagnostics>
+                <processors>
+                    <processor>ca.pandp.processor.BeanProcessor</processor>
+                </processors>
+                <includes><include>**/*Def.java</include></includes>
+            </configuration>
+            <executions>
+                <execution>
+                    <id>process</id>
+                    <goals>
+                        <goal>process</goal>
+                    </goals>
+                    <phase>generate-sources</phase>
+                </execution>
+                <execution>
+                    <id>process-test</id>
+                    <goals>
+                        <goal>process-test</goal>
+                    </goals>
+                    <phase>generate-test-sources</phase>
+                </execution>
+            </executions>
+        </plugin>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.5.1</version>
+            <configuration>
+                <compilerArgument>-proc:none</compilerArgument>
+            </configuration>
+        </plugin>
+    </plugins>
 </build>
 ```
 
@@ -447,7 +450,7 @@ David now has access to a method called `sayHi()`.
 final Adult adult = Adult.buildAdult()
 // rest of adult omitted 
 
-adult.sayHello();
+adult.sayHi();
 ```
 
 **Do not try to customize Object override methods**. Methods like `equals(Object o)`, `hashcode()` or `toString()` are never inherited, instead they are overridden by the custom implementation.

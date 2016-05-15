@@ -77,12 +77,21 @@ Include the following dependencies in your project. When you deploy your artifac
 </dependency>
 ```
 
+The compiler plugin is required to build the source. The compiler argument turns off annotation processing.
 Although it is not strictly necessary, the following build plugins are recommended. 
 - The processor plugin is recommended to explicitly specify the output directories of the generated source.
-- The compiler plugin is recommended when you have defined BeanTemplates in other jars, and want to compose them with new BeanTemplates in your existing jar.
+- The build helper plugin is recommended when you have defined BeanTemplates in other jars, and want to compose them with new BeanTemplates in your existing jar.
 ```
 <build>
     <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.5.1</version>
+            <configuration>
+                <compilerArgument>-proc:none</compilerArgument>
+            </configuration>
+        </plugin>
         <plugin>
             <groupId>org.bsc.maven</groupId>
             <artifactId>maven-processor-plugin</artifactId>
@@ -113,12 +122,23 @@ Although it is not strictly necessary, the following build plugins are recommend
             </executions>
         </plugin>
         <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <version>3.5.1</version>
-            <configuration>
-                <compilerArgument>-proc:none</compilerArgument>
-            </configuration>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <version>1.10</version>
+            <executions>
+                <execution>
+                    <id>add-generated-source</id>
+                    <phase>initialize</phase>
+                    <goals>
+                        <goal>add-source</goal>
+                    </goals>
+                    <configuration>
+                        <sources>
+                            <source>${project.build.directory}/generated-sources/apt</source>
+                        </sources>
+                    </configuration>
+                </execution>
+            </executions>
         </plugin>
     </plugins>
 </build>
@@ -588,7 +608,6 @@ System.out.println(ChildGuava.ORDER_BY_SEX .sortedCopy(childList));
 - Add gradle support.
 - Methods that return a `List` should have a `...` setter.
 - Rewrite in pure Java.
-- Updates should allow updating any method without required orderings, since required fields already exist for the instance.
 
 ## Authors (in alphabetical order)
 - David P Phillips

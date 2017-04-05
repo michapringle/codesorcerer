@@ -56,9 +56,6 @@ public class ImmutableBuilder extends AbstractBuilder {
         addEquals(ic, classBuilder);
         addSimpleBuilders(ic, classBuilder);
 
-        addFromMutable(ic, classBuilder);
-        addToMutable(ic, classBuilder);
-
         return classBuilder;
     }
 
@@ -604,50 +601,6 @@ public class ImmutableBuilder extends AbstractBuilder {
             classBuilder.addMethod(getter);
         });
     }
-
-    private void addFromMutable(InfoClass ic, TypeSpec.Builder classBuilder) {
-        MethodSpec.Builder builder = MethodSpec.methodBuilder("fromMutable");
-        builder.addModifiers(Modifier.PUBLIC, Modifier.STATIC);
-        builder.addParameter(ic.typeMutable, "mutable");
-        builder.returns(ic.typeImmutable);
-
-
-        CodeBlock.Builder cb = CodeBlock.builder();
-        cb.add("return new " + ic.immutableClassName + "(");
-        cb.indent();
-        String params = ic.infos.stream()
-                .map(i -> "mutable." + i.prefix + i.nameUpper + "()")
-                .collect(Collectors.joining(",\n"));
-
-        cb.add(params);
-        cb.add(");\n");
-        cb.unindent();
-
-        builder.addCode(cb.build());
-
-        classBuilder.addMethod(builder.build());
-    }
-
-    private void addToMutable(InfoClass ic, TypeSpec.Builder classBuilder) {
-        MethodSpec.Builder toMutable1 = MethodSpec.methodBuilder("toMutable");
-        toMutable1.addModifiers(Modifier.PUBLIC);
-        toMutable1.returns(ic.typeMutable);
-        toMutable1.addStatement("return toMutable(this)");
-        classBuilder.addMethod(toMutable1.build());
-
-        MethodSpec.Builder toMutable = MethodSpec.methodBuilder("toMutable");
-        toMutable.addModifiers(Modifier.PUBLIC, Modifier.STATIC);
-        toMutable.returns(ic.typeMutable);
-        toMutable.addParameter(ic.typeImmutable, "immutable");
-        toMutable.addStatement("$T mutable = new $T()", ic.typeMutable, ic.typeMutable);
-        toMutable.addStatement("if(immutable != null) {");
-        ic.infos.forEach(i -> toMutable.addStatement("mutable.set" + i.nameUpper + "(immutable." + i.prefix + i.nameUpper + "())"));
-        toMutable.addStatement("}");
-        toMutable.addStatement("return mutable");
-        classBuilder.addMethod(toMutable.build());
-
-    }
-
 
     private void addMemberFields(List<Info> infos, TypeSpec.Builder classBuilder) {
         infos.forEach(info -> {

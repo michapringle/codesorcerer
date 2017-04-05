@@ -52,7 +52,7 @@ public class JacksonBuilder extends AbstractBuilder {
         m.addException(ClassName.get(IOException.class));
         m.addException(ClassName.get(JsonProcessingException.class));
 
-        m.addStatement("return $T.fromMutable(jp.readValueAs($N.class))", ic.typeImmutable, ic.typeMutable.simpleName());
+        m.addStatement("return jp.readValueAs($T.class).toImmutable()", ic.typeMutable);
 
         classBuilder.addMethod(m.build());
         return classBuilder;
@@ -81,7 +81,7 @@ public class JacksonBuilder extends AbstractBuilder {
         m.addException(ClassName.get(IOException.class));
         m.addException(ClassName.get(JsonGenerationException.class));
 
-        m.addStatement("gen.writeObject(o.toMutable());");
+        m.addStatement("gen.writeObject($T.fromImmutable(o))", ic.typeMutable);
 
         classBuilder.addMethod(m.build());
         return classBuilder;

@@ -45,7 +45,6 @@ public class ImmutableBuilder extends AbstractBuilder {
         addAbstract(ic, classBuilder);
         addBaseClasses(ic, classBuilder);
 
-
         addBuilder(ic, classBuilder);
         addUpdater(ic, classBuilder);
         addMemberFields(ic.infos, classBuilder);
@@ -83,7 +82,7 @@ public class ImmutableBuilder extends AbstractBuilder {
         //Fields
         a.addField(Types.jpP, "parent", Modifier.PRIVATE);
         a.addField(ic.typeCallbackImpl, "callback", Modifier.PRIVATE);
-        a.addField(ic.typeMutable, "m", Modifier.PRIVATE);
+        ic.infos.forEach(i -> a.addField(i.buildField(Modifier.PRIVATE)));
 
         //Constructor
         MethodSpec.Builder constructor = MethodSpec.constructorBuilder();
@@ -91,9 +90,15 @@ public class ImmutableBuilder extends AbstractBuilder {
         constructor.addParameter(ic.typeImmutable, "x");
         constructor.addParameter(Types.jpP, "parent");
         constructor.addParameter(ic.typeCallbackImpl, "callback");
-        constructor.addStatement("this.m = toMutable(x)");
         constructor.addStatement("this.parent = parent");
         constructor.addStatement("this.callback = callback");
+
+        CodeBlock.Builder cbConst = CodeBlock.builder();
+        cbConst.beginControlFlow("if(x != null)");
+        ic.infos.forEach(i -> cbConst.addStatement("this." + i.nameMangled + " = x." + i.prefix + i.nameUpper + "()"));
+        cbConst.endControlFlow();
+        constructor.addCode(cbConst.build());
+
         a.addMethod(constructor.build());
 
         //setters
@@ -111,7 +116,7 @@ public class ImmutableBuilder extends AbstractBuilder {
             MethodSpec.Builder m = MethodSpec.methodBuilder("get" + i.nameUpper);
             m.addModifiers(Modifier.PUBLIC);
             m.returns(ParameterizedTypeName.get(ClassName.bestGuess(i.returnType + "." + Types.jpSubBeanUpdatable.simpleName()), ic.lastGeneric()));
-            m.addStatement("return " + i.returnType + ".Internal.newSubBeanUpdater((" + ic.lastGeneric() + ")this, newCallback" + i.nameUpper + "(m), m.get" + i.nameUpper + "())");
+            m.addStatement("return " + i.returnType + ".Internal.newSubBeanUpdater((" + ic.lastGeneric() + ")this, (v)->" + i.nameMangled + "=v, " + i.nameMangled + ")");
             a.addMethod(m.build());
         });
 
@@ -125,7 +130,7 @@ public class ImmutableBuilder extends AbstractBuilder {
             cb.add("return new $T(", ic.typeImmutable);
             cb.indent();
             String params = ic.infos.stream()
-                    .map(i -> "m." + i.prefix + i.nameUpper + "()")
+                    .map(i -> i.nameMangled)
                     .collect(Collectors.joining(",\n"));
             cb.add(params);
             cb.add(");\n");
@@ -140,32 +145,32 @@ public class ImmutableBuilder extends AbstractBuilder {
             MethodSpec.Builder doneMethod = MethodSpec.methodBuilder("done");
             doneMethod.addModifiers(Modifier.PUBLIC, Modifier.FINAL);
             doneMethod.returns(Types.jpP);
-            doneMethod.addStatement("callback.update(build())");
+            doneMethod.addStatement("callback.accept(build())");
             doneMethod.addStatement("return parent");
             a.addMethod(doneMethod.build());
         }
 
-        //Callbacks
-        ic.infos.stream().filter(i -> i.isBB).forEach(i -> {
-            MethodSpec.Builder m = MethodSpec.methodBuilder("newCallback" + i.nameUpper);
-            m.addModifiers(Modifier.PRIVATE);
-            m.returns(ParameterizedTypeName.get(Types.jpCallback, i.nReturnType));
-            m.addParameter(ic.typeMutable, "m");
-
-            TypeSpec callback = TypeSpec.anonymousClassBuilder("")
-                    .addSuperinterface(ParameterizedTypeName.get(Types.jpCallback, i.nReturnType))
-                    .addMethod(MethodSpec.methodBuilder("update")
-                            .addAnnotation(Override.class)
-                            .addModifiers(Modifier.PUBLIC)
-                            .addParameter(i.nReturnType, "val")
-                            .returns(void.class)
-                            .addStatement("m.set" + i.nameUpper + "(val)")
-                            .build())
-                    .build();
-
-            m.addStatement("return $L", callback);
-            a.addMethod(m.build());
-        });
+//        //Callbacks
+//        ic.infos.stream().filter(i -> i.isBB).forEach(i -> {
+//            MethodSpec.Builder m = MethodSpec.methodBuilder("newCallback" + i.nameUpper);
+//            m.addModifiers(Modifier.PRIVATE);
+//            m.returns(ParameterizedTypeName.get(Types.jpCallback, i.nReturnType));
+//            //m.addParameter(ic.typeMutable, "m");
+//
+//            TypeSpec callback = TypeSpec.anonymousClassBuilder("")
+//                    .addSuperinterface(ParameterizedTypeName.get(Types.jpCallback, i.nReturnType))
+//                    .addMethod(MethodSpec.methodBuilder("update")
+//                            .addAnnotation(Override.class)
+//                            .addModifiers(Modifier.PUBLIC)
+//                            .addParameter(i.nReturnType, "val")
+//                            .returns(void.class)
+//                            .addStatement("" + i.nameMangled + " = val")
+//                            .build())
+//                    .build();
+//
+//            m.addStatement("return $L", callback);
+//            a.addMethod(m.build());
+//        });
 
         classBuilder.addType(a.build());
     }
@@ -178,7 +183,7 @@ public class ImmutableBuilder extends AbstractBuilder {
         if (i.isNonNull) {
             m.addStatement("$L.checkNotNull($N, \"$L.$L cannot be null\")", Types.guava_preconditions, i.nameMangled, ic.immutableClassName, i.nameMangled);
         }
-        m.addStatement("m.set" + i.nameUpper + "(" + i.nameMangled + ")");
+        m.addStatement("this." + i.nameMangled + " = " + i.nameMangled);
         m.addStatement("return (" + tn.name + ")this");
         a.addMethod(m.build());
 
@@ -186,7 +191,7 @@ public class ImmutableBuilder extends AbstractBuilder {
             MethodSpec.Builder m2 = MethodSpec.methodBuilder("new" + i.nameUpper);
             m2.addModifiers(Modifier.PUBLIC);
             m2.returns(ParameterizedTypeName.get(ClassName.bestGuess(i.returnType + ".SubBeanRequires0"), tn));
-            m2.addStatement("return " + i.returnType + ".Internal.newSubBeanBuilder((" + tn.name + ")this, newCallback" + i.nameUpper + "(m))");
+            m2.addStatement("return " + i.returnType + ".Internal.newSubBeanBuilder((" + tn.name + ")this, (v)->" + i.nameMangled + "=v)");
             a.addMethod(m2.build());
         }
     }

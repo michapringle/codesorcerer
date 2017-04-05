@@ -1,7 +1,6 @@
 package com.beautifulbeanbuilder.processor.builders;
 
 import com.beautifulbeanbuilder.Buildable;
-import com.beautifulbeanbuilder.Callback;
 import com.beautifulbeanbuilder.Doneable;
 import com.google.common.base.*;
 import com.google.common.collect.Ordering;
@@ -10,6 +9,7 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeVariableName;
 
 import java.util.Objects;
+import java.util.function.Consumer;
 
 public final class Types {
 
@@ -55,7 +55,7 @@ public final class Types {
     public static final ParameterizedTypeName jpSubBeanBuildableP = ParameterizedTypeName.get(jpSubBeanBuildable, jpP);
     public static final ClassName jpBeanBuildable = ClassName.bestGuess("BeanBuildable");
 
-    public static final ClassName jpCallback = ClassName.get(Callback.class);
+    public static final ClassName jpCallback = ClassName.get(Consumer.class);
 
 
 }

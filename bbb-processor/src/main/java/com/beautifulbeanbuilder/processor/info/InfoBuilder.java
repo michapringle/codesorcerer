@@ -49,7 +49,6 @@ public class InfoBuilder {
         ic.isInterfaceDef = te.getKind() == ElementKind.INTERFACE;
         ic.typeDef = ClassName.get(te);
         ic.typeImmutable = ClassName.get(pkg, bbbWithNoDef);
-        ic.typeCallbackImpl = ParameterizedTypeName.get(Types.jpCallback, ic.typeImmutable);
         ic.typeMutable = ClassName.get(pkg, bbbWithNoDef + "Mutable");
         ic.typeGuava = ClassName.get(pkg, bbbWithNoDef + "Guava");
         ic.typeJackson= ClassName.get(pkg, bbbWithNoDef + "Jackson");

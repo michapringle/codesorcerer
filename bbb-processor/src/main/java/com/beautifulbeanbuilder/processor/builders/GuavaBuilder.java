@@ -11,8 +11,10 @@ import java.util.Objects;
 
 public class GuavaBuilder extends AbstractBuilder {
 
-    public TypeSpec.Builder buildGuavaBean(InfoClass ic) throws IOException {
-        TypeSpec.Builder classBuilder = buildClass(ic.typeGuava);
+    public TypeSpec.Builder build(InfoClass ic, TypeSpec.Builder immutableClassBuilder) throws IOException {
+        ClassName typeGuava = ClassName.get(ic.pkg, ic.immutableClassName + "Guava");
+
+        TypeSpec.Builder classBuilder = buildClass(typeGuava);
 
         ParameterizedTypeName typePredicateImmutable = ParameterizedTypeName.get(Types.guava_predicate, ic.typeImmutable);
         ParameterizedTypeName typeOrderingImmutable = ParameterizedTypeName.get(Types.guava_ordering, ic.typeImmutable);

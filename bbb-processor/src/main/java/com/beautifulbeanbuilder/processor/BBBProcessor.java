@@ -66,10 +66,10 @@ public class BBBProcessor extends AbstractProcessor {
 
             final InfoClass ic = new InfoBuilder().init(processingEnv, te, currentTypeName, currentTypePackage);
 
-            TypeSpec.Builder m = new MutableBuilder().buildMutableBean(ic);
-            TypeSpec.Builder i = new ImmutableBuilder().buildImmutableBean(ic);
-            TypeSpec.Builder g = new GuavaBuilder().buildGuavaBean(ic);
-            TypeSpec.Builder j = new JacksonBuilder().buildJacksonSerializers(ic);
+            TypeSpec.Builder i = new ImmutableBuilder().build(ic);
+            TypeSpec.Builder m = new MutableBuilder().build(ic, i);
+            TypeSpec.Builder g = new GuavaBuilder().build(ic, i);
+            TypeSpec.Builder j = new JacksonBuilder().build(ic, i);
 
             write(ic, m);
             write(ic, i);

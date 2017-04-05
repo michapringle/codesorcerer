@@ -26,9 +26,6 @@ public class InfoClass {
 
     public ClassName typeDef;
     public ClassName typeImmutable;
-    public ClassName typeMutable;
-    public ClassName typeJackson;
-    public ClassName typeGuava;
 
     public ParameterizedTypeName typeCallbackImpl;
 

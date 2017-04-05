@@ -22,13 +22,11 @@ import static com.google.common.collect.Iterables.toArray;
 
 public class ImmutableBuilder extends AbstractBuilder {
 
-    public TypeSpec.Builder buildImmutableBean(InfoClass ic) throws IOException {
+    public TypeSpec.Builder build(InfoClass ic) throws IOException {
         TypeSpec.Builder classBuilder = buildClass(ic.typeImmutable);
 
         classBuilder.addAnnotation(Immutable.class);
         classBuilder.addAnnotation(ThreadSafe.class);
-
-        addJsonSerializationAnnotations(ic, classBuilder);
 
         addExtends(ic, classBuilder);
         addSerialVersionUUID(classBuilder);
@@ -58,17 +56,6 @@ public class ImmutableBuilder extends AbstractBuilder {
 
         return classBuilder;
     }
-
-    private void addJsonSerializationAnnotations(InfoClass ic, TypeSpec.Builder classBuilder) {
-        classBuilder.addAnnotation(AnnotationSpec.builder(JsonDeserialize.class)
-                .addMember("using", ic.typeJackson.simpleName() + ".Deserializer.class")
-                .build());
-
-        classBuilder.addAnnotation(AnnotationSpec.builder(JsonSerialize.class)
-                .addMember("using", ic.typeJackson.simpleName() + ".Serializer.class")
-                .build());
-    }
-
 
     private void addAbstract(InfoClass ic, TypeSpec.Builder classBuilder) {
         TypeSpec.Builder a = TypeSpec.classBuilder(Types.jpAbstract);

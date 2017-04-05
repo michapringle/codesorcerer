@@ -1,20 +1,17 @@
 package com.beautifulbeanbuilder.processor.builders;
 
 import com.beautifulbeanbuilder.processor.info.InfoClass;
-import com.squareup.javapoet.CodeBlock;
-import com.squareup.javapoet.FieldSpec;
-import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.TypeSpec;
-import com.sun.tools.javac.jvm.Code;
+import com.squareup.javapoet.*;
 
 import javax.lang.model.element.Modifier;
 import java.io.IOException;
-import java.util.stream.Collectors;
 
 public class MutableBuilder extends AbstractBuilder {
 
-    public TypeSpec.Builder buildMutableBean(InfoClass ic) throws IOException {
-        final TypeSpec.Builder classBuilder = buildClass(ic.typeMutable);
+    public TypeSpec.Builder build(InfoClass ic, TypeSpec.Builder immutableClassBuilder) throws IOException {
+        ClassName typeMutable = ClassName.get(ic.pkg, ic.immutableClassName + "Mutable");
+
+        final TypeSpec.Builder classBuilder = buildClass(typeMutable);
         addSerialVersionUUID(classBuilder);
 
         //Members
@@ -35,29 +32,30 @@ public class MutableBuilder extends AbstractBuilder {
             classBuilder.addMethod(setter);
         });
 
-        addFromImmutable(ic, classBuilder);
         addToImmutable(ic, classBuilder);
+        addToMutable(ic, immutableClassBuilder, typeMutable);
 
         return classBuilder;
     }
 
+    private void addToMutable(InfoClass ic, TypeSpec.Builder classBuilder, ClassName typeMutable) {
+        MethodSpec.Builder toMutable1 = MethodSpec.methodBuilder("toMutable");
+        toMutable1.addModifiers(Modifier.PUBLIC);
+        toMutable1.returns(typeMutable);
+        toMutable1.addStatement("return toMutable(this)");
+        classBuilder.addMethod(toMutable1.build());
 
+        MethodSpec.Builder toMutable = MethodSpec.methodBuilder("toMutable");
+        toMutable.addModifiers(Modifier.PUBLIC, Modifier.STATIC);
+        toMutable.returns(typeMutable);
+        toMutable.addParameter(ic.typeImmutable, "immutable");
+        toMutable.addStatement("$T mutable = new $T()", typeMutable, typeMutable);
+        toMutable.addStatement("if(immutable != null) {");
+        ic.infos.forEach(i -> toMutable.addStatement("mutable.set" + i.nameUpper + "(immutable." + i.prefix + i.nameUpper + "())"));
+        toMutable.addStatement("}");
+        toMutable.addStatement("return mutable");
+        classBuilder.addMethod(toMutable.build());
 
-    private void addFromImmutable(InfoClass ic, TypeSpec.Builder classBuilder) {
-        MethodSpec.Builder builder = MethodSpec.methodBuilder("fromImmutable");
-        builder.addModifiers(Modifier.PUBLIC, Modifier.STATIC);
-        builder.addParameter(ic.typeImmutable, "imm");
-        builder.returns(ic.typeMutable);
-
-
-        CodeBlock.Builder cb = CodeBlock.builder();
-        cb.addStatement("$T x = new $T()", ic.typeMutable, ic.typeMutable);
-        ic.infos.forEach(i -> cb.addStatement("x.set" + i.nameUpper + "(imm." + i.prefix + i.nameUpper+ "())"));
-        cb.addStatement("return x");
-
-        builder.addCode(cb.build());
-
-        classBuilder.addMethod(builder.build());
     }
 
     private void addToImmutable(InfoClass ic, TypeSpec.Builder classBuilder) {
@@ -65,29 +63,15 @@ public class MutableBuilder extends AbstractBuilder {
         toMutable1.addModifiers(Modifier.PUBLIC);
         toMutable1.returns(ic.typeImmutable);
 
-        CodeBlock.Builder cb1 = CodeBlock.builder();
-        cb1.add("return $T.build" + ic.immutableClassName + "()", ic.typeImmutable);
-        ic.nonNullInfos.forEach(i -> cb1.add("." + i.nameMangled + "(" + i.nameMangled + ")"));
-        ic.nullableInfos.forEach(i -> cb1.add("." + i.nameMangled + "(" + i.nameMangled + ")"));
-        cb1.add(".build();");
-        toMutable1.addCode(cb1.build());
+        CodeBlock.Builder cb = CodeBlock.builder();
+        cb.add("return $T.build" + ic.immutableClassName + "()", ic.typeImmutable);
+        cb.indent();
+        ic.nonNullInfos.forEach(i -> cb.add("." + i.nameMangled + "(" + i.nameMangled + ")"));
+        ic.nullableInfos.forEach(i -> cb.add("." + i.nameMangled + "(" + i.nameMangled + ")"));
+        cb.add(".build();");
+        cb.unindent();
+        toMutable1.addCode(cb.build());
+
         classBuilder.addMethod(toMutable1.build());
-
-//
-//        MethodSpec.Builder toMutable = MethodSpec.methodBuilder("toMutable");
-//        toMutable.addModifiers(Modifier.PUBLIC, Modifier.STATIC);
-//        toMutable.returns(ic.typeMutable);
-//        toMutable.addParameter(ic.typeImmutable, "immutable");
-//
-//        CodeBlock.Builder cb = CodeBlock.builder();
-//        cb.addStatement("$T mutable = new $T()", ic.typeMutable, ic.typeMutable);
-//        cb.beginControlFlow("if(immutable != null)");
-//        ic.infos.forEach(i -> cb.addStatement("mutable.set" + i.nameUpper + "(immutable." + i.prefix + i.nameUpper + "())"));
-//        cb.endControlFlow();
-//        cb.addStatement("return mutable");
-//
-//        toMutable.addCode(cb.build());
-//        classBuilder.addMethod(toMutable.build());
-
     }
 }

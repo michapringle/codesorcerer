@@ -49,9 +49,6 @@ public class InfoBuilder {
         ic.isInterfaceDef = te.getKind() == ElementKind.INTERFACE;
         ic.typeDef = ClassName.get(te);
         ic.typeImmutable = ClassName.get(pkg, bbbWithNoDef);
-        ic.typeMutable = ClassName.get(pkg, bbbWithNoDef + "Mutable");
-        ic.typeGuava = ClassName.get(pkg, bbbWithNoDef + "Guava");
-        ic.typeJackson= ClassName.get(pkg, bbbWithNoDef + "Jackson");
         ic.pkg = pkg;
         ic.immutableClassName = bbbWithNoDef;
         ic.infos = parseGetters(processingEnv, te);

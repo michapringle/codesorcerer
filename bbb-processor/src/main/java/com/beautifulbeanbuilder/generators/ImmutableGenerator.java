@@ -6,11 +6,9 @@ import com.beautifulbeanbuilder.processor.BBBProcessor;
 import com.beautifulbeanbuilder.processor.info.Info;
 import com.beautifulbeanbuilder.processor.info.InfoBuilder;
 import com.beautifulbeanbuilder.processor.info.InfoClass;
-import com.google.auto.common.MoreElements;
 import com.google.auto.common.MoreTypes;
 import com.google.common.collect.Lists;
 import com.squareup.javapoet.*;
-import org.springframework.core.annotation.AnnotationUtils;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
@@ -411,7 +409,6 @@ public class ImmutableGenerator extends AbstractGenerator<BBBImmutable> {
 
         for (int x = 0; x < ic.nonNullInfos.size(); x++) {
             Info a = ic.nonNullInfos.get(x);
-            ClassName classNameSubBeanRequires0 = ClassName.bestGuess(a.returnType + "." + "SubBeanRequires0");
 
             TypeSpec.Builder if1 = TypeSpec.interfaceBuilder("BeanRequires" + x);
             if1.addModifiers(Modifier.PUBLIC);
@@ -441,16 +438,25 @@ public class ImmutableGenerator extends AbstractGenerator<BBBImmutable> {
 
                 //Not last
                 m1.returns(classNameBeanRequiresXX);
-                m2.returns(ParameterizedTypeName.get(classNameSubBeanRequires0, classNameBeanRequiresXX));
                 m3.returns(ParameterizedTypeName.get(classNameSubBeanRequiresXX, Types.jpP));
-                m4.returns(ParameterizedTypeName.get(classNameSubBeanRequires0, classNameSubBeanRequiresXX));
+
+                if (isBBB(a)) {
+                    ClassName classNameSubBeanRequires0 = ClassName.bestGuess(a.returnType + "." + "SubBeanRequires0");
+                    m2.returns(ParameterizedTypeName.get(classNameSubBeanRequires0, classNameBeanRequiresXX));
+                    //m4.returns(ParameterizedTypeName.get(classNameSubBeanRequires0, classNameSubBeanRequiresXX));
+                    m4.returns(ParameterizedTypeName.get(classNameSubBeanRequires0, ParameterizedTypeName.get(classNameSubBeanRequiresXX, Types.jpP)));
+                }
 
             } else {
                 //Last
                 m1.returns(Types.jpBeanBuildable);
-                m2.returns(ParameterizedTypeName.get(classNameSubBeanRequires0, Types.jpBeanBuildable));
                 m3.returns(Types.jpSubBeanBuildableP);
-                m4.returns(ParameterizedTypeName.get(classNameSubBeanRequires0, Types.jpSubBeanBuildableP));
+
+                if (isBBB(a)) {
+                    ClassName classNameSubBeanRequires0 = ClassName.bestGuess(a.returnType + "." + "SubBeanRequires0");
+                    m2.returns(ParameterizedTypeName.get(classNameSubBeanRequires0, Types.jpBeanBuildable));
+                    m4.returns(ParameterizedTypeName.get(classNameSubBeanRequires0, Types.jpSubBeanBuildableP));
+                }
             }
 
             if1.addMethod(m1.build());

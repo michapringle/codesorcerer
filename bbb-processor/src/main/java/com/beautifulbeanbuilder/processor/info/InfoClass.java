@@ -1,19 +1,27 @@
 package com.beautifulbeanbuilder.processor.info;
 
-import com.beautifulbeanbuilder.processor.builders.Types;
+import com.beautifulbeanbuilder.generators.Types;
 import com.google.common.base.Joiner;
+import com.google.common.collect.Sets;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeVariableName;
 
+import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.toList;
 
 public class InfoClass {
+    public TypeElement typeElement;
+
     public String pkg;
     public String immutableClassName;
     public boolean isInterfaceDef;
@@ -33,7 +41,6 @@ public class InfoClass {
         List<String> listOfParameteNames = infos.stream().map(i -> i.nameMangled).collect(toList());
         return Joiner.on(", ").join(listOfParameteNames);
     }
-
 
     public TypeVariableName lastGeneric() {
         if (nonNullInfos.size() == 0) {

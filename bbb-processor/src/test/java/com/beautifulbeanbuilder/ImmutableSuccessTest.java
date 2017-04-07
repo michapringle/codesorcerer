@@ -13,13 +13,13 @@ public class ImmutableSuccessTest {
     @Test
     public void listOfSubBeans() throws Exception {
         compiles("",
-                "          @BeautifulBean                                                  ",
+                "          @BBBImmutable                                                 ",
                 "          public interface BeanDef {                                                  ",
                 "            List<? extends SubDef> getSubs();                                                  ",
                 "            Map<String, ? extends SubDef> getSubs2();                                                  ",
                 "          }                                                                          ",
                 "                                                                                    ",
-                "           @BeautifulBean                                                  ",
+                "           @BBBImmutable                                                 ",
                 "           interface SubDef {                                                  ",
                 "             String getThing1();                                                  ",
                 "           }                                                                          ",
@@ -41,14 +41,26 @@ public class ImmutableSuccessTest {
     @Test
     public void subBean() throws Exception {
         compiles("",
-                "          @BeautifulBean                                                  ",
+                "          @com.beautifulbeanbuilder.BeautifulBean                                                 ",
                 "          public interface BeanDef {                                                  ",
                 "            SubDef getSub();                                                  ",
                 "          }                                                                          ",
                 "                                                                                    ",
-                "           @BeautifulBean                                                  ",
+                "           @com.beautifulbeanbuilder.BeautifulBean                                                 ",
                 "           interface SubDef {                                                  ",
                 "             String getThing1();                                                  ",
+                "           }                                                                          ",
+                "                                                                                    ",
+                "           class Usage {                                                  ",
+                "             void test() {                                                  ",
+                "               Bean x = Bean.buildBean()                                                  ",
+                "               .newSub()                                                  ",
+                "                 .thing1(\"hi\")                                                  ",
+                "               .done()                                                  ",
+                "               .build();                                                  ",
+                "                                                                                       ",
+                "               Sub sub = x.getSub();                                                  ",
+                "             }                                                                                                  ",
                 "           }                                                                          ",
                 "          "
         );
@@ -58,7 +70,7 @@ public class ImmutableSuccessTest {
     public void memberFieldsNonNull() throws Exception {
         compiles("",
                 "                                                            ",
-                "          @BeautifulBean                                                  ",
+                "          @BBBImmutable                                                 ",
                 "          public interface BeanDef {                                                  ",
                 "             @Nonnull String getThing1();                                                  ",
                 "             @Nonnull Boolean getThing2();                                                  ",
@@ -81,7 +93,7 @@ public class ImmutableSuccessTest {
     public void nonNullLast() throws Exception {
         compiles("",
                 "                                                            ",
-                "          @BeautifulBean                                                  ",
+                "          @BBBImmutable                                                 ",
                 "          public interface BeanDef {                                                  ",
                 "             public static final String CONST = \"abc\";                                                  ",
                 "             int getAuthReq();                                                  ",

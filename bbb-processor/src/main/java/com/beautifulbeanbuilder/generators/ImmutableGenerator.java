@@ -1,28 +1,44 @@
-package com.beautifulbeanbuilder.processor.builders;
+package com.beautifulbeanbuilder.generators;
 
+import com.beautifulbeanbuilder.BBBImmutable;
+import com.beautifulbeanbuilder.processor.AbstractGenerator;
+import com.beautifulbeanbuilder.processor.BBBProcessor;
 import com.beautifulbeanbuilder.processor.info.Info;
+import com.beautifulbeanbuilder.processor.info.InfoBuilder;
 import com.beautifulbeanbuilder.processor.info.InfoClass;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.auto.common.MoreElements;
+import com.google.auto.common.MoreTypes;
 import com.google.common.collect.Lists;
 import com.squareup.javapoet.*;
+import org.springframework.core.annotation.AnnotationUtils;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
 import javax.annotation.concurrent.ThreadSafe;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.type.TypeMirror;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.google.common.collect.Iterables.toArray;
 
-public class ImmutableBuilder extends AbstractBuilder {
+public class ImmutableGenerator extends AbstractGenerator<BBBImmutable> {
 
-    public TypeSpec.Builder build(InfoClass ic) throws IOException {
+
+    private boolean isBBB(Info i) {
+        final TypeMirror returnTypeMirror = i.getter.getReturnType();
+
+        return !InfoBuilder.isPrimitive(returnTypeMirror) &&
+                !InfoBuilder.isArray(returnTypeMirror) &&
+                BBBProcessor.hasAnnotation(MoreTypes.asElement(returnTypeMirror), BBBImmutable.class);
+    }
+
+    public TypeSpec.Builder build(InfoClass ic, Map<AbstractGenerator, TypeSpec.Builder> generatorBuilderMap) throws IOException {
         TypeSpec.Builder classBuilder = buildClass(ic.typeImmutable);
 
         classBuilder.addAnnotation(Immutable.class);
@@ -96,7 +112,7 @@ public class ImmutableBuilder extends AbstractBuilder {
         }
 
         //getters
-        ic.infos.stream().filter(i -> i.isBB).forEach(i -> {
+        ic.infos.stream().filter(i -> isBBB(i)).forEach(i -> {
             MethodSpec.Builder m = MethodSpec.methodBuilder("get" + i.nameUpper);
             m.addModifiers(Modifier.PUBLIC);
             m.returns(ParameterizedTypeName.get(ClassName.bestGuess(i.returnType + "." + Types.jpSubBeanUpdatable.simpleName()), ic.lastGeneric()));
@@ -135,7 +151,7 @@ public class ImmutableBuilder extends AbstractBuilder {
         }
 
 //        //Callbacks
-//        ic.infos.stream().filter(i -> i.isBB).forEach(i -> {
+//        ic.infos.stream().filter(i -> isBBB(i)).forEach(i -> {
 //            MethodSpec.Builder m = MethodSpec.methodBuilder("newCallback" + i.nameUpper);
 //            m.addModifiers(Modifier.PRIVATE);
 //            m.returns(ParameterizedTypeName.get(Types.jpCallback, i.nReturnType));
@@ -171,7 +187,7 @@ public class ImmutableBuilder extends AbstractBuilder {
         m.addStatement("return (" + tn.name + ")this");
         a.addMethod(m.build());
 
-        if (i.isBB) {
+        if (isBBB(i)) {
             MethodSpec.Builder m2 = MethodSpec.methodBuilder("new" + i.nameUpper);
             m2.addModifiers(Modifier.PUBLIC);
             m2.returns(ParameterizedTypeName.get(ClassName.bestGuess(i.returnType + ".SubBeanRequires0"), tn));
@@ -326,7 +342,7 @@ public class ImmutableBuilder extends AbstractBuilder {
         if1.addModifiers(Modifier.PRIVATE);
         if1.addTypeVariable(Types.jpT);
 
-        ic.infos.stream().filter(i -> i.isBB).forEach(i -> {
+        ic.infos.stream().filter(i -> isBBB(i)).forEach(i -> {
             MethodSpec.Builder m = MethodSpec.methodBuilder("get" + i.nameUpper);
             m.addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
             m.returns(ParameterizedTypeName.get(ClassName.bestGuess(i.returnType + "." + Types.jpSubBeanUpdatable.simpleName()), Types.jpT));
@@ -341,7 +357,7 @@ public class ImmutableBuilder extends AbstractBuilder {
             if1.addMethod(m.build());
         });
 
-        ic.nonNullInfos.stream().filter(i -> i.isBB).forEach(i -> {
+        ic.nonNullInfos.stream().filter(i -> isBBB(i)).forEach(i -> {
             MethodSpec.Builder m = MethodSpec.methodBuilder("new" + i.nameUpper);
             m.addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
             m.returns(ParameterizedTypeName.get(ClassName.bestGuess(i.returnType + ".SubBeanRequires0"), Types.jpT));
@@ -365,7 +381,7 @@ public class ImmutableBuilder extends AbstractBuilder {
             if1.addMethod(m.build());
         });
 
-        ic.nullableInfos.stream().filter(i -> i.isBB).forEach(i -> {
+        ic.nullableInfos.stream().filter(i -> isBBB(i)).forEach(i -> {
             MethodSpec.Builder m = MethodSpec.methodBuilder("new" + i.nameUpper);
             m.addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
             m.returns(ParameterizedTypeName.get(ClassName.bestGuess(i.returnType + ".SubBeanRequires0"), Types.jpT));
@@ -440,7 +456,7 @@ public class ImmutableBuilder extends AbstractBuilder {
             if1.addMethod(m1.build());
             if2.addMethod(m3.build());
 
-            if (a.isBB) {
+            if (isBBB(a)) {
                 if1.addMethod(m2.build());
                 if2.addMethod(m4.build());
             }

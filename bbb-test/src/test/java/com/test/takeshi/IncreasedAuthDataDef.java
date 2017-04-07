@@ -3,6 +3,7 @@ package com.test.takeshi;
 
 import java.util.List;
 
+import com.beautifulbeanbuilder.BBBImmutable;
 import com.beautifulbeanbuilder.BeautifulBean;
 
 @BeautifulBean

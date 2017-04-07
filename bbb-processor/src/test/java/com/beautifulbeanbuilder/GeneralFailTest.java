@@ -8,6 +8,7 @@ import org.junit.runners.JUnit4;
 
 import javax.tools.JavaFileObject;
 
+import static com.beautifulbeanbuilder.Helper.compiles;
 import static com.beautifulbeanbuilder.Helper.hasCompileError;
 
 @RunWith(JUnit4.class)
@@ -21,13 +22,32 @@ public class GeneralFailTest {
                         "                                                                        ",
                         "package test;                                                  ",
                         "                                                                                    ",
-                        "import com.beautifulbeanbuilder.BeautifulBean;                                                  ",
-                        "                                                                                   ",
-                        "@BeautifulBean                                                    ",
+                        "import com.beautifulbeanbuilder.BBBImmutable;                                                    ",
+                        "@BBBImmutable                                                  ",
                         "public interface Bob {                                                  ",
                         "}                                                                  ");
 
         hasCompileError(source, "Must end with Def");
+    }
+
+
+    @Test
+    public void nothingToGenerate() throws Exception {
+        compiles(
+                "                                                                        ",
+                "@com.beautifulbeanbuilder.BeautifulBean                                                    ",
+                "public interface BobDef {                                                  ",
+                "}                                                                  ");
+    }
+
+
+    @Test
+    public void notRelevantAnnotatoin() throws Exception {
+        compiles(
+                "                                                                        ",
+                "@Deprecated                                                    ",
+                "public class Bob {                                                  ",
+                "}                                                                  ");
     }
 }
 

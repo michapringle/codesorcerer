@@ -24,7 +24,10 @@ public class Helper {
         List<String> start = Arrays.asList(
                 "          package test;                                                  ",
                 "                                                            ",
-                "          import " + BeautifulBean.class.getName() + ";                                                  ",
+                "          import " + BBBMutable.class.getName() + ";                                                  ",
+                "          import " + BBBJson.class.getName() + ";                                                  ",
+                "          import " + BBBGuava.class.getName() + ";                                                  ",
+                "          import " + BBBImmutable.class.getName() + ";                                                  ",
                 "          import " + Ordering.class.getName() + ";                                                  ",
                 "          import " + Nonnull.class.getName() + ";                                                  ",
                 "          import " + List.class.getName() + ";                                                  ",

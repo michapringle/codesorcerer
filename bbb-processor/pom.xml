@@ -17,6 +17,11 @@
     <dependencies>
 
         <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>com.bbb</groupId>
             <artifactId>bbb</artifactId>
             <version>0.0.0.0.0-SNAPSHOT</version>

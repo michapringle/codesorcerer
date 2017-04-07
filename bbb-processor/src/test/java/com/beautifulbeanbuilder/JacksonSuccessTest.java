@@ -13,7 +13,7 @@ public class JacksonSuccessTest {
     @Test
     public void testGenCode() throws Exception {
         compiles("",
-                "          @BeautifulBean                                                  ",
+                "          @BBBJson                                                 ",
                 "          public interface BeanDef {                                                  ",
                 "            int getThing();                                                  ",
                 "          }                                                                          ",

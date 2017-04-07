@@ -1,8 +1,6 @@
 package com.beautifulbeanbuilder.processor.info;
 
-import com.beautifulbeanbuilder.BeautifulBean;
-import com.beautifulbeanbuilder.processor.BBBProcessor;
-import com.beautifulbeanbuilder.processor.builders.Types;
+import com.beautifulbeanbuilder.generators.Types;
 import com.google.auto.common.MoreElements;
 import com.google.auto.common.MoreTypes;
 import com.google.common.collect.ImmutableSet;
@@ -46,6 +44,7 @@ public class InfoBuilder {
 
         String pkg = removeEnd(currentTypePackage, ".def");
         String bbbWithNoDef = removeEnd(currentTypeName, "Def");
+        ic.typeElement = te;
         ic.isInterfaceDef = te.getKind() == ElementKind.INTERFACE;
         ic.typeDef = ClassName.get(te);
         ic.typeImmutable = ClassName.get(pkg, bbbWithNoDef);
@@ -71,6 +70,7 @@ public class InfoBuilder {
 
     private Info buildInfo(ProcessingEnvironment processingEnv, ExecutableElement getter) {
         Info info = new Info();
+        info.getter = getter;
         TypeMirror returnTypeMirror = getter.getReturnType();
 
         info.prefix = getPrefix(getter);
@@ -81,7 +81,7 @@ public class InfoBuilder {
 
 
         info.isComparable = isComparable(processingEnv, returnTypeMirror);
-        info.isBB = isBBB(returnTypeMirror);
+//        info.isBB = isBBB(returnTypeMirror);
         info.isNonNull = isNonNull(getter, isPrimitive(returnTypeMirror));
         info.nReturnType = calcReturnTypes(returnTypeMirror);
 
@@ -91,17 +91,12 @@ public class InfoBuilder {
         return info;
     }
 
-    private boolean isBBB(TypeMirror returnTypeMirror) {
-        return !isPrimitive(returnTypeMirror) &&
-                !isArray(returnTypeMirror) &&
-                MoreElements.isAnnotationPresent(MoreTypes.asElement(returnTypeMirror), BeautifulBean.class);
-    }
 
-    private boolean isArray(TypeMirror returnTypeMirror) {
+    public static boolean isArray(TypeMirror returnTypeMirror) {
         return returnTypeMirror instanceof ArrayType;
     }
 
-    private boolean isPrimitive(TypeMirror returnTypeMirror) {
+    public static boolean isPrimitive(TypeMirror returnTypeMirror) {
         return returnTypeMirror instanceof PrimitiveType;
     }
 

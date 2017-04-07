@@ -1,6 +1,8 @@
 package com.beautifulbeanbuilder;
 
 
+import com.beautifulbeanbuilder.generators.GuavaGenerator;
+import com.beautifulbeanbuilder.generators.ImmutableGenerator;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -15,7 +17,7 @@ public class GuavaSuccessTest {
     public void comparable() throws Exception {
         compiles("",
                 "                                                            ",
-                "           @BeautifulBean                                                  ",
+                "           @BBBGuava                                                 ",
                 "           interface CompDef {                                                  ",
                 "              Long getThing1();                                                  ",
                 "              long getThing2();                                                  ",

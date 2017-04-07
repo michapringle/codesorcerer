@@ -13,7 +13,7 @@ public class MutableSuccessTest {
     @Test
     public void toFromMutable() throws Exception {
         compiles("",
-                "          @BeautifulBean                                                                                                        ",
+                "          @BBBMutable                                                 ",
                 "          public interface BeanDef {                                                                                                        ",
                 "            String getThing();                                                                                                     ",
                 "          }                                                                                                                             ",

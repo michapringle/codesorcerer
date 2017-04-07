@@ -7,10 +7,13 @@ import com.squareup.javapoet.TypeName;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
 
 public class Info {
 
+    public ExecutableElement getter;
     public String prefix;       // 'get' or 'is'
     public String nameUpper;    // 'Thing'
     public String nameAllUpper; // 'THING'
@@ -18,7 +21,6 @@ public class Info {
     public String nameMangled;  // same as name, but with KEYWORDS fixed
 
     public Boolean isNonNull;     // annotated with @Nonnull
-    public Boolean isBB;        //Is a BBB
     public Boolean isComparable;  //Extends from Comparable
 
     public TypeName nReturnType; // the return type

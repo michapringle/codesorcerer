@@ -1,4 +1,4 @@
-package com.beautifulbeanbuilder.processor.builders;
+package com.beautifulbeanbuilder.generators;
 
 import com.beautifulbeanbuilder.Buildable;
 import com.beautifulbeanbuilder.Doneable;

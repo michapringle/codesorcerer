@@ -1,14 +1,28 @@
-package com.beautifulbeanbuilder.processor.builders;
+package com.beautifulbeanbuilder.generators;
 
+import com.beautifulbeanbuilder.BBBImmutable;
+import com.beautifulbeanbuilder.BBBMutable;
+import com.beautifulbeanbuilder.processor.AbstractGenerator;
 import com.beautifulbeanbuilder.processor.info.InfoClass;
 import com.squareup.javapoet.*;
 
 import javax.lang.model.element.Modifier;
 import java.io.IOException;
+import java.lang.annotation.Annotation;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
-public class MutableBuilder extends AbstractBuilder {
+public class MutableGenerator extends AbstractGenerator<BBBMutable> {
 
-    public TypeSpec.Builder build(InfoClass ic, TypeSpec.Builder immutableClassBuilder) throws IOException {
+
+    @Override
+    public List<Class<? extends Annotation>> requires() {
+        return Collections.singletonList(BBBImmutable.class);
+    }
+
+    @Override
+    public TypeSpec.Builder build(InfoClass ic, Map<AbstractGenerator, TypeSpec.Builder> generatorBuilderMap) throws IOException {
         ClassName typeMutable = ClassName.get(ic.pkg, ic.immutableClassName + "Mutable");
 
         final TypeSpec.Builder classBuilder = buildClass(typeMutable);
@@ -33,7 +47,7 @@ public class MutableBuilder extends AbstractBuilder {
         });
 
         addToImmutable(ic, classBuilder);
-        addToMutable(ic, immutableClassBuilder, typeMutable);
+        addToMutable(ic, getTypeBuilder(ImmutableGenerator.class, generatorBuilderMap), typeMutable);
 
         return classBuilder;
     }

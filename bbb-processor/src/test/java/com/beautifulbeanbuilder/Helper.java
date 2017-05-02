@@ -63,7 +63,7 @@ public class Helper {
 
     public static void hasNoCompileErrors(JavaFileObject... source) {
         assertAbout(javaSources()).that(Arrays.asList(source))
-                .withCompilerOptions(ImmutableList.of("-XprintRounds"))
+                .withCompilerOptions(ImmutableList.of("-XprintRounds", "-proc:only"))
                 .processedWith(new BeanDefProcessor(), new RestControllerProcessor())
                 .compilesWithoutError();
     }

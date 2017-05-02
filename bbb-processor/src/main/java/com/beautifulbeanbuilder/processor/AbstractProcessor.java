@@ -81,14 +81,6 @@ public abstract class AbstractProcessor<Input> extends javax.annotation.processi
         }
     }
 
-    private List<AbstractGenerator> filterGeneratorsBasedOnInput() {
-        return allGenerators
-                .stream()
-                .filter(g -> g.getInputClass().equals(getInputClass()))
-                .collect(Collectors.toList());
-    }
-
-
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
 
@@ -111,12 +103,13 @@ public abstract class AbstractProcessor<Input> extends javax.annotation.processi
             process(te, currentTypeName, currentTypePackage, roundEnv);
         }
 
-        return true;
+        //return true;
+        return false;
     }
 
     private boolean shouldClaimTheseAnnotations(Set<? extends TypeElement> annotations) {
         for (TypeElement t : annotations) {
-            for (AbstractGenerator g : filterGeneratorsBasedOnInput()) {
+            for (AbstractGenerator g : allGenerators) {
                 final String annClassName = t.getQualifiedName().toString();
                 final String generatorAnnClassName = g.getAnnotationClass().getName();
 
@@ -163,29 +156,30 @@ public abstract class AbstractProcessor<Input> extends javax.annotation.processi
             printHeader();
 
             //Analyze the Def class
-            final Input ic = buildInput(te, currentTypeName, currentTypePackage);
 
             //Holds a bunch of builders that have been run
             final Map<AbstractGenerator, Object> processedBuilders = Maps.newHashMap();
 
             //Run the generators
             for (String annotationClassName : getAllAnnotations(te)) {
-                runGeneratorforAnnotation(ic, processedBuilders, filterGeneratorsBasedOnInput(), annotationClassName);
+                runGeneratorforAnnotation(te, currentTypeName, currentTypePackage, processedBuilders, allGenerators, annotationClassName);
             }
 
             //Write the code out
             for (Map.Entry<AbstractGenerator, Object> e : processedBuilders.entrySet()) {
                 final AbstractGenerator generator = e.getKey();
                 final Object value = e.getValue();
-                if (value != null) {
+                if(value != null) {
+                    final Input ic = buildInput(te, currentTypeName, currentTypePackage);
                     generator.write(ic, value, processingEnv);
                     allObjects.put(generator, value);
                 }
 
-                if (roundEnvironment.processingOver()) {
+                if(roundEnvironment.processingOver()) {
                     generator.processingOver(allObjects.get(generator));
                 }
             }
+
 
 
         } catch (Exception ex) {
@@ -195,24 +189,30 @@ public abstract class AbstractProcessor<Input> extends javax.annotation.processi
 
     public abstract Input buildInput(TypeElement te, String currentTypeName, String currentTypePackage);
 
-    private void runGeneratorforAnnotation(Input ic, Map<AbstractGenerator, Object> processedBuilders, List<AbstractGenerator> allGenerators, String annotationClassName) {
+    private void runGeneratorforAnnotation(TypeElement te, String currentTypeName, String currentTypePackage, Map<AbstractGenerator, Object> processedBuilders, List<AbstractGenerator> allGenerators, String annotationClassName) {
         allGenerators
                 .stream()
                 .filter(g -> g.getAnnotationClass().getName().equals(annotationClassName))
                 .filter(g -> !processedBuilders.containsKey(g))
                 .findAny()
-                .ifPresent(g -> runGenerator(ic, processedBuilders, allGenerators, g));
+                .ifPresent(g -> runGenerator(te, currentTypeName, currentTypePackage, processedBuilders, allGenerators, g));
     }
 
-    private void runGenerator(Input ic, Map<AbstractGenerator, Object> processedBuilders, List<AbstractGenerator> allGenerators, AbstractGenerator g) {
+    private void runGenerator(TypeElement te, String currentTypeName, String currentTypePackage, Map<AbstractGenerator, Object> processedBuilders, List<AbstractGenerator> allGenerators, AbstractGenerator g) {
         try {
             for (Object wtf : g.requires()) {
                 Class<? extends Annotation> aClass = (Class<? extends Annotation>) wtf;
-                runGeneratorforAnnotation(ic, processedBuilders, allGenerators, aClass.getName());
+                runGeneratorforAnnotation(te, currentTypeName, currentTypePackage, processedBuilders, allGenerators, aClass.getName());
             }
 
-            final Object builder = g.build(ic, processedBuilders);
-            processedBuilders.put(g, builder);
+            //Make sure they want the same input class
+            Class g1 = g.getInputClass();
+            Class<Input> g2 = getInputClass();
+            if(g1 == g2) {
+                Input ic = buildInput(te, currentTypeName, currentTypePackage);
+                final Object builder = g.build(ic, processedBuilders);
+                processedBuilders.put(g, builder);
+            }
         } catch (Exception e) {
             throw Throwables.propagate(e);
         }

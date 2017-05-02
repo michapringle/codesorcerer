@@ -76,7 +76,7 @@ public class TypescriptGenerator extends AbstractGenerator<BBBTypescript, BeanDe
             BeanDefFieldInfo i = ic.nonNullBeanDefFieldInfos.get(x);
             sb.append(ic.immutableClassName + "Requires" + i.nameUpper + ", ");
         }
-        sb.append("Nullable");
+        sb.append(ic.immutableClassName + "Nullable");
     }
 
     private void buildBuild(BeanDefInfo ic, StringBuilder sb) {
@@ -97,8 +97,9 @@ public class TypescriptGenerator extends AbstractGenerator<BBBTypescript, BeanDe
     private void buildSetters(BeanDefInfo ic, StringBuilder sb) {
         for (int x = 0; x < ic.beanDefFieldInfos.size(); x++) {
             BeanDefFieldInfo i = ic.beanDefFieldInfos.get(x);
-            sb.append(i.nameMangled + "(" + convertTypes(i.returnType) + ": " + i.nameMangled + ") {\n");
+            sb.append(i.nameMangled + "(" +  i.nameMangled + " : " + convertTypes(i.returnType) + ") : " + this + "{\n");
             sb.append("  this." + i.nameMangled + " = " + i.nameMangled + ";\n");
+            sb.append("  return this;\n");
             sb.append("}\n");
             sb.append("\n");
         }
@@ -110,7 +111,7 @@ public class TypescriptGenerator extends AbstractGenerator<BBBTypescript, BeanDe
             BeanDefFieldInfo i = ic.nonNullBeanDefFieldInfos.get(0);
             retType = ic.immutableClassName + "Requires" + i.nameUpper;
         } else {
-            retType = "Nullable";
+            retType = ic.immutableClassName + "Nullable";
         }
         sb.append("static build" + ic.immutableClassName + "() : " + retType + " {\n");
         sb.append("  return new " + ic.immutableClassName + "Builder();\n");
@@ -122,7 +123,7 @@ public class TypescriptGenerator extends AbstractGenerator<BBBTypescript, BeanDe
         sb.append("export interface " + ic.immutableClassName + "Nullable {\n");
         for (int x = 0; x < ic.nullableBeanDefFieldInfos.size() - 1; x++) {
             BeanDefFieldInfo i = ic.nullableBeanDefFieldInfos.get(x);
-            sb.append("  " + i.nameMangled + "(" + convertTypes(i.returnType) + ": " + i.nameMangled + ") : " + ic.immutableClassName + "Nullable;\n");
+            sb.append("  " + i.nameMangled + "(" + i.nameMangled + " : " + convertTypes(i.returnType) + ") : " + ic.immutableClassName + "Nullable;\n");
         }
         sb.append("build() : " + ic.immutableClassName + ";\n");
 
@@ -166,7 +167,7 @@ public class TypescriptGenerator extends AbstractGenerator<BBBTypescript, BeanDe
 
     private void buildFields(BeanDefInfo ic, StringBuilder sb) {
         for (BeanDefFieldInfo i : ic.beanDefFieldInfos) {
-            sb.append(" private " + i.nameMangled + ": " + convertTypes(i.returnType) + ";\n");
+            sb.append("  " + i.nameMangled + ": " + convertTypes(i.returnType) + ";\n");
         }
         sb.append("\n");
     }

@@ -1,24 +1,23 @@
 package com.beautifulbeanbuilder.processor;
 
-import com.beautifulbeanbuilder.processor.info.InfoBuilder;
-import com.beautifulbeanbuilder.processor.info.InfoClass;
 import com.google.common.base.Throwables;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.reflect.ClassPath;
-import com.squareup.javapoet.JavaFile;
-import com.squareup.javapoet.TypeSpec;
+import com.google.common.reflect.TypeToken;
 
-import javax.annotation.processing.*;
-import javax.lang.model.SourceVersion;
+import javax.annotation.processing.Filer;
+import javax.annotation.processing.Messager;
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
-import javax.tools.Diagnostic;
-import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
 import java.util.List;
@@ -26,18 +25,25 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.apache.commons.lang3.StringUtils.endsWith;
-
-@SupportedSourceVersion(SourceVersion.RELEASE_8)
-public class BBBProcessor extends javax.annotation.processing.AbstractProcessor {
+public abstract class AbstractProcessor<Input> extends javax.annotation.processing.AbstractProcessor {
 
     public Types typeUtils;
     public Elements elementUtils;
     public Filer filer;
     public Messager messager;
 
+
+    private TypeToken<Input> type = new TypeToken<Input>(getClass()) {
+    };
+
     private static boolean headerPrinted = false;
     private static List<AbstractGenerator> allGenerators;
+
+    private static Multimap<AbstractGenerator, Object> allObjects = HashMultimap.create();
+
+    public Class<Input> getInputClass() {
+        return (Class<Input>) type.getRawType();
+    }
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
@@ -56,11 +62,11 @@ public class BBBProcessor extends javax.annotation.processing.AbstractProcessor 
 
         try {
             allGenerators = ClassPath.from(getClass().getClassLoader()).getAllClasses().stream()
-                    .filter(c -> c.getSimpleName().contains("Generator") && !c.getName().equals(AbstractGenerator.class.getName()))
-                    .map(c -> safeLoad(c))
-                    .filter(c -> AbstractGenerator.class.isAssignableFrom(c))
+                    .filter(c -> c.getSimpleName().contains("Generator"))
+                    .map(this::safeLoad)
+                    .filter(AbstractGenerator.class::isAssignableFrom)
                     .filter(c -> !Modifier.isAbstract(c.getModifiers()))
-                    .map(c -> newGenerator(c))
+                    .map(this::newGenerator)
                     .collect(Collectors.toList());
         } catch (Exception e) {
             e.printStackTrace();
@@ -74,6 +80,14 @@ public class BBBProcessor extends javax.annotation.processing.AbstractProcessor 
             return String.class;
         }
     }
+
+    private List<AbstractGenerator> filterGeneratorsBasedOnInput() {
+        return allGenerators
+                .stream()
+                .filter(g -> g.getInputClass().equals(getInputClass()))
+                .collect(Collectors.toList());
+    }
+
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -102,7 +116,7 @@ public class BBBProcessor extends javax.annotation.processing.AbstractProcessor 
 
     private boolean shouldClaimTheseAnnotations(Set<? extends TypeElement> annotations) {
         for (TypeElement t : annotations) {
-            for (AbstractGenerator g : allGenerators) {
+            for (AbstractGenerator g : filterGeneratorsBasedOnInput()) {
                 final String annClassName = t.getQualifiedName().toString();
                 final String generatorAnnClassName = g.getAnnotationClass().getName();
 
@@ -123,10 +137,9 @@ public class BBBProcessor extends javax.annotation.processing.AbstractProcessor 
 
 
     public static boolean hasAnnotation(Element te, Class<? extends Annotation> ann) {
-        return getAllAnnotations(te).stream()
-                .filter(a -> a.equals(ann.getName()))
-                .findAny()
-                .isPresent();
+        return getAllAnnotations(te)
+                .stream()
+                .anyMatch(a -> a.equals(ann.getName()));
     }
 
     public static Set<String> getAllAnnotations(Element te) {
@@ -150,27 +163,39 @@ public class BBBProcessor extends javax.annotation.processing.AbstractProcessor 
             printHeader();
 
             //Analyze the Def class
-            final InfoClass ic = new InfoBuilder().init(processingEnv, te, currentTypeName, currentTypePackage);
+            final Input ic = buildInput(te, currentTypeName, currentTypePackage);
 
             //Holds a bunch of builders that have been run
-            final Map<AbstractGenerator, TypeSpec.Builder> processedBuilders = Maps.newHashMap();
+            final Map<AbstractGenerator, Object> processedBuilders = Maps.newHashMap();
 
             //Run the generators
             for (String annotationClassName : getAllAnnotations(te)) {
-                runGeneratorforAnnotation(ic, processedBuilders, allGenerators, annotationClassName);
+                runGeneratorforAnnotation(ic, processedBuilders, filterGeneratorsBasedOnInput(), annotationClassName);
             }
 
             //Write the code out
-            for (TypeSpec.Builder builder : processedBuilders.values()) {
-                write(ic, builder);
+            for (Map.Entry<AbstractGenerator, Object> e : processedBuilders.entrySet()) {
+                final AbstractGenerator generator = e.getKey();
+                final Object value = e.getValue();
+                if (value != null) {
+                    generator.write(ic, value, processingEnv);
+                    allObjects.put(generator, value);
+                }
+
+                if (roundEnvironment.processingOver()) {
+                    generator.processingOver(allObjects.get(generator));
+                }
             }
+
 
         } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
 
-    private void runGeneratorforAnnotation(InfoClass ic, Map<AbstractGenerator, TypeSpec.Builder> processedBuilders, List<AbstractGenerator> allGenerators, String annotationClassName) {
+    public abstract Input buildInput(TypeElement te, String currentTypeName, String currentTypePackage);
+
+    private void runGeneratorforAnnotation(Input ic, Map<AbstractGenerator, Object> processedBuilders, List<AbstractGenerator> allGenerators, String annotationClassName) {
         allGenerators
                 .stream()
                 .filter(g -> g.getAnnotationClass().getName().equals(annotationClassName))
@@ -179,17 +204,14 @@ public class BBBProcessor extends javax.annotation.processing.AbstractProcessor 
                 .ifPresent(g -> runGenerator(ic, processedBuilders, allGenerators, g));
     }
 
-    private void runGenerator(InfoClass ic, Map<AbstractGenerator, TypeSpec.Builder> processedBuilders, List<AbstractGenerator> allGenerators, AbstractGenerator g) {
-        printBeanStatus(ic.typeElement, g);
-        checkBBBUsage(ic.typeElement);
-
+    private void runGenerator(Input ic, Map<AbstractGenerator, Object> processedBuilders, List<AbstractGenerator> allGenerators, AbstractGenerator g) {
         try {
             for (Object wtf : g.requires()) {
                 Class<? extends Annotation> aClass = (Class<? extends Annotation>) wtf;
                 runGeneratorforAnnotation(ic, processedBuilders, allGenerators, aClass.getName());
             }
 
-            final TypeSpec.Builder builder = g.build(ic, processedBuilders);
+            final Object builder = g.build(ic, processedBuilders);
             processedBuilders.put(g, builder);
         } catch (Exception e) {
             throw Throwables.propagate(e);
@@ -215,24 +237,5 @@ public class BBBProcessor extends javax.annotation.processing.AbstractProcessor 
             headerPrinted = true;
         }
     }
-
-    private void printBeanStatus(TypeElement te, AbstractGenerator g) {
-        System.out.println("* Making it beautiful - " + te.getQualifiedName() + " " + g.getAnnotationClass().getName());
-    }
-
-
-    private void write(InfoClass ic, TypeSpec.Builder classBuilder) throws IOException {
-        if (classBuilder != null) {
-            JavaFile javaFile = JavaFile.builder(ic.pkg, classBuilder.build()).build();
-            javaFile.writeTo(processingEnv.getFiler());
-        }
-    }
-
-    private void checkBBBUsage(TypeElement te) {
-        if (!endsWith(te.getSimpleName(), "Def")) {
-            processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "Must end with Def", te);
-        }
-    }
-
 
 }

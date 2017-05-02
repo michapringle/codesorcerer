@@ -2,7 +2,7 @@ package com.beautifulbeanbuilder.generators;
 
 import com.beautifulbeanbuilder.BBBGuava;
 import com.beautifulbeanbuilder.BBBImmutable;
-import com.beautifulbeanbuilder.processor.AbstractGenerator;
+import com.beautifulbeanbuilder.processor.AbstractJavaGenerator;
 import com.beautifulbeanbuilder.processor.info.InfoClass;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
@@ -16,14 +16,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class GuavaGenerator extends AbstractGenerator<BBBGuava> {
+public class GuavaGenerator extends AbstractJavaGenerator<BBBGuava> {
 
     @Override
     public List<Class<? extends Annotation>> requires() {
         return Collections.singletonList(BBBImmutable.class);
     }
 
-    public TypeSpec.Builder build(InfoClass ic, Map<AbstractGenerator, TypeSpec.Builder> generatorBuilderMap) throws IOException {
+    public TypeSpec.Builder build(InfoClass ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap) throws IOException {
         ClassName typeGuava = ClassName.get(ic.pkg, ic.immutableClassName + "Guava");
 
         TypeSpec.Builder classBuilder = buildClass(typeGuava);

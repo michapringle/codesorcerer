@@ -38,6 +38,7 @@ public class InfoBuilder {
             "class", "finally", "long", "strictfp", "volatile",
             "const", "float", "native", "super", "while");
 
+
     public InfoClass init(ProcessingEnvironment processingEnv, TypeElement te, String currentTypeName, String currentTypePackage) {
 
         final InfoClass ic = new InfoClass();
@@ -183,13 +184,13 @@ public class InfoBuilder {
     /**
      * @param f A function that converts a TypeElement (Class/Interface) to a list of things for that level in the hierarchy
      */
-    public <T> List<T> getHierarchy(TypeElement te, Function<TypeElement, List<T>> f) {
+    public static <T> List<T> getHierarchy(TypeElement te, Function<TypeElement, List<T>> f) {
         final List<T> elems = Lists.newArrayList();
         getHierarchy(te, elems, f);
         return elems;
     }
 
-    private <T> void getHierarchy(TypeElement te, List<T> list, Function<TypeElement, List<T>> f) {
+    private static <T> void getHierarchy(TypeElement te, List<T> list, Function<TypeElement, List<T>> f) {
         //Recursivly go up the interface hierarchy
         for (TypeMirror i : te.getInterfaces()) {
             getHierarchy(asTypeElement(i), list, f);

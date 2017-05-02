@@ -1,7 +1,8 @@
 package com.beautifulbeanbuilder;
 
 
-import com.beautifulbeanbuilder.processor.BBBProcessor;
+import com.beautifulbeanbuilder.processor.InfoClassProcessor;
+import com.beautifulbeanbuilder.processor.RestControllerProcessor;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
 import com.google.testing.compile.JavaFileObjects;
@@ -28,6 +29,7 @@ public class Helper {
                 "          import " + BBBJson.class.getName() + ";                                                  ",
                 "          import " + BBBGuava.class.getName() + ";                                                  ",
                 "          import " + BBBImmutable.class.getName() + ";                                                  ",
+                "          import " + BBBTypescript.class.getName() + ";                                                  ",
                 "          import " + Ordering.class.getName() + ";                                                  ",
                 "          import " + Nonnull.class.getName() + ";                                                  ",
                 "          import " + List.class.getName() + ";                                                  ",
@@ -50,7 +52,7 @@ public class Helper {
 
     public static void hasCompileError(JavaFileObject source, String msg) {
         assertAbout(javaSource()).that(source)
-                .processedWith(new BBBProcessor())
+                .processedWith(new InfoClassProcessor())
                 .failsToCompile()
                 .withErrorContaining(msg);
     }
@@ -58,7 +60,7 @@ public class Helper {
 
     public static void hasNoCompileErrors(JavaFileObject source) {
         assertAbout(javaSource()).that(source)
-                .processedWith(new BBBProcessor())
+                .processedWith(new InfoClassProcessor(), new RestControllerProcessor())
                 .compilesWithoutError();
     }
 }

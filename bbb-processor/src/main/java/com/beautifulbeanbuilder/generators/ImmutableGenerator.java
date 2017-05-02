@@ -1,8 +1,8 @@
 package com.beautifulbeanbuilder.generators;
 
 import com.beautifulbeanbuilder.BBBImmutable;
-import com.beautifulbeanbuilder.processor.AbstractGenerator;
-import com.beautifulbeanbuilder.processor.BBBProcessor;
+import com.beautifulbeanbuilder.processor.AbstractJavaGenerator;
+import com.beautifulbeanbuilder.processor.InfoClassProcessor;
 import com.beautifulbeanbuilder.processor.info.Info;
 import com.beautifulbeanbuilder.processor.info.InfoBuilder;
 import com.beautifulbeanbuilder.processor.info.InfoClass;
@@ -25,7 +25,7 @@ import java.util.stream.IntStream;
 
 import static com.google.common.collect.Iterables.toArray;
 
-public class ImmutableGenerator extends AbstractGenerator<BBBImmutable> {
+public class ImmutableGenerator extends AbstractJavaGenerator<BBBImmutable> {
 
 
     private boolean isBBB(Info i) {
@@ -33,10 +33,10 @@ public class ImmutableGenerator extends AbstractGenerator<BBBImmutable> {
 
         return !InfoBuilder.isPrimitive(returnTypeMirror) &&
                 !InfoBuilder.isArray(returnTypeMirror) &&
-                BBBProcessor.hasAnnotation(MoreTypes.asElement(returnTypeMirror), BBBImmutable.class);
+                InfoClassProcessor.hasAnnotation(MoreTypes.asElement(returnTypeMirror), BBBImmutable.class);
     }
 
-    public TypeSpec.Builder build(InfoClass ic, Map<AbstractGenerator, TypeSpec.Builder> generatorBuilderMap) throws IOException {
+    public TypeSpec.Builder build(InfoClass ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap) throws IOException {
         TypeSpec.Builder classBuilder = buildClass(ic.typeImmutable);
 
         classBuilder.addAnnotation(Immutable.class);

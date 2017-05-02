@@ -1,7 +1,6 @@
-package com.beautifulbeanbuilder.processor;
+package com.beautifulbeanbuilder.generators.beandef;
 
-import com.beautifulbeanbuilder.processor.info.InfoBuilder;
-import com.beautifulbeanbuilder.processor.info.InfoClass;
+import com.beautifulbeanbuilder.processor.AbstractProcessor;
 
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
@@ -11,13 +10,13 @@ import javax.tools.Diagnostic;
 import static org.apache.commons.lang3.StringUtils.endsWith;
 
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
-public class InfoClassProcessor extends AbstractProcessor<InfoClass> {
+public class BeanDefProcessor extends AbstractProcessor<BeanDefInfo> {
 
     @Override
-    public InfoClass buildInput(TypeElement te, String currentTypeName, String currentTypePackage) {
+    public BeanDefInfo buildInput(TypeElement te, String currentTypeName, String currentTypePackage) {
         printBeanStatus(te);
         checkBBBUsage(te);
-        return new InfoBuilder().init(processingEnv, te, currentTypeName, currentTypePackage);
+        return new BeanDefInfoBuilder().init(processingEnv, te, currentTypeName, currentTypePackage);
     }
 
     private void printBeanStatus(TypeElement te) {

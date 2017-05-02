@@ -1,8 +1,6 @@
 package com.beautifulbeanbuilder;
 
 
-import com.beautifulbeanbuilder.generators.GuavaGenerator;
-import com.beautifulbeanbuilder.generators.ImmutableGenerator;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;

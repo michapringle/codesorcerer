@@ -1,4 +1,4 @@
-package com.beautifulbeanbuilder.processor.info;
+package com.beautifulbeanbuilder.generators.beandef;
 
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
@@ -11,7 +11,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 
-public class Info {
+public class BeanDefFieldInfo {
 
     public ExecutableElement getter;
     public String prefix;       // 'get' or 'is'

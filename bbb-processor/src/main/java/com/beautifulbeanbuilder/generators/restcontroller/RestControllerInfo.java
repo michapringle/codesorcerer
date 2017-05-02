@@ -1,5 +1,6 @@
-package com.beautifulbeanbuilder.processor.info;
+package com.beautifulbeanbuilder.generators.restcontroller;
 
+import com.beautifulbeanbuilder.generators.beandef.BeanDefInfoBuilder;
 import org.springframework.messaging.simp.annotation.SubscribeMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -10,10 +11,10 @@ import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class InfoRestController {
+public class RestControllerInfo {
     public TypeElement typeElement;
 
-    public InfoRestController(TypeElement typeElement) {
+    public RestControllerInfo(TypeElement typeElement) {
         this.typeElement = typeElement;
     }
 
@@ -33,7 +34,7 @@ public class InfoRestController {
     }
 
     private List<ExecutableElement> getAllMethods() {
-        return InfoBuilder.getHierarchy(typeElement, x -> ElementFilter.methodsIn(x.getEnclosedElements()));
+        return BeanDefInfoBuilder.getHierarchy(typeElement, x -> ElementFilter.methodsIn(x.getEnclosedElements()));
     }
 
 

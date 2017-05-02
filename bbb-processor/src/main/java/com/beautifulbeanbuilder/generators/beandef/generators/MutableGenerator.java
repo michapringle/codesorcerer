@@ -1,9 +1,9 @@
-package com.beautifulbeanbuilder.generators;
+package com.beautifulbeanbuilder.generators.beandef.generators;
 
 import com.beautifulbeanbuilder.BBBImmutable;
 import com.beautifulbeanbuilder.BBBMutable;
+import com.beautifulbeanbuilder.generators.beandef.BeanDefInfo;
 import com.beautifulbeanbuilder.processor.AbstractJavaGenerator;
-import com.beautifulbeanbuilder.processor.info.InfoClass;
 import com.squareup.javapoet.*;
 
 import javax.lang.model.element.Modifier;
@@ -22,26 +22,26 @@ public class MutableGenerator extends AbstractJavaGenerator<BBBMutable> {
     }
 
     @Override
-    public TypeSpec.Builder build(InfoClass ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap) throws IOException {
+    public TypeSpec.Builder build(BeanDefInfo ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap) throws IOException {
         ClassName typeMutable = ClassName.get(ic.pkg, ic.immutableClassName + "Mutable");
 
         final TypeSpec.Builder classBuilder = buildClass(typeMutable);
         addSerialVersionUUID(classBuilder);
 
         //Members
-        ic.infos.forEach(i -> {
+        ic.beanDefFieldInfos.forEach(i -> {
             final FieldSpec f = i.buildField(Modifier.PRIVATE);
             classBuilder.addField(f);
         });
 
         //Getters
-        ic.infos.forEach(i -> {
+        ic.beanDefFieldInfos.forEach(i -> {
             final MethodSpec getter = i.buildGetter();
             classBuilder.addMethod(getter);
         });
 
         //Setters
-        ic.infos.forEach(i -> {
+        ic.beanDefFieldInfos.forEach(i -> {
             final MethodSpec setter = i.buildSetter();
             classBuilder.addMethod(setter);
         });
@@ -52,7 +52,7 @@ public class MutableGenerator extends AbstractJavaGenerator<BBBMutable> {
         return classBuilder;
     }
 
-    private void addToMutable(InfoClass ic, TypeSpec.Builder classBuilder, ClassName typeMutable) {
+    private void addToMutable(BeanDefInfo ic, TypeSpec.Builder classBuilder, ClassName typeMutable) {
         MethodSpec.Builder toMutable1 = MethodSpec.methodBuilder("toMutable");
         toMutable1.addModifiers(Modifier.PUBLIC);
         toMutable1.returns(typeMutable);
@@ -65,14 +65,14 @@ public class MutableGenerator extends AbstractJavaGenerator<BBBMutable> {
         toMutable.addParameter(ic.typeImmutable, "immutable");
         toMutable.addStatement("$T mutable = new $T()", typeMutable, typeMutable);
         toMutable.addStatement("if(immutable != null) {");
-        ic.infos.forEach(i -> toMutable.addStatement("mutable.set" + i.nameUpper + "(immutable." + i.prefix + i.nameUpper + "())"));
+        ic.beanDefFieldInfos.forEach(i -> toMutable.addStatement("mutable.set" + i.nameUpper + "(immutable." + i.prefix + i.nameUpper + "())"));
         toMutable.addStatement("}");
         toMutable.addStatement("return mutable");
         classBuilder.addMethod(toMutable.build());
 
     }
 
-    private void addToImmutable(InfoClass ic, TypeSpec.Builder classBuilder) {
+    private void addToImmutable(BeanDefInfo ic, TypeSpec.Builder classBuilder) {
         MethodSpec.Builder toMutable1 = MethodSpec.methodBuilder("toImmutable");
         toMutable1.addModifiers(Modifier.PUBLIC);
         toMutable1.returns(ic.typeImmutable);
@@ -80,8 +80,8 @@ public class MutableGenerator extends AbstractJavaGenerator<BBBMutable> {
         CodeBlock.Builder cb = CodeBlock.builder();
         cb.add("return $T.build" + ic.immutableClassName + "()", ic.typeImmutable);
         cb.indent();
-        ic.nonNullInfos.forEach(i -> cb.add("." + i.nameMangled + "(" + i.nameMangled + ")"));
-        ic.nullableInfos.forEach(i -> cb.add("." + i.nameMangled + "(" + i.nameMangled + ")"));
+        ic.nonNullBeanDefFieldInfos.forEach(i -> cb.add("." + i.nameMangled + "(" + i.nameMangled + ")"));
+        ic.nullableBeanDefFieldInfos.forEach(i -> cb.add("." + i.nameMangled + "(" + i.nameMangled + ")"));
         cb.add(".build();");
         cb.unindent();
         toMutable1.addCode(cb.build());

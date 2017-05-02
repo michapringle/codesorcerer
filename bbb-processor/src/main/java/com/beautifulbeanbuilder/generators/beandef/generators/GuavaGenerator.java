@@ -1,9 +1,10 @@
-package com.beautifulbeanbuilder.generators;
+package com.beautifulbeanbuilder.generators.beandef.generators;
 
 import com.beautifulbeanbuilder.BBBGuava;
 import com.beautifulbeanbuilder.BBBImmutable;
+import com.beautifulbeanbuilder.generators.beandef.Types;
+import com.beautifulbeanbuilder.generators.beandef.BeanDefInfo;
 import com.beautifulbeanbuilder.processor.AbstractJavaGenerator;
-import com.beautifulbeanbuilder.processor.info.InfoClass;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 import com.squareup.javapoet.*;
@@ -23,7 +24,7 @@ public class GuavaGenerator extends AbstractJavaGenerator<BBBGuava> {
         return Collections.singletonList(BBBImmutable.class);
     }
 
-    public TypeSpec.Builder build(InfoClass ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap) throws IOException {
+    public TypeSpec.Builder build(BeanDefInfo ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap) throws IOException {
         ClassName typeGuava = ClassName.get(ic.pkg, ic.immutableClassName + "Guava");
 
         TypeSpec.Builder classBuilder = buildClass(typeGuava);
@@ -38,7 +39,7 @@ public class GuavaGenerator extends AbstractJavaGenerator<BBBGuava> {
 
 
         //TO_  BY_
-        ic.infos.forEach(i -> {
+        ic.beanDefFieldInfos.forEach(i -> {
             TypeName nReturnType = i.nReturnType.isPrimitive() ? i.nReturnType.box() : i.nReturnType;
             ParameterizedTypeName ret = ParameterizedTypeName.get(Types.guava_function, ic.typeImmutable, nReturnType);
 
@@ -55,7 +56,7 @@ public class GuavaGenerator extends AbstractJavaGenerator<BBBGuava> {
 
 
         //Equivilance
-        ic.infos.forEach(i -> {
+        ic.beanDefFieldInfos.forEach(i -> {
             ParameterizedTypeName eqImpl = ParameterizedTypeName.get(Types.guava_equivilance, ic.typeImmutable);
             FieldSpec.Builder f = FieldSpec.builder(eqImpl, "EQUALS_" + i.nameAllUpper);
             f.addModifiers(Modifier.PUBLIC, Modifier.FINAL, Modifier.STATIC);
@@ -65,7 +66,7 @@ public class GuavaGenerator extends AbstractJavaGenerator<BBBGuava> {
 
 
         //Equivilance Wrapper
-        ic.infos.forEach(i -> {
+        ic.beanDefFieldInfos.forEach(i -> {
             ParameterizedTypeName eqWrapperImpl = ParameterizedTypeName.get(Types.guava_equivilanceWrapper, ic.typeImmutable);
             ParameterizedTypeName ret = ParameterizedTypeName.get(Types.guava_function, ic.typeImmutable, eqWrapperImpl);
             FieldSpec.Builder f = FieldSpec.builder(ret, "EQUALS_" + i.nameAllUpper + "_WRAPPER");
@@ -85,7 +86,7 @@ public class GuavaGenerator extends AbstractJavaGenerator<BBBGuava> {
         }
 
         //Predicate
-        ic.infos.stream().filter(i -> !i.nReturnType.isPrimitive() || !(i.nReturnType instanceof ArrayTypeName)).forEach(i -> {
+        ic.beanDefFieldInfos.stream().filter(i -> !i.nReturnType.isPrimitive() || !(i.nReturnType instanceof ArrayTypeName)).forEach(i -> {
 
             MethodSpec.Builder m = MethodSpec.methodBuilder("by" + i.nameUpper);
             m.addModifiers(Modifier.PUBLIC, Modifier.FINAL, Modifier.STATIC);
@@ -96,7 +97,7 @@ public class GuavaGenerator extends AbstractJavaGenerator<BBBGuava> {
         });
 
         //Boolean
-        ic.infos.stream().filter(i -> i.nReturnType.equals(ClassName.get(Boolean.class))).forEach(i -> {
+        ic.beanDefFieldInfos.stream().filter(i -> i.nReturnType.equals(ClassName.get(Boolean.class))).forEach(i -> {
             FieldSpec.Builder f = FieldSpec.builder(typePredicateImmutable, "IS_" + i.nameAllUpper);
             f.addModifiers(Modifier.PUBLIC, Modifier.FINAL, Modifier.STATIC);
             f.initializer("(x) -> {return ((x == null) ? false : (x." + i.prefix + i.nameUpper + "() == null ? false : x." + i.prefix + i.nameUpper + "()));}");
@@ -104,7 +105,7 @@ public class GuavaGenerator extends AbstractJavaGenerator<BBBGuava> {
         });
 
         //Primitive Boolean
-        ic.infos.stream().filter(i -> i.nReturnType.equals(TypeName.BOOLEAN)).forEach(i -> {
+        ic.beanDefFieldInfos.stream().filter(i -> i.nReturnType.equals(TypeName.BOOLEAN)).forEach(i -> {
             FieldSpec.Builder f = FieldSpec.builder(typePredicateImmutable, "IS_" + i.nameAllUpper);
             f.addModifiers(Modifier.PUBLIC, Modifier.FINAL, Modifier.STATIC);
             f.initializer("(x) -> {return x." + i.prefix + i.nameUpper + "();}");
@@ -113,7 +114,7 @@ public class GuavaGenerator extends AbstractJavaGenerator<BBBGuava> {
 
 
         //Orderings
-        ic.infos.stream().filter(i -> i.isComparable).forEach(i -> {
+        ic.beanDefFieldInfos.stream().filter(i -> i.isComparable).forEach(i -> {
             FieldSpec.Builder f = FieldSpec.builder(typeOrderingImmutable, "ORDER_BY_" + i.nameAllUpper);
             f.addModifiers(Modifier.PUBLIC, Modifier.FINAL, Modifier.STATIC);
 

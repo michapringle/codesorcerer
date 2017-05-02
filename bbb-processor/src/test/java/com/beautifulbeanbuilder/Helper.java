@@ -1,8 +1,9 @@
 package com.beautifulbeanbuilder;
 
 
-import com.beautifulbeanbuilder.processor.InfoClassProcessor;
-import com.beautifulbeanbuilder.processor.RestControllerProcessor;
+import com.beautifulbeanbuilder.generators.beandef.BeanDefProcessor;
+import com.beautifulbeanbuilder.generators.restcontroller.RestControllerProcessor;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
 import com.google.testing.compile.JavaFileObjects;
@@ -13,6 +14,7 @@ import java.util.*;
 
 import static com.google.common.truth.Truth.assertAbout;
 import static com.google.testing.compile.JavaSourceSubjectFactory.javaSource;
+import static com.google.testing.compile.JavaSourcesSubjectFactory.javaSources;
 
 public class Helper {
 
@@ -52,15 +54,17 @@ public class Helper {
 
     public static void hasCompileError(JavaFileObject source, String msg) {
         assertAbout(javaSource()).that(source)
-                .processedWith(new InfoClassProcessor())
+                .withCompilerOptions(ImmutableList.of("-XprintRounds"))
+                .processedWith(new BeanDefProcessor(), new RestControllerProcessor())
                 .failsToCompile()
                 .withErrorContaining(msg);
     }
 
 
-    public static void hasNoCompileErrors(JavaFileObject source) {
-        assertAbout(javaSource()).that(source)
-                .processedWith(new InfoClassProcessor(), new RestControllerProcessor())
+    public static void hasNoCompileErrors(JavaFileObject... source) {
+        assertAbout(javaSources()).that(Arrays.asList(source))
+                .withCompilerOptions(ImmutableList.of("-XprintRounds"))
+                .processedWith(new BeanDefProcessor(), new RestControllerProcessor())
                 .compilesWithoutError();
     }
 }

@@ -1,9 +1,9 @@
-package com.beautifulbeanbuilder.generators;
+package com.beautifulbeanbuilder.generators.beandef.generators;
 
 import com.beautifulbeanbuilder.BBBJson;
 import com.beautifulbeanbuilder.BBBMutable;
+import com.beautifulbeanbuilder.generators.beandef.BeanDefInfo;
 import com.beautifulbeanbuilder.processor.AbstractJavaGenerator;
-import com.beautifulbeanbuilder.processor.info.InfoClass;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -30,7 +30,7 @@ public class JacksonGenerator extends AbstractJavaGenerator<BBBJson> {
         return ImmutableList.of(BBBMutable.class);
     }
 
-    public TypeSpec.Builder build(InfoClass ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap) throws IOException {
+    public TypeSpec.Builder build(BeanDefInfo ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap) throws IOException {
         ClassName typeJackson = ClassName.get(ic.pkg, ic.immutableClassName + "Jackson");
 
         //TODO: dont depend on mutable
@@ -46,7 +46,7 @@ public class JacksonGenerator extends AbstractJavaGenerator<BBBJson> {
     }
 
 
-    private void addJsonSerializationAnnotations(InfoClass ic, TypeSpec.Builder classBuilder, ClassName typeJackson) {
+    private void addJsonSerializationAnnotations(BeanDefInfo ic, TypeSpec.Builder classBuilder, ClassName typeJackson) {
         classBuilder.addAnnotation(AnnotationSpec.builder(JsonDeserialize.class)
                 .addMember("using", typeJackson.simpleName() + ".Deserializer.class")
                 .build());
@@ -58,7 +58,7 @@ public class JacksonGenerator extends AbstractJavaGenerator<BBBJson> {
 
 
 
-    private TypeSpec.Builder buildDeserializer(InfoClass ic, ClassName typeMutable) {
+    private TypeSpec.Builder buildDeserializer(BeanDefInfo ic, ClassName typeMutable) {
         final TypeSpec.Builder classBuilder = buildClass(ClassName.bestGuess("Deserializer"));
         classBuilder.addModifiers(Modifier.STATIC, Modifier.PUBLIC);
 
@@ -86,7 +86,7 @@ public class JacksonGenerator extends AbstractJavaGenerator<BBBJson> {
         return classBuilder;
     }
 
-    private TypeSpec.Builder buildSerializer(InfoClass ic) {
+    private TypeSpec.Builder buildSerializer(BeanDefInfo ic) {
         final TypeSpec.Builder classBuilder = buildClass(ClassName.bestGuess("Serializer"));
         classBuilder.addModifiers(Modifier.STATIC, Modifier.PUBLIC);
 

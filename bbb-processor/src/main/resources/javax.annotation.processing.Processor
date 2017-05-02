@@ -1,1 +1,2 @@
-com.central1.bbb.processor.BBBProcessor
+com.beautifulbeanbuilder.generators.beandef.BeanDefProcessor
+com.beautifulbeanbuilder.generators.restcontroller.RestControllerProcessor

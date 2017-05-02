@@ -1,11 +1,12 @@
-package com.beautifulbeanbuilder.generators;
+package com.beautifulbeanbuilder.generators.beandef.generators;
 
 import com.beautifulbeanbuilder.BBBImmutable;
+import com.beautifulbeanbuilder.generators.beandef.Types;
+import com.beautifulbeanbuilder.generators.beandef.BeanDefFieldInfo;
+import com.beautifulbeanbuilder.generators.beandef.BeanDefInfo;
+import com.beautifulbeanbuilder.generators.beandef.BeanDefInfoBuilder;
+import com.beautifulbeanbuilder.generators.beandef.BeanDefProcessor;
 import com.beautifulbeanbuilder.processor.AbstractJavaGenerator;
-import com.beautifulbeanbuilder.processor.InfoClassProcessor;
-import com.beautifulbeanbuilder.processor.info.Info;
-import com.beautifulbeanbuilder.processor.info.InfoBuilder;
-import com.beautifulbeanbuilder.processor.info.InfoClass;
 import com.google.auto.common.MoreTypes;
 import com.google.common.collect.Lists;
 import com.squareup.javapoet.*;
@@ -28,15 +29,15 @@ import static com.google.common.collect.Iterables.toArray;
 public class ImmutableGenerator extends AbstractJavaGenerator<BBBImmutable> {
 
 
-    private boolean isBBB(Info i) {
+    private boolean isBBB(BeanDefFieldInfo i) {
         final TypeMirror returnTypeMirror = i.getter.getReturnType();
 
-        return !InfoBuilder.isPrimitive(returnTypeMirror) &&
-                !InfoBuilder.isArray(returnTypeMirror) &&
-                InfoClassProcessor.hasAnnotation(MoreTypes.asElement(returnTypeMirror), BBBImmutable.class);
+        return !BeanDefInfoBuilder.isPrimitive(returnTypeMirror) &&
+                !BeanDefInfoBuilder.isArray(returnTypeMirror) &&
+                BeanDefProcessor.hasAnnotation(MoreTypes.asElement(returnTypeMirror), BBBImmutable.class);
     }
 
-    public TypeSpec.Builder build(InfoClass ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap) throws IOException {
+    public TypeSpec.Builder build(BeanDefInfo ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap) throws IOException {
         TypeSpec.Builder classBuilder = buildClass(ic.typeImmutable);
 
         classBuilder.addAnnotation(Immutable.class);
@@ -59,9 +60,9 @@ public class ImmutableGenerator extends AbstractJavaGenerator<BBBImmutable> {
 
         addBuilder(ic, classBuilder);
         addUpdater(ic, classBuilder);
-        addMemberFields(ic.infos, classBuilder);
+        addMemberFields(ic.beanDefFieldInfos, classBuilder);
         addConstructor(ic, classBuilder);
-        addGetters(ic.infos, classBuilder);
+        addGetters(ic.beanDefFieldInfos, classBuilder);
         addWiths(ic, classBuilder);
         addToString(ic, classBuilder);
         addHashcode(ic, classBuilder);
@@ -71,7 +72,7 @@ public class ImmutableGenerator extends AbstractJavaGenerator<BBBImmutable> {
         return classBuilder;
     }
 
-    private void addAbstract(InfoClass ic, TypeSpec.Builder classBuilder) {
+    private void addAbstract(BeanDefInfo ic, TypeSpec.Builder classBuilder) {
         TypeSpec.Builder a = TypeSpec.classBuilder(Types.jpAbstract);
         a.addModifiers(Modifier.PRIVATE, Modifier.ABSTRACT, Modifier.STATIC);
         a.addTypeVariable(Types.jpP);
@@ -80,7 +81,7 @@ public class ImmutableGenerator extends AbstractJavaGenerator<BBBImmutable> {
         //Fields
         a.addField(Types.jpP, "parent", Modifier.PRIVATE);
         a.addField(ic.typeCallbackImpl, "callback", Modifier.PRIVATE);
-        ic.infos.forEach(i -> a.addField(i.buildField(Modifier.PRIVATE)));
+        ic.beanDefFieldInfos.forEach(i -> a.addField(i.buildField(Modifier.PRIVATE)));
 
         //Constructor
         MethodSpec.Builder constructor = MethodSpec.constructorBuilder();
@@ -93,24 +94,24 @@ public class ImmutableGenerator extends AbstractJavaGenerator<BBBImmutable> {
 
         CodeBlock.Builder cbConst = CodeBlock.builder();
         cbConst.beginControlFlow("if(x != null)");
-        ic.infos.forEach(i -> cbConst.addStatement("this." + i.nameMangled + " = x." + i.prefix + i.nameUpper + "()"));
+        ic.beanDefFieldInfos.forEach(i -> cbConst.addStatement("this." + i.nameMangled + " = x." + i.prefix + i.nameUpper + "()"));
         cbConst.endControlFlow();
         constructor.addCode(cbConst.build());
 
         a.addMethod(constructor.build());
 
         //setters
-        for (int x = 0; x < ic.nonNullInfos.size(); x++) {
-            Info i = ic.nonNullInfos.get(x);
+        for (int x = 0; x < ic.nonNullBeanDefFieldInfos.size(); x++) {
+            BeanDefFieldInfo i = ic.nonNullBeanDefFieldInfos.get(x);
             addSetter(ic, i, a, TypeVariableName.get("T" + (x + 1)));
         }
-        for (int x = 0; x < ic.nullableInfos.size(); x++) {
-            Info i = ic.nullableInfos.get(x);
+        for (int x = 0; x < ic.nullableBeanDefFieldInfos.size(); x++) {
+            BeanDefFieldInfo i = ic.nullableBeanDefFieldInfos.get(x);
             addSetter(ic, i, a, ic.lastGeneric());
         }
 
         //getters
-        ic.infos.stream().filter(i -> isBBB(i)).forEach(i -> {
+        ic.beanDefFieldInfos.stream().filter(i -> isBBB(i)).forEach(i -> {
             MethodSpec.Builder m = MethodSpec.methodBuilder("get" + i.nameUpper);
             m.addModifiers(Modifier.PUBLIC);
             m.returns(ParameterizedTypeName.get(ClassName.bestGuess(i.returnType + "." + Types.jpSubBeanUpdatable.simpleName()), ic.lastGeneric()));
@@ -127,7 +128,7 @@ public class ImmutableGenerator extends AbstractJavaGenerator<BBBImmutable> {
             CodeBlock.Builder cb = CodeBlock.builder();
             cb.add("return new $T(", ic.typeImmutable);
             cb.indent();
-            String params = ic.infos.stream()
+            String params = ic.beanDefFieldInfos.stream()
                     .map(i -> i.nameMangled)
                     .collect(Collectors.joining(",\n"));
             cb.add(params);
@@ -149,7 +150,7 @@ public class ImmutableGenerator extends AbstractJavaGenerator<BBBImmutable> {
         }
 
 //        //Callbacks
-//        ic.infos.stream().filter(i -> isBBB(i)).forEach(i -> {
+//        ic.beanDefFieldInfos.stream().filter(i -> isBBB(i)).forEach(i -> {
 //            MethodSpec.Builder m = MethodSpec.methodBuilder("newCallback" + i.nameUpper);
 //            m.addModifiers(Modifier.PRIVATE);
 //            m.returns(ParameterizedTypeName.get(Types.jpCallback, i.nReturnType));
@@ -173,7 +174,7 @@ public class ImmutableGenerator extends AbstractJavaGenerator<BBBImmutable> {
         classBuilder.addType(a.build());
     }
 
-    private void addSetter(InfoClass ic, Info i, TypeSpec.Builder a, TypeVariableName tn) {
+    private void addSetter(BeanDefInfo ic, BeanDefFieldInfo i, TypeSpec.Builder a, TypeVariableName tn) {
         MethodSpec.Builder m = MethodSpec.methodBuilder(i.nameMangled);
         m.addModifiers(Modifier.PUBLIC);
         m.returns(tn);
@@ -195,7 +196,7 @@ public class ImmutableGenerator extends AbstractJavaGenerator<BBBImmutable> {
     }
 
 
-    private void addBaseClasses(InfoClass ic, TypeSpec.Builder classBuilder) {
+    private void addBaseClasses(BeanDefInfo ic, TypeSpec.Builder classBuilder) {
         {
             final List<TypeName> l = Lists.newArrayList();
             l.add(Types.jpBeanBuildable);
@@ -289,14 +290,14 @@ public class ImmutableGenerator extends AbstractJavaGenerator<BBBImmutable> {
 
     }
 
-    private List<TypeName> fckedUpMethodThatGenertesStuff(InfoClass ic, String prefix, String typ, boolean includeCount, boolean minOne, boolean includeFirst) {
-        if (ic.nonNullInfos.size() == 0 && minOne) {
+    private List<TypeName> fckedUpMethodThatGenertesStuff(BeanDefInfo ic, String prefix, String typ, boolean includeCount, boolean minOne, boolean includeFirst) {
+        if (ic.nonNullBeanDefFieldInfos.size() == 0 && minOne) {
             ClassName cn = ClassName.bestGuess(prefix);
             return typ == null ? Collections.singletonList(cn) : Collections.singletonList(ParameterizedTypeName.get(cn, TypeVariableName.get(typ)));
         }
 
         int start = includeFirst ? 0 : 1;
-        return IntStream.range(start, ic.nonNullInfos.size())
+        return IntStream.range(start, ic.nonNullBeanDefFieldInfos.size())
                 .mapToObj(i -> {
                     ClassName cn = ClassName.bestGuess(includeCount ? prefix + (i) : prefix);
                     return typ == null ? cn : ParameterizedTypeName.get(cn, TypeVariableName.get(typ));
@@ -304,7 +305,7 @@ public class ImmutableGenerator extends AbstractJavaGenerator<BBBImmutable> {
                 .collect(Collectors.toList());
     }
 
-    private void addBaseInterfaces(InfoClass ic, TypeSpec.Builder classBuilder) {
+    private void addBaseInterfaces(BeanDefInfo ic, TypeSpec.Builder classBuilder) {
         TypeSpec.Builder if1 = TypeSpec.interfaceBuilder(Types.jpBeanBuildable);
         if1.addModifiers(Modifier.PUBLIC);
         if1.addSuperinterface(ParameterizedTypeName.get(Types.jpNullable, Types.jpBeanBuildable));
@@ -334,20 +335,20 @@ public class ImmutableGenerator extends AbstractJavaGenerator<BBBImmutable> {
         classBuilder.addType(if4.build());
     }
 
-    private void addNonNullableInterface(InfoClass ic, TypeSpec.Builder classBuilder) {
+    private void addNonNullableInterface(BeanDefInfo ic, TypeSpec.Builder classBuilder) {
 
         TypeSpec.Builder if1 = TypeSpec.interfaceBuilder(Types.jpNonNullable);
         if1.addModifiers(Modifier.PRIVATE);
         if1.addTypeVariable(Types.jpT);
 
-        ic.infos.stream().filter(i -> isBBB(i)).forEach(i -> {
+        ic.beanDefFieldInfos.stream().filter(i -> isBBB(i)).forEach(i -> {
             MethodSpec.Builder m = MethodSpec.methodBuilder("get" + i.nameUpper);
             m.addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
             m.returns(ParameterizedTypeName.get(ClassName.bestGuess(i.returnType + "." + Types.jpSubBeanUpdatable.simpleName()), Types.jpT));
             if1.addMethod(m.build());
         });
 
-        ic.nonNullInfos.stream().forEach(i -> {
+        ic.nonNullBeanDefFieldInfos.stream().forEach(i -> {
             MethodSpec.Builder m = MethodSpec.methodBuilder(i.nameMangled);
             m.addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
             m.addParameter(i.nReturnType, i.nameMangled);
@@ -355,7 +356,7 @@ public class ImmutableGenerator extends AbstractJavaGenerator<BBBImmutable> {
             if1.addMethod(m.build());
         });
 
-        ic.nonNullInfos.stream().filter(i -> isBBB(i)).forEach(i -> {
+        ic.nonNullBeanDefFieldInfos.stream().filter(i -> isBBB(i)).forEach(i -> {
             MethodSpec.Builder m = MethodSpec.methodBuilder("new" + i.nameUpper);
             m.addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
             m.returns(ParameterizedTypeName.get(ClassName.bestGuess(i.returnType + ".SubBeanRequires0"), Types.jpT));
@@ -365,13 +366,13 @@ public class ImmutableGenerator extends AbstractJavaGenerator<BBBImmutable> {
         classBuilder.addType(if1.build());
     }
 
-    private void addNullableInterface(InfoClass ic, TypeSpec.Builder classBuilder) {
+    private void addNullableInterface(BeanDefInfo ic, TypeSpec.Builder classBuilder) {
 
         TypeSpec.Builder if1 = TypeSpec.interfaceBuilder(Types.jpNullable);
         if1.addModifiers(Modifier.PRIVATE);
         if1.addTypeVariable(Types.jpT);
 
-        ic.nullableInfos.forEach(i -> {
+        ic.nullableBeanDefFieldInfos.forEach(i -> {
             MethodSpec.Builder m = MethodSpec.methodBuilder(i.nameMangled);
             m.addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
             m.addParameter(i.nReturnType, i.nameMangled);
@@ -379,7 +380,7 @@ public class ImmutableGenerator extends AbstractJavaGenerator<BBBImmutable> {
             if1.addMethod(m.build());
         });
 
-        ic.nullableInfos.stream().filter(i -> isBBB(i)).forEach(i -> {
+        ic.nullableBeanDefFieldInfos.stream().filter(i -> isBBB(i)).forEach(i -> {
             MethodSpec.Builder m = MethodSpec.methodBuilder("new" + i.nameUpper);
             m.addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
             m.returns(ParameterizedTypeName.get(ClassName.bestGuess(i.returnType + ".SubBeanRequires0"), Types.jpT));
@@ -390,10 +391,10 @@ public class ImmutableGenerator extends AbstractJavaGenerator<BBBImmutable> {
     }
 
 
-    private void addBeanRequiresInterfaces(InfoClass ic, TypeSpec.Builder classBuilder) {
+    private void addBeanRequiresInterfaces(BeanDefInfo ic, TypeSpec.Builder classBuilder) {
 
 
-        if (ic.nonNullInfos.isEmpty()) {
+        if (ic.nonNullBeanDefFieldInfos.isEmpty()) {
 
             TypeSpec.Builder if1 = TypeSpec.interfaceBuilder(Types.jpBeanRequires0);
             if1.addSuperinterface(Types.jpBeanBuildable);
@@ -407,8 +408,8 @@ public class ImmutableGenerator extends AbstractJavaGenerator<BBBImmutable> {
             classBuilder.addType(if2.build());
         }
 
-        for (int x = 0; x < ic.nonNullInfos.size(); x++) {
-            Info a = ic.nonNullInfos.get(x);
+        for (int x = 0; x < ic.nonNullBeanDefFieldInfos.size(); x++) {
+            BeanDefFieldInfo a = ic.nonNullBeanDefFieldInfos.get(x);
 
             TypeSpec.Builder if1 = TypeSpec.interfaceBuilder("BeanRequires" + x);
             if1.addModifiers(Modifier.PUBLIC);
@@ -430,7 +431,7 @@ public class ImmutableGenerator extends AbstractJavaGenerator<BBBImmutable> {
             m4.addModifiers(Modifier.ABSTRACT, Modifier.PUBLIC);
             //m4.addParameter(a.nReturnType, a.nameMangled);
 
-            if (x < ic.nonNullInfos.size() - 1) {
+            if (x < ic.nonNullBeanDefFieldInfos.size() - 1) {
                 int xx = x + 1;
 
                 ClassName classNameBeanRequiresXX = ClassName.bestGuess("BeanRequires" + xx);
@@ -473,7 +474,7 @@ public class ImmutableGenerator extends AbstractJavaGenerator<BBBImmutable> {
     }
 
 
-    private void addUpdaterInternalInterface(InfoClass ic, TypeSpec.Builder classBuilder) {
+    private void addUpdaterInternalInterface(BeanDefInfo ic, TypeSpec.Builder classBuilder) {
 
         TypeSpec.Builder innerClassBuilder = TypeSpec.classBuilder("Internal");
         innerClassBuilder.addModifiers(Modifier.PUBLIC, Modifier.STATIC);
@@ -503,7 +504,7 @@ public class ImmutableGenerator extends AbstractJavaGenerator<BBBImmutable> {
     }
 
 
-    private void addBuilder(InfoClass ic, TypeSpec.Builder classBuilder) {
+    private void addBuilder(BeanDefInfo ic, TypeSpec.Builder classBuilder) {
         MethodSpec.Builder builder = MethodSpec.methodBuilder("build" + ic.immutableClassName);
         builder.addModifiers(Modifier.PUBLIC, Modifier.STATIC);
         builder.returns(Types.jpBeanRequires0);
@@ -513,7 +514,7 @@ public class ImmutableGenerator extends AbstractJavaGenerator<BBBImmutable> {
         classBuilder.addMethod(builder.build());
     }
 
-    private void addUpdater(InfoClass ic, TypeSpec.Builder classBuilder) {
+    private void addUpdater(BeanDefInfo ic, TypeSpec.Builder classBuilder) {
         MethodSpec.Builder builder = MethodSpec.methodBuilder("update");
         builder.addModifiers(Modifier.PUBLIC);
         builder.returns(Types.jpBeanUpdatable);
@@ -523,8 +524,8 @@ public class ImmutableGenerator extends AbstractJavaGenerator<BBBImmutable> {
         classBuilder.addMethod(builder.build());
     }
 
-    private void addSimpleBuilders(InfoClass ic, TypeSpec.Builder classBuilder) {
-        if (ic.infos.size() > 3) {
+    private void addSimpleBuilders(BeanDefInfo ic, TypeSpec.Builder classBuilder) {
+        if (ic.beanDefFieldInfos.size() > 3) {
             return;
         }
 
@@ -533,13 +534,13 @@ public class ImmutableGenerator extends AbstractJavaGenerator<BBBImmutable> {
         builder.returns(ic.typeImmutable);
         builder.addAnnotation(Nonnull.class);
         builder.addAnnotation(CheckReturnValue.class);
-        ic.infos.forEach(i -> builder.addParameter(i.buildParameter()));
+        ic.beanDefFieldInfos.forEach(i -> builder.addParameter(i.buildParameter()));
         builder.addStatement("return new $T(" + ic.listAllUsageParametrs() + ")", ic.typeImmutable);
         classBuilder.addMethod(builder.build());
     }
 
 
-    private void addEquals(InfoClass ic, TypeSpec.Builder classBuilder) {
+    private void addEquals(BeanDefInfo ic, TypeSpec.Builder classBuilder) {
         MethodSpec.Builder builder = startEquals();
 
         builder.beginControlFlow("if (this == o)");
@@ -556,7 +557,7 @@ public class ImmutableGenerator extends AbstractJavaGenerator<BBBImmutable> {
         CodeBlock.Builder cb = CodeBlock.builder();
         cb.add("return ");
         cb.indent();
-        ic.infos.forEach(i -> cb.add("Objects.equals(this.$N, that.$N) &&\n", i.nameMangled, i.nameMangled));
+        ic.beanDefFieldInfos.forEach(i -> cb.add("Objects.equals(this.$N, that.$N) &&\n", i.nameMangled, i.nameMangled));
         cb.add("true;\n");
         cb.unindent();
 
@@ -566,19 +567,19 @@ public class ImmutableGenerator extends AbstractJavaGenerator<BBBImmutable> {
     }
 
 
-    private void addHashcode(InfoClass ic, TypeSpec.Builder classBuilder) {
+    private void addHashcode(BeanDefInfo ic, TypeSpec.Builder classBuilder) {
         MethodSpec.Builder builder = startHashcode();
         builder.addStatement("return $T.hash(" + ic.listAllUsageParametrs() + ")", Types.java_objects);
         classBuilder.addMethod(builder.build());
     }
 
-    private void addToString(InfoClass ic, TypeSpec.Builder classBuilder) {
+    private void addToString(BeanDefInfo ic, TypeSpec.Builder classBuilder) {
         MethodSpec.Builder builder = startToString();
 
         CodeBlock.Builder cb = CodeBlock.builder();
         cb.add("return $T.toStringHelper(this)\n", Types.guava_moreObjects);
         cb.indent();
-        ic.infos.forEach(i -> cb.add(".add($S, $N)\n", i.nameUpper, i.nameMangled));
+        ic.beanDefFieldInfos.forEach(i -> cb.add(".add($S, $N)\n", i.nameUpper, i.nameMangled));
         cb.add(".omitNullValues()\n");
         cb.add(".toString();\n");
         cb.unindent();
@@ -587,8 +588,8 @@ public class ImmutableGenerator extends AbstractJavaGenerator<BBBImmutable> {
         classBuilder.addMethod(builder.build());
     }
 
-    private void addWiths(InfoClass ic, TypeSpec.Builder classBuilder) {
-        ic.infos.forEach(i -> {
+    private void addWiths(BeanDefInfo ic, TypeSpec.Builder classBuilder) {
+        ic.beanDefFieldInfos.forEach(i -> {
                     MethodSpec.Builder builder = MethodSpec.methodBuilder("with" + i.nameUpper);
                     builder.addModifiers(Modifier.PUBLIC);
                     builder.addParameter(i.buildParameter());
@@ -604,31 +605,34 @@ public class ImmutableGenerator extends AbstractJavaGenerator<BBBImmutable> {
     }
 
 
-    private void addGetters(List<Info> infos, TypeSpec.Builder classBuilder) {
-        infos.forEach(i -> {
+    private void addGetters(List<BeanDefFieldInfo> beanDefFieldInfos, TypeSpec.Builder classBuilder) {
+        beanDefFieldInfos.forEach(i -> {
             MethodSpec getter = i.buildGetter();
             classBuilder.addMethod(getter);
         });
     }
 
-    private void addMemberFields(List<Info> infos, TypeSpec.Builder classBuilder) {
-        infos.forEach(info -> {
-            FieldSpec f = info.buildField(Modifier.PRIVATE, Modifier.FINAL);
+    private void addMemberFields(List<BeanDefFieldInfo> beanDefFieldInfos, TypeSpec.Builder classBuilder) {
+        beanDefFieldInfos.forEach(beanDefFieldInfo -> {
+            FieldSpec f = beanDefFieldInfo.buildField(Modifier.PRIVATE, Modifier.FINAL);
             classBuilder.addField(f);
         });
     }
 
-    private void addConstructor(InfoClass ic, TypeSpec.Builder classBuilder) {
+    private void addConstructor(BeanDefInfo ic, TypeSpec.Builder classBuilder) {
         MethodSpec.Builder builder = MethodSpec.constructorBuilder();
         builder.addModifiers(Modifier.PRIVATE);
-        ic.infos.forEach(i -> builder.addParameter(i.buildParameter()));
-        ic.infos.forEach(i -> builder.addStatement("this.$N = $N", i.nameMangled, i.nameMangled));
+        ic.beanDefFieldInfos.forEach(i -> builder.addParameter(i.buildParameter()));
+        ic.beanDefFieldInfos.forEach(i -> builder.addStatement("this.$N = $N", i.nameMangled, i.nameMangled));
         classBuilder.addMethod(builder.build());
     }
 
-    private void addExtends(InfoClass ic, TypeSpec.Builder classBuilder) {
+    private void addExtends(BeanDefInfo ic, TypeSpec.Builder classBuilder) {
         if (!ic.isInterfaceDef) {
             classBuilder.superclass(ic.typeDef);
+        }
+        else {
+            classBuilder.addSuperinterface(ic.typeDef);
         }
     }
 

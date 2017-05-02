@@ -1,6 +1,5 @@
-package com.beautifulbeanbuilder.processor.info;
+package com.beautifulbeanbuilder.generators.beandef;
 
-import com.beautifulbeanbuilder.generators.Types;
 import com.google.auto.common.MoreElements;
 import com.google.auto.common.MoreTypes;
 import com.google.common.collect.ImmutableSet;
@@ -16,6 +15,7 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.*;
 import javax.lang.model.type.*;
 import javax.lang.model.util.ElementFilter;
+import java.lang.reflect.ParameterizedType;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
@@ -25,7 +25,7 @@ import static com.google.common.collect.Iterables.toArray;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.*;
 
-public class InfoBuilder {
+public class BeanDefInfoBuilder {
 
     public static final Set<String> KEYWORDS = ImmutableSet.of("abstract", "continue", "for", "new", "switch",
             "assert", "default", "goto", "package", "synchronized",
@@ -39,26 +39,27 @@ public class InfoBuilder {
             "const", "float", "native", "super", "while");
 
 
-    public InfoClass init(ProcessingEnvironment processingEnv, TypeElement te, String currentTypeName, String currentTypePackage) {
+    public BeanDefInfo init(ProcessingEnvironment processingEnv, TypeElement te, String currentTypeName, String currentTypePackage) {
 
-        final InfoClass ic = new InfoClass();
+        final BeanDefInfo ic = new BeanDefInfo();
 
         String pkg = removeEnd(currentTypePackage, ".def");
         String bbbWithNoDef = removeEnd(currentTypeName, "Def");
         ic.typeElement = te;
         ic.isInterfaceDef = te.getKind() == ElementKind.INTERFACE;
+
         ic.typeDef = ClassName.get(te);
         ic.typeImmutable = ClassName.get(pkg, bbbWithNoDef);
         ic.pkg = pkg;
         ic.immutableClassName = bbbWithNoDef;
-        ic.infos = parseGetters(processingEnv, te);
-        ic.nonNullInfos = ic.infos.stream().filter(i -> i.isNonNull).collect(toList());
-        ic.nullableInfos = ic.infos.stream().filter(i -> !i.isNonNull).collect(toList());
+        ic.beanDefFieldInfos = parseGetters(processingEnv, te);
+        ic.nonNullBeanDefFieldInfos = ic.beanDefFieldInfos.stream().filter(i -> i.isNonNull).collect(toList());
+        ic.nullableBeanDefFieldInfos = ic.beanDefFieldInfos.stream().filter(i -> !i.isNonNull).collect(toList());
         ic.typeCallbackImpl = ParameterizedTypeName.get(Types.jpCallback, ic.typeImmutable);
         return ic;
     }
 
-    private List<Info> parseGetters(ProcessingEnvironment processingEnv, TypeElement te) {
+    private List<BeanDefFieldInfo> parseGetters(ProcessingEnvironment processingEnv, TypeElement te) {
         final Set<String> removeDups = Sets.newHashSet();
         return getAllMethods(te)
                 .stream()
@@ -69,27 +70,27 @@ public class InfoBuilder {
     }
 
 
-    private Info buildInfo(ProcessingEnvironment processingEnv, ExecutableElement getter) {
-        Info info = new Info();
-        info.getter = getter;
+    private BeanDefFieldInfo buildInfo(ProcessingEnvironment processingEnv, ExecutableElement getter) {
+        BeanDefFieldInfo beanDefFieldInfo = new BeanDefFieldInfo();
+        beanDefFieldInfo.getter = getter;
         TypeMirror returnTypeMirror = getter.getReturnType();
 
-        info.prefix = getPrefix(getter);
-        info.nameUpper = removePrefix(getter);
-        info.nameAllUpper = info.nameUpper.toUpperCase();
-        info.name = uncapitalize(info.nameUpper);
-        info.nameMangled = info.name + (KEYWORDS.contains(info.name.toLowerCase()) ? "_" : "");
+        beanDefFieldInfo.prefix = getPrefix(getter);
+        beanDefFieldInfo.nameUpper = removePrefix(getter);
+        beanDefFieldInfo.nameAllUpper = beanDefFieldInfo.nameUpper.toUpperCase();
+        beanDefFieldInfo.name = uncapitalize(beanDefFieldInfo.nameUpper);
+        beanDefFieldInfo.nameMangled = beanDefFieldInfo.name + (KEYWORDS.contains(beanDefFieldInfo.name.toLowerCase()) ? "_" : "");
 
 
-        info.isComparable = isComparable(processingEnv, returnTypeMirror);
-//        info.isBB = isBBB(returnTypeMirror);
-        info.isNonNull = isNonNull(getter, isPrimitive(returnTypeMirror));
-        info.nReturnType = calcReturnTypes(returnTypeMirror);
+        beanDefFieldInfo.isComparable = isComparable(processingEnv, returnTypeMirror);
+//        beanDefFieldInfo.isBB = isBBB(returnTypeMirror);
+        beanDefFieldInfo.isNonNull = isNonNull(getter, isPrimitive(returnTypeMirror));
+        beanDefFieldInfo.nReturnType = calcReturnTypes(returnTypeMirror);
 
-        info.returnType = info.nReturnType.toString();
+        beanDefFieldInfo.returnType = beanDefFieldInfo.nReturnType.toString();
 
 
-        return info;
+        return beanDefFieldInfo;
     }
 
 

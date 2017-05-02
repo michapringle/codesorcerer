@@ -75,7 +75,7 @@
                     <version>3.6.1</version>
                     <configuration>
                         <annotationProcessors>
-                            <annotationProcessor>com.beautifulbeanbuilder.processor.InfoClassProcessor</annotationProcessor>
+                            <annotationProcessor>com.beautifulbeanbuilder.generators.beandef.BeanDefProcessor</annotationProcessor>
                         </annotationProcessors>
                     </configuration>
 

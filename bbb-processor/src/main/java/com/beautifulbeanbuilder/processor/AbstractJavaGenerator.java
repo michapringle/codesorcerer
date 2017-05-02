@@ -1,6 +1,6 @@
 package com.beautifulbeanbuilder.processor;
 
-import com.beautifulbeanbuilder.processor.info.InfoClass;
+import com.beautifulbeanbuilder.generators.beandef.BeanDefInfo;
 import com.google.common.reflect.TypeToken;
 import com.squareup.javapoet.*;
 
@@ -15,7 +15,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public abstract class AbstractJavaGenerator<T extends Annotation> extends AbstractGenerator<T, InfoClass, TypeSpec.Builder> {
+public abstract class AbstractJavaGenerator<T extends Annotation> extends AbstractGenerator<T, BeanDefInfo, TypeSpec.Builder> {
 
     private TypeToken<T> type = new TypeToken<T>(getClass()) {
     };
@@ -25,7 +25,7 @@ public abstract class AbstractJavaGenerator<T extends Annotation> extends Abstra
         return Collections.emptyList();
     }
 
-    public abstract TypeSpec.Builder build(InfoClass ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap) throws IOException;
+    public abstract TypeSpec.Builder build(BeanDefInfo ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap) throws IOException;
 
     public Class<T> getAnnotationClass() {
         return (Class<T>) type.getRawType();
@@ -37,9 +37,10 @@ public abstract class AbstractJavaGenerator<T extends Annotation> extends Abstra
         //Do nothing?
     }
 
-    public void write(InfoClass ic, TypeSpec.Builder objectToWrite, ProcessingEnvironment processingEnv) throws IOException {
+    public void write(BeanDefInfo ic, TypeSpec.Builder objectToWrite, ProcessingEnvironment processingEnv) throws IOException {
         if (objectToWrite != null) {
             JavaFile javaFile = JavaFile.builder(ic.pkg, objectToWrite.build()).build();
+            System.out.println("Writing out object " + javaFile.packageName + "." + javaFile.typeSpec.name);
             javaFile.writeTo(processingEnv.getFiler());
         }
     }

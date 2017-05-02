@@ -1,8 +1,9 @@
-package com.beautifulbeanbuilder.generators.typescript;
+package com.beautifulbeanbuilder.generators.restcontroller.generators;
 
+import com.beautifulbeanbuilder.generators.beandef.generators.TypescriptGenerator;
+import com.beautifulbeanbuilder.generators.restcontroller.RestControllerInfo;
 import com.beautifulbeanbuilder.processor.AbstractGenerator;
 import com.beautifulbeanbuilder.processor.AbstractJavaGenerator;
-import com.beautifulbeanbuilder.processor.info.InfoRestController;
 import org.apache.commons.io.FileUtils;
 import org.springframework.messaging.simp.annotation.SubscribeMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,20 +21,19 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 
-public class TypescriptWizzBangGenerator extends AbstractGenerator<RestController, InfoRestController, String> {
+public class TypescriptRestControllerGenerator extends AbstractGenerator<RestController, RestControllerInfo, String> {
 
     @Override
     public void processingOver(Collection<String> objects) {
     }
 
     @Override
-    public void write(InfoRestController ic, String objectToWrite, ProcessingEnvironment processingEnv) throws IOException {
-        File dir = FileUtils.getTempDirectory();
-        FileUtils.write(new File(dir, ic.typeElement.getSimpleName() + ".ts"), objectToWrite, Charset.defaultCharset());
+    public void write(RestControllerInfo ic, String objectToWrite, ProcessingEnvironment processingEnv) throws IOException {
+        FileUtils.write(new File(TypescriptGenerator.DIR, ic.typeElement.getSimpleName() + ".ts"), objectToWrite, Charset.defaultCharset());
     }
 
     @Override
-    public String build(InfoRestController ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap) throws IOException {
+    public String build(RestControllerInfo ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap) throws IOException {
         String serviceName = ic.typeElement.getSimpleName().toString();
 
 

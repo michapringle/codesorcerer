@@ -1,9 +1,6 @@
 package com.beautifulbeanbuilder.processor;
 
-import com.beautifulbeanbuilder.processor.info.InfoClass;
 import com.google.common.reflect.TypeToken;
-import com.squareup.javapoet.JavaFile;
-import com.squareup.javapoet.TypeSpec;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import java.io.IOException;
@@ -36,5 +33,5 @@ public abstract class AbstractGenerator<T extends Annotation, Input, Output> {
 
     public abstract void write(Input ic, Output objectToWrite, ProcessingEnvironment processingEnv) throws IOException;
 
-    public abstract void processingOver(Collection<Output> objects);
+    public abstract void processingOver(Collection<Output> objects) throws IOException;
 }

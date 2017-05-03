@@ -5,6 +5,7 @@ import com.beautifulbeanbuilder.generators.restcontroller.RestControllerInfo;
 import com.beautifulbeanbuilder.processor.AbstractGenerator;
 import com.beautifulbeanbuilder.processor.AbstractJavaGenerator;
 import com.google.common.collect.Sets;
+import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.processing.JavacFiler;
 import org.apache.commons.io.FileUtils;
 import org.springframework.messaging.simp.annotation.SubscribeMapping;
@@ -99,36 +100,50 @@ public class TypescriptRestControllerGenerator extends AbstractGenerator<RestCon
         sb.append("\n");
         //   sb.append("}");
 
-        String imports = referenced.stream()
-                .map(tm -> {
-
-                    if (tm.toString().contains("io.reactivex.Observable")) {
-                        return "import {Observable} from 'rxjs';\n";
-                    } else if (tm.toString().contains("io.reactivex.Single")) {
-                        return "import {Observable} from 'rxjs';\n";
-                    } else {
-                        String name = "";
-                        String simpleName = tm.toString();
-
-                        if (tm instanceof ErrorType) {
-                            simpleName = tm.toString();
-
-                            JavacFiler f = (JavacFiler) processingEnv.getFiler();
-                            name = f.getGeneratedSourceNames().stream()
-                                    .filter(n -> n.endsWith("." + tm.toString()))
-                                    .findFirst()
-                                    .get();
-
-                        }
-                        return "import {" + simpleName + "} from './" + name + "';\n";
-                    }
-                })
-                .collect(Collectors.joining());
+        String imports = generateImportStatement(processingEnv);
 
         String x = sb.toString().replace("*IMPORTS*", imports);
 
-        System.out.println(x);
+     //   System.out.println(x);
         return x;
+    }
+
+    private String generateImportStatement(ProcessingEnvironment processingEnv) {
+        return referenced.stream()
+                    .map(tm -> {
+
+                        if (tm.toString().contains("io.reactivex.Observable")) {
+                            return "import {Observable} from 'rxjs';\n";
+                        } else if (tm.toString().contains("io.reactivex.Single")) {
+                            return "import {Observable} from 'rxjs';\n";
+                        } else if (tm.toString().contains("java.util.List")) {
+                            return "";
+                        } else {
+                            String name = "";
+                            String simpleName = tm.toString();
+
+                            if (tm instanceof ErrorType) {
+                                simpleName = tm.toString();
+
+                                JavacFiler f = (JavacFiler) processingEnv.getFiler();
+                                name = f.getGeneratedSourceNames().stream()
+                                        .filter(n -> n.endsWith("." + tm.toString()))
+                                        .findFirst()
+                                        .get();
+
+                            }
+                            else if (tm instanceof Type.ClassType) {
+                                Type.ClassType ct = (Type.ClassType) tm;
+                                name = ct.asElement().getQualifiedName().toString();
+                                simpleName  = ct.asElement().getSimpleName().toString();
+                            }
+                            else {
+                                throw new RuntimeException("Unknown type " + tm.getClass());
+                            }
+                            return "import {" + simpleName + "} from './" + name + "';\n";
+                        }
+                    })
+                    .collect(Collectors.joining());
     }
 
 }

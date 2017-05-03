@@ -12,6 +12,8 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.type.TypeMirror;
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
@@ -20,18 +22,21 @@ import java.util.stream.Collectors;
 
 public class TypescriptGenerator extends AbstractGenerator<BBBTypescript, BeanDefInfo, String> {
 
-    public static final File DIR = new File("/home/dphillips/git/lean-modules/ng-stomp-poc/src/app");
+    //public static final File DIR = new File("/home/dphillips/git/lean-modules/ng-stomp-poc/src/app");
+    public static final File DIR = new File("typescript");
 
     @Override
     public void processingOver(Collection<String> objects) throws IOException {
         //write package.json
-        String x = "{ 'name': 'my-awesome-package', 'version': '1.0.0' }";
+        String x = "{ 'name': 'my-awesome-package', 'version': '0.0.0.0.0-SNAPSHOT' }";
 
+        FileUtils.forceMkdirParent(DIR);
         FileUtils.write(new File(DIR, "package.json"), x, Charset.defaultCharset());
     }
 
     @Override
     public void write(BeanDefInfo ic, String objectToWrite, ProcessingEnvironment processingEnv) throws IOException {
+        FileUtils.forceMkdirParent(DIR);
         FileUtils.write(new File(DIR, ic.pkg + "." + ic.immutableClassName + ".ts"), objectToWrite, Charset.defaultCharset());
     }
 
@@ -254,26 +259,41 @@ public class TypescriptGenerator extends AbstractGenerator<BBBTypescript, BeanDe
 
 
     public static String convertTypes(TypeMirror tm) {
-        Type.ClassType ct = (Type.ClassType) tm;
+        if(tm instanceof Type.ClassType) {
+            Type.ClassType ct = (Type.ClassType) tm;
 
-        if(ct.asElement().toString().equals(List.class.getName())) {
-            final Type firstTypeArg = ct.getTypeArguments().get(0);
-            return convertTypes(firstTypeArg) + "[]";
+            if (ct.asElement().toString().equals(List.class.getName())) {
+                final Type firstTypeArg = ct.getTypeArguments().get(0);
+                return convertTypes(firstTypeArg) + "[]";
+            } else if (ct.asElement().toString().equals("io.reactivex.Observable")) {
+                final Type firstTypeArg = ct.getTypeArguments().get(0);
+                return "Observable<" + convertTypes(firstTypeArg) + ">";
+            } else if (ct.asElement().toString().equals("io.reactivex.Single")) {
+                final Type firstTypeArg = ct.getTypeArguments().get(0);
+                return "Observable<" + convertTypes(firstTypeArg) + ">";
+            } else {
+                return convertTypes(tm.toString());
+            }
         }
-        else if(ct.asElement().toString().equals("io.reactivex.Observable")) {
-            final Type firstTypeArg = ct.getTypeArguments().get(0);
-            return "Observable<" + convertTypes(firstTypeArg) + ">";
-        }
-        else if(ct.asElement().toString().equals("io.reactivex.Single")) {
-            final Type firstTypeArg = ct.getTypeArguments().get(0);
-            return "Observable<" + convertTypes(firstTypeArg) + ">";
+        else if(tm instanceof Type.JCVoidType) {
+            return "void";
         }
         else {
-            return convertTypes(tm.toString());
+            throw new RuntimeException("Unknown type");
         }
     }
 
     public static String convertTypes(String javaType) {
+
+        if (javaType.equals("org.joda.money.Money")) {
+            return "string";
+        }
+        if (javaType.equals(BigDecimal.class.getName())) {
+            return "number";
+        }
+        if (javaType.equals(BigInteger.class.getName())) {
+            return "number";
+        }
         if (javaType.equals(String.class.getName())) {
             return "string";
         }

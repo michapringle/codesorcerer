@@ -14,6 +14,7 @@ public class BeanDefProcessor extends AbstractProcessor<BeanDefInfo> {
 
     @Override
     public BeanDefInfo buildInput(TypeElement te, String currentTypeName, String currentTypePackage) {
+        checkBBBUsage(te);
         printBeanStatus(te);
         return new BeanDefInfoBuilder().init(processingEnv, te, currentTypeName, currentTypePackage);
     }
@@ -22,6 +23,11 @@ public class BeanDefProcessor extends AbstractProcessor<BeanDefInfo> {
         System.out.println("* Making it beautiful - " + te.getQualifiedName());
     }
 
+    private void checkBBBUsage(TypeElement te) {
+        if (!endsWith(te.getSimpleName(), "Def")) {
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "Must end with Def", te);
+        }
+    }
 
 
 }

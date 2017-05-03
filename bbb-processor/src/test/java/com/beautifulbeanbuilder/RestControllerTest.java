@@ -12,6 +12,7 @@ import org.junit.runners.JUnit4;
 
 import javax.annotation.Nonnull;
 import javax.tools.JavaFileObject;
+import java.math.BigDecimal;
 import java.util.*;
 
 import static com.google.common.truth.Truth.assertAbout;
@@ -28,6 +29,7 @@ public class RestControllerTest {
                         "package testx;                                                                                                  ",
                         "                                                                                                   ",
                         "import " + BBBJson.class.getName() + ";                                                  ",
+                        "import " + BigDecimal.class.getName() + ";                                                  ",
                         "import " + BBBImmutable.class.getName() + ";                                                  ",
                         "import " + BBBTypescript.class.getName() + ";                                                  ",
                         "                                                                                                                                                    ",
@@ -37,6 +39,7 @@ public class RestControllerTest {
                         "   public interface AccountDef {                                                  ",
                         "      String getName();                                                  ",
                         "      int getAmount();                                                  ",
+                        "      BigDecimal getBDec();                                                  ",
                         "}                                                                                                                                       "
                 );
 

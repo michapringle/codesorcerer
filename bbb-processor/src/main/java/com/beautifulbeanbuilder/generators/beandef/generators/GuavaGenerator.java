@@ -9,6 +9,7 @@ import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 import com.squareup.javapoet.*;
 
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Modifier;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -24,7 +25,7 @@ public class GuavaGenerator extends AbstractJavaGenerator<BBBGuava> {
         return Collections.singletonList(BBBImmutable.class);
     }
 
-    public TypeSpec.Builder build(BeanDefInfo ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap) throws IOException {
+    public TypeSpec.Builder build(BeanDefInfo ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap, ProcessingEnvironment processingEnvironment) throws IOException {
         ClassName typeGuava = ClassName.get(ic.pkg, ic.immutableClassName + "Guava");
 
         TypeSpec.Builder classBuilder = buildClass(typeGuava);

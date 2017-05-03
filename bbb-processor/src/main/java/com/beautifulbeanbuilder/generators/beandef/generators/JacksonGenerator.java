@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.google.common.collect.ImmutableList;
 import com.squareup.javapoet.*;
 
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Modifier;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -30,7 +31,7 @@ public class JacksonGenerator extends AbstractJavaGenerator<BBBJson> {
         return ImmutableList.of(BBBMutable.class);
     }
 
-    public TypeSpec.Builder build(BeanDefInfo ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap) throws IOException {
+    public TypeSpec.Builder build(BeanDefInfo ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap, ProcessingEnvironment processingEnvironment) throws IOException {
         ClassName typeJackson = ClassName.get(ic.pkg, ic.immutableClassName + "Jackson");
 
         //TODO: dont depend on mutable

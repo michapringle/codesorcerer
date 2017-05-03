@@ -15,7 +15,6 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.*;
 import javax.lang.model.type.*;
 import javax.lang.model.util.ElementFilter;
-import java.lang.reflect.ParameterizedType;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
@@ -47,7 +46,6 @@ public class BeanDefInfoBuilder {
         String bbbWithNoDef = removeEnd(currentTypeName, "Def");
         ic.typeElement = te;
         ic.isInterfaceDef = te.getKind() == ElementKind.INTERFACE;
-
         ic.typeDef = ClassName.get(te);
         ic.typeImmutable = ClassName.get(pkg, bbbWithNoDef);
         ic.pkg = pkg;

@@ -19,7 +19,35 @@ public class TypescriptTest {
                 "          public interface BeanDef {                                                  ",
                 "            String getName();                                                  ",
                 "            int getAge();                                                  ",
+                "          }                                                                          ",
+                "                                                                                  "
+        );
+    }
+
+    @Test
+    public void nonnull() throws Exception {
+        compiles("",
+                "          @BBBTypescript                                                 ",
+                "          @BBBJson                                                        ",
+                "          @BBBImmutable                                                        ",
+                "          public interface BeanNonDef {                                                  ",
                 "            @Nonnull String getLastName();                                                  ",
+                "            @Nonnull String getSin();                                                  ",
+                "          }                                                                          ",
+                "                                                                                  "
+        );
+    }
+
+    @Test
+    public void bothNullNonNull() throws Exception {
+        compiles("",
+                "          @BBBTypescript                                                 ",
+                "          @BBBJson                                                        ",
+                "          @BBBImmutable                                                        ",
+                "          public interface BeanBothDef {                                                  ",
+                "            String getName();                                                  ",
+                "            @Nonnull String getLastName();                                                  ",
+                "            int getAge();                                                  ",
                 "            @Nonnull String getSin();                                                  ",
                 "          }                                                                          ",
                 "                                                                                  "

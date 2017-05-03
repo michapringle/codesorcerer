@@ -11,7 +11,7 @@ public class RestControllerProcessor extends AbstractProcessor<RestControllerInf
 
     @Override
     public RestControllerInfo buildInput(TypeElement te, String currentTypeName, String currentTypePackage) {
-        return new RestControllerInfo(te);
+        return new RestControllerInfo(te, currentTypeName, currentTypePackage);
     }
 
 }

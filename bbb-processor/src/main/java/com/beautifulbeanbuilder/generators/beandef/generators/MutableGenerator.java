@@ -6,6 +6,7 @@ import com.beautifulbeanbuilder.generators.beandef.BeanDefInfo;
 import com.beautifulbeanbuilder.processor.AbstractJavaGenerator;
 import com.squareup.javapoet.*;
 
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Modifier;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -22,7 +23,7 @@ public class MutableGenerator extends AbstractJavaGenerator<BBBMutable> {
     }
 
     @Override
-    public TypeSpec.Builder build(BeanDefInfo ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap) throws IOException {
+    public TypeSpec.Builder build(BeanDefInfo ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap, ProcessingEnvironment processingEnvironment) throws IOException {
         ClassName typeMutable = ClassName.get(ic.pkg, ic.immutableClassName + "Mutable");
 
         final TypeSpec.Builder classBuilder = buildClass(typeMutable);

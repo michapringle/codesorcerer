@@ -13,9 +13,13 @@ import java.util.stream.Collectors;
 
 public class RestControllerInfo {
     public TypeElement typeElement;
+    private final String currentTypeName;
+    private final String currentTypePackage;
 
-    public RestControllerInfo(TypeElement typeElement) {
+    public RestControllerInfo(TypeElement typeElement, String currentTypeName, String currentTypePackage) {
         this.typeElement = typeElement;
+        this.currentTypeName = currentTypeName;
+        this.currentTypePackage = currentTypePackage;
     }
 
     public List<ExecutableElement> getAllMethodsStomp() {
@@ -37,5 +41,11 @@ public class RestControllerInfo {
         return BeanDefInfoBuilder.getHierarchy(typeElement, x -> ElementFilter.methodsIn(x.getEnclosedElements()));
     }
 
+    public String getCurrentTypeName() {
+        return currentTypeName;
+    }
 
+    public String getCurrentTypePackage() {
+        return currentTypePackage;
+    }
 }

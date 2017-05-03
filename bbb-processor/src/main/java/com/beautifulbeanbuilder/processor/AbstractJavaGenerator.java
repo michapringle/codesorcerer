@@ -25,8 +25,6 @@ public abstract class AbstractJavaGenerator<T extends Annotation> extends Abstra
         return Collections.emptyList();
     }
 
-    public abstract TypeSpec.Builder build(BeanDefInfo ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap) throws IOException;
-
     public Class<T> getAnnotationClass() {
         return (Class<T>) type.getRawType();
     }

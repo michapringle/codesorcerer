@@ -15,6 +15,7 @@ import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
 import javax.annotation.concurrent.ThreadSafe;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.TypeMirror;
 import java.io.IOException;
@@ -37,7 +38,7 @@ public class ImmutableGenerator extends AbstractJavaGenerator<BBBImmutable> {
                 BeanDefProcessor.hasAnnotation(MoreTypes.asElement(returnTypeMirror), BBBImmutable.class);
     }
 
-    public TypeSpec.Builder build(BeanDefInfo ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap) throws IOException {
+    public TypeSpec.Builder build(BeanDefInfo ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap, ProcessingEnvironment processingEnvironment) throws IOException {
         TypeSpec.Builder classBuilder = buildClass(ic.typeImmutable);
 
         classBuilder.addAnnotation(Immutable.class);

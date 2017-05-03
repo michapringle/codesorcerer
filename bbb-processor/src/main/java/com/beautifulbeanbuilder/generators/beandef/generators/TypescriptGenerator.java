@@ -5,6 +5,7 @@ import com.beautifulbeanbuilder.generators.beandef.BeanDefFieldInfo;
 import com.beautifulbeanbuilder.generators.beandef.BeanDefInfo;
 import com.beautifulbeanbuilder.processor.AbstractGenerator;
 import com.beautifulbeanbuilder.processor.AbstractJavaGenerator;
+import com.sun.tools.javac.code.Type;
 import org.apache.commons.io.FileUtils;
 
 import javax.annotation.processing.ProcessingEnvironment;
@@ -13,7 +14,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class TypescriptGenerator extends AbstractGenerator<BBBTypescript, BeanDefInfo, String> {
 
@@ -29,15 +32,17 @@ public class TypescriptGenerator extends AbstractGenerator<BBBTypescript, BeanDe
 
     @Override
     public void write(BeanDefInfo ic, String objectToWrite, ProcessingEnvironment processingEnv) throws IOException {
-        FileUtils.write(new File(DIR, ic.immutableClassName + ".ts"), objectToWrite, Charset.defaultCharset());
+        FileUtils.write(new File(DIR, ic.pkg + "." + ic.immutableClassName + ".ts"), objectToWrite, Charset.defaultCharset());
     }
 
     @Override
-    public String build(BeanDefInfo ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap) throws IOException {
+    public String build(BeanDefInfo ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap, ProcessingEnvironment processingEnvironment) throws IOException {
 
         StringBuilder sb = new StringBuilder();
+//        sb.append("namespace '" + ic.pkg + "' {");
         buildBuilder(ic, sb);
         buildInterface(ic, sb);
+        //   sb.append("}");
 
         return sb.toString();
     }
@@ -50,6 +55,7 @@ public class TypescriptGenerator extends AbstractGenerator<BBBTypescript, BeanDe
         buildStaticStarter(ic, sb);
         buildPrivateConstructor2(ic, sb);
         buildGetters(ic, sb);
+        buildWith(ic, sb);
         sb.append("}");
     }
 
@@ -80,8 +86,12 @@ public class TypescriptGenerator extends AbstractGenerator<BBBTypescript, BeanDe
     }
 
     private void buildBuild(BeanDefInfo ic, StringBuilder sb) {
+        String allParams = ic.beanDefFieldInfos.stream()
+                .map(i -> "this._" + i.nameMangled)
+                .collect(Collectors.joining(", "));
+
         sb.append("build() : " + ic.immutableClassName + " {\n");
-        sb.append(" return new " + ic.immutableClassName + "(this);\n");
+        sb.append(" return new " + ic.immutableClassName + "(" + allParams + ");\n");
         sb.append("}");
         sb.append("\n");
     }
@@ -89,20 +99,59 @@ public class TypescriptGenerator extends AbstractGenerator<BBBTypescript, BeanDe
     private void buildGetters(BeanDefInfo ic, StringBuilder sb) {
         for (int x = 0; x < ic.beanDefFieldInfos.size(); x++) {
             BeanDefFieldInfo i = ic.beanDefFieldInfos.get(x);
-            sb.append("get" + i.nameUpper + "() { return this." + i.nameMangled + "; }\n");
+            sb.append("public get " + i.nameMangled + "() : " + convertTypes(i.returnType) + " { return this._" + i.nameMangled + "; }\n");
         }
     }
 
 
     private void buildSetters(BeanDefInfo ic, StringBuilder sb) {
+        //NonNull stuff
+        if (ic.nonNullBeanDefFieldInfos.size() > 0) {
+            for (int x = 0; x < ic.nonNullBeanDefFieldInfos.size() - 1; x++) {
+                BeanDefFieldInfo i = ic.nonNullBeanDefFieldInfos.get(x);
+                BeanDefFieldInfo ii = ic.nonNullBeanDefFieldInfos.get(x + 1);
+                String returnType = ic.immutableClassName + "Requires" + ii.nameUpper;
+                setter(sb, i, returnType);
+                sb.append("\n");
+            }
+
+            BeanDefFieldInfo i = ic.nonNullBeanDefFieldInfos.get(ic.nonNullBeanDefFieldInfos.size() - 1);
+            String returnType = ic.immutableClassName + "Nullable";
+            setter(sb, i, returnType);
+            sb.append("\n");
+        }
+
+        //Nullable
+        for (int x = 0; x < ic.nullableBeanDefFieldInfos.size(); x++) {
+            BeanDefFieldInfo i = ic.nullableBeanDefFieldInfos.get(x);
+            String returnType = ic.immutableClassName + "Nullable";
+            setter(sb, i, returnType);
+            sb.append("\n");
+        }
+    }
+
+    private void buildWith(BeanDefInfo ic, StringBuilder sb) {
+        String allParams = ic.beanDefFieldInfos.stream()
+                .map(i -> "this._" + i.nameMangled)
+                .collect(Collectors.joining(", "));
+
         for (int x = 0; x < ic.beanDefFieldInfos.size(); x++) {
             BeanDefFieldInfo i = ic.beanDefFieldInfos.get(x);
-            sb.append(i.nameMangled + "(" +  i.nameMangled + " : " + convertTypes(i.returnType) + ") : " + this + "{\n");
-            sb.append("  this." + i.nameMangled + " = " + i.nameMangled + ";\n");
-            sb.append("  return this;\n");
+            final String allParamsWithOneReplaced = allParams.replace("this._" + i.nameMangled, i.nameMangled);
+
+            String returnType = ic.immutableClassName + "Nullable";
+            sb.append("public with" + i.nameUpper + "(" + i.nameMangled + " : " + convertTypes(i.returnType) + ") : " + ic.immutableClassName + " {\n");
+            sb.append("  return new " + ic.immutableClassName + "(" + allParamsWithOneReplaced + ");\n");
             sb.append("}\n");
             sb.append("\n");
         }
+    }
+
+    private void setter(StringBuilder sb, BeanDefFieldInfo i, String returnType) {
+        sb.append("public " + i.nameMangled + "(" + i.nameMangled + " : " + convertTypes(i.returnType) + ") : " + returnType + " {\n");
+        sb.append("  this._" + i.nameMangled + " = " + i.nameMangled + ";\n");
+        sb.append("  return this;\n");
+        sb.append("}\n");
     }
 
     private void buildStaticStarter(BeanDefInfo ic, StringBuilder sb) {
@@ -116,38 +165,51 @@ public class TypescriptGenerator extends AbstractGenerator<BBBTypescript, BeanDe
         sb.append("static build" + ic.immutableClassName + "() : " + retType + " {\n");
         sb.append("  return new " + ic.immutableClassName + "Builder();\n");
         sb.append("}\n");
+
+        if (ic.beanDefFieldInfos.size() <= 3) {
+            String allParams1 = ic.beanDefFieldInfos.stream()
+                    .map(i -> i.nameMangled + " : " + convertTypes(i.returnType))
+                    .collect(Collectors.joining(", "));
+
+            String allParams2 = ic.beanDefFieldInfos.stream()
+                    .map(i -> i.nameMangled)
+                    .collect(Collectors.joining(", "));
+
+            sb.append("static new" + ic.immutableClassName + "(" + allParams1 + ") : " + ic.immutableClassName + " {\n");
+            sb.append("  return new " + ic.immutableClassName + "(" + allParams2 + ");\n");
+            sb.append("}\n");
+        }
+
         sb.append("\n");
     }
 
     private void buildNullableInterface(BeanDefInfo ic, StringBuilder sb) {
         sb.append("export interface " + ic.immutableClassName + "Nullable {\n");
-        for (int x = 0; x < ic.nullableBeanDefFieldInfos.size() - 1; x++) {
+        for (int x = 0; x < ic.nullableBeanDefFieldInfos.size(); x++) {
             BeanDefFieldInfo i = ic.nullableBeanDefFieldInfos.get(x);
             sb.append("  " + i.nameMangled + "(" + i.nameMangled + " : " + convertTypes(i.returnType) + ") : " + ic.immutableClassName + "Nullable;\n");
         }
-        sb.append("build() : " + ic.immutableClassName + ";\n");
+        sb.append("  build() : " + ic.immutableClassName + ";\n");
 
         sb.append("}\n");
         sb.append("\n");
     }
 
     private void buildRequiresInterfaces(BeanDefInfo ic, StringBuilder sb) {
-        for (int x = 0; x < ic.nonNullBeanDefFieldInfos.size() - 1; x++) {
-            BeanDefFieldInfo i = ic.nonNullBeanDefFieldInfos.get(x);
-            BeanDefFieldInfo ii = ic.nonNullBeanDefFieldInfos.get(x + 1);
-            sb.append("export interface " + ic.immutableClassName + "Requires" + i.nameUpper + " {\n");
-            sb.append("  " + i.nameMangled + "(" + convertTypes(i.returnType) + ": " + i.nameMangled + ") : " + ic.immutableClassName + "Requires" + ii.nameUpper + ";\n");
-            sb.append("}\n");
-        }
-        sb.append("\n");
-
         if (ic.nonNullBeanDefFieldInfos.size() > 0) {
-            {
-                BeanDefFieldInfo i = ic.nonNullBeanDefFieldInfos.get(ic.nonNullBeanDefFieldInfos.size() - 1);
+            for (int x = 0; x < ic.nonNullBeanDefFieldInfos.size() - 1; x++) {
+                BeanDefFieldInfo i = ic.nonNullBeanDefFieldInfos.get(x);
+                BeanDefFieldInfo ii = ic.nonNullBeanDefFieldInfos.get(x + 1);
                 sb.append("export interface " + ic.immutableClassName + "Requires" + i.nameUpper + " {\n");
-                sb.append("  " + i.nameMangled + "(" + convertTypes(i.returnType) + ": " + i.nameMangled + ") : " + ic.immutableClassName + "Nullable;\n");
+                sb.append("  " + i.nameMangled + "(" + i.nameMangled + " : " + convertTypes(i.returnType) + ") : " + ic.immutableClassName + "Requires" + ii.nameUpper + ";\n");
                 sb.append("}\n");
             }
+            sb.append("\n");
+
+            BeanDefFieldInfo i = ic.nonNullBeanDefFieldInfos.get(ic.nonNullBeanDefFieldInfos.size() - 1);
+            sb.append("export interface " + ic.immutableClassName + "Requires" + i.nameUpper + " {\n");
+            sb.append("  " + i.nameMangled + "(" + i.nameMangled + " : " + convertTypes(i.returnType) + ") : " + ic.immutableClassName + "Nullable;\n");
+            sb.append("}\n");
         }
     }
 
@@ -157,9 +219,20 @@ public class TypescriptGenerator extends AbstractGenerator<BBBTypescript, BeanDe
     }
 
     private void buildPrivateConstructor2(BeanDefInfo ic, StringBuilder sb) {
-        sb.append("public constructor( builder : " + ic.immutableClassName + "Builder) {\n");
+//        sb.append("private constructor( builder : " + ic.immutableClassName + "Builder) {\n");
+//        for (BeanDefFieldInfo i : ic.beanDefFieldInfos) {
+//            sb.append("  this._" + i.nameMangled + " = builder._" + i.nameMangled + ";\n");
+//        }
+//        sb.append("}");
+//        sb.append("\n");
+
+        String allParams = ic.beanDefFieldInfos.stream()
+                .map(i -> i.nameMangled + " : " + convertTypes(i.returnType))
+                .collect(Collectors.joining(", "));
+
+        sb.append("private constructor( " + allParams + ") {\n");
         for (BeanDefFieldInfo i : ic.beanDefFieldInfos) {
-            sb.append("  this." + i.nameMangled + " = builder." + i.nameMangled + ";\n");
+            sb.append("  this._" + i.nameMangled + " = " + i.nameMangled + ";\n");
         }
         sb.append("}");
         sb.append("\n");
@@ -167,29 +240,48 @@ public class TypescriptGenerator extends AbstractGenerator<BBBTypescript, BeanDe
 
     private void buildFields(BeanDefInfo ic, StringBuilder sb) {
         for (BeanDefFieldInfo i : ic.beanDefFieldInfos) {
-            sb.append("  " + i.nameMangled + ": " + convertTypes(i.returnType) + ";\n");
+            sb.append("  _" + i.nameMangled + ": " + convertTypes(i.returnType) + ";\n");
         }
         sb.append("\n");
     }
 
     private void buildFields2(BeanDefInfo ic, StringBuilder sb) {
         for (BeanDefFieldInfo i : ic.beanDefFieldInfos) {
-            sb.append(" private readonly " + i.nameMangled + ": " + convertTypes(i.returnType) + ";\n");
+            sb.append(" private readonly _" + i.nameMangled + ": " + convertTypes(i.returnType) + ";\n");
         }
         sb.append("\n");
     }
 
 
     public static String convertTypes(TypeMirror tm) {
-        return convertTypes(tm.toString());
+        Type.ClassType ct = (Type.ClassType) tm;
+
+        if(ct.asElement().toString().equals(List.class.getName())) {
+            final Type firstTypeArg = ct.getTypeArguments().get(0);
+            return convertTypes(firstTypeArg) + "[]";
+        }
+        else if(ct.asElement().toString().equals("io.reactivex.Observable")) {
+            final Type firstTypeArg = ct.getTypeArguments().get(0);
+            return "Observable<" + convertTypes(firstTypeArg) + ">";
+        }
+        else if(ct.asElement().toString().equals("io.reactivex.Single")) {
+            final Type firstTypeArg = ct.getTypeArguments().get(0);
+            return "Observable<" + convertTypes(firstTypeArg) + ">";
+        }
+        else {
+            return convertTypes(tm.toString());
+        }
     }
 
     public static String convertTypes(String javaType) {
         if (javaType.equals(String.class.getName())) {
             return "string";
         }
-        if (javaType.equals(int.class.getName())) {
+        if (javaType.equals(int.class.getName()) || javaType.equals(Integer.class.getName())) {
             return "number";
+        }
+        if (javaType.equals(boolean.class.getName()) || javaType.equals(Boolean.class.getName())) {
+            return "boolean";
         }
         return javaType;
     }

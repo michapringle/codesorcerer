@@ -24,8 +24,8 @@ public class RestControllerTest {
     public void simple() throws Exception {
 
         JavaFileObject o1 = JavaFileObjects
-                .forSourceLines("test.AccountDef", "",
-                        "package test;                                                                                                  ",
+                .forSourceLines("testx.AccountDef", "",
+                        "package testx;                                                                                                  ",
                         "                                                                                                   ",
                         "import " + BBBJson.class.getName() + ";                                                  ",
                         "import " + BBBImmutable.class.getName() + ";                                                  ",
@@ -56,6 +56,7 @@ public class RestControllerTest {
                         "                                                                                                          ",
                         "import static org.springframework.web.bind.annotation.RequestMethod.POST;                                                     ",
                         "                                                                                                                                                    ",
+                        "import testx.Account;                                                                                                          ",
                         "                                                                                                                                                    ",
                         "   @RestController                                                                                                          ",
                         "   public class AccountsRestController {                                                     ",

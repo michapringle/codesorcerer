@@ -210,7 +210,7 @@ public abstract class AbstractProcessor<Input> extends javax.annotation.processi
             Class<Input> g2 = getInputClass();
             if(g1 == g2) {
                 Input ic = buildInput(te, currentTypeName, currentTypePackage);
-                final Object builder = g.build(ic, processedBuilders);
+                final Object builder = g.build(ic, processedBuilders, processingEnv);
                 processedBuilders.put(g, builder);
             }
         } catch (Exception e) {

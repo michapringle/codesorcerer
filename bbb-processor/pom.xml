@@ -85,6 +85,11 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-messaging</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.central1</groupId>
+            <artifactId>leanAnnotations</artifactId>
+            <version>0.0.0.0.0-SNAPSHOT</version>
+        </dependency>
 
     </dependencies>
 

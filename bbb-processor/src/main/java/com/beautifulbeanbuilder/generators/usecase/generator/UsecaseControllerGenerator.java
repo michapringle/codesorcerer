@@ -120,10 +120,12 @@ public class UsecaseControllerGenerator extends AbstractGenerator<LeanUsecase, U
 		sb.append( "import " ).append( getEntityPackage( ic ) ).append( ".*;\n" );
 
 		sb.append( "import com.central1.lean.entities.*;\n" );
+		sb.append( "import com.central1.lean.status.WriteOperationResult;\n" );
 		sb.append( "import com.central1.lean.mapping.Mapper;\n");
 		sb.append( "import com.central1.leanannotations.LeanEntryPoint;\n" );
 		sb.append( "\n" );
 		sb.append( "import io.reactivex.Observable;\n");
+		sb.append( "import io.reactivex.Single;\n");
 		sb.append( "import org.springframework.web.bind.annotation.*;\n");
 		sb.append( "import org.springframework.messaging.handler.annotation.DestinationVariable;\n");
 		sb.append( "import org.springframework.messaging.simp.annotation.SubscribeMapping;\n");
@@ -131,6 +133,8 @@ public class UsecaseControllerGenerator extends AbstractGenerator<LeanUsecase, U
 		sb.append( "import java.util.List;\n" );
 		sb.append( "import java.util.Arrays;\n" );
 		sb.append( "\n" );
+
+		sb.append( "import static org.springframework.web.bind.annotation.RequestMethod.*;\n");
 
 		sb.append( "@LeanEntryPoint\n" );
 		sb.append( "@RestController\n" );
@@ -189,11 +193,22 @@ public class UsecaseControllerGenerator extends AbstractGenerator<LeanUsecase, U
 		});
 
 		nonReadMethods.forEach( e -> {
-			//TODO: may need to convert parameters
-			sb.append( "\n" );
+			String methodName = e.getSimpleName().toString();
+			String requestBodyName = methodName + "Request";
+			String requestBodyType = requestBodyName.substring(0, 1).toUpperCase() + requestBodyName.substring(1);
 			sb.append( "	@RequestMapping( value = \"/" ).append( e.getSimpleName() ).append( "\", method = POST)\n" );
-			sb.append( "	public Single<WriteOperationResult> " ).append( e.getSimpleName() ).append( "() {\n" );
-			sb.append( "		return usecase." ).append( e.getSimpleName() ).append( ";\n" );
+			sb.append( "	public Single<WriteOperationResult> " ).append( e.getSimpleName() );
+			sb.append( "( @RequestBody ").append( requestBodyType ).append( " " ).append( requestBodyName ).append( ") {\n" );
+
+			List<String> methodParams = Lists.newArrayList();
+			if ( e.getParameters().size() > 0 )
+			{
+				e.getParameters().forEach( paramElement -> {
+					String paraName = paramElement.getSimpleName().toString();
+					methodParams.add( requestBodyName + ".get" + paraName.substring(0, 1).toUpperCase() + paraName.substring(1) + "()");
+				}  );
+			}
+			sb.append( "		return usecase." ).append( e.getSimpleName() ).append( "( ").append( StringUtils.join( methodParams, ", " )).append( " );\n" );
 			sb.append( "	}\n" );
 			sb.append( "\n" );
 		} );

@@ -24,11 +24,6 @@ public class UsecaseInfo
 		return allMethodsWithAnnotation(Expose.class);
 	}
 
-	public String getControllerPackage()
-	{
-		return typePackage.replace( "usecases", "controllers" );
-	}
-
 	private List<ExecutableElement> allMethodsWithAnnotation(Class<? extends Annotation> clazz) {
 		return getAllMethods()
 				.stream()

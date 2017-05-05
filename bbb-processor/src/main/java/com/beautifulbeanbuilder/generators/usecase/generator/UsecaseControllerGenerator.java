@@ -25,7 +25,7 @@ import java.util.*;
 
 public class UsecaseControllerGenerator extends AbstractGenerator<LeanUsecase, UsecaseInfo, String>
 {
-	public static final String DIR = "target/generated-sources/annotations/";
+	private static final String DIR = "target/generated-sources/annotations/";
 
 	@Override
 	public void processingOver(Collection<String> objects) {
@@ -34,24 +34,45 @@ public class UsecaseControllerGenerator extends AbstractGenerator<LeanUsecase, U
 	@Override
 	public void write(UsecaseInfo ic, String objectToWrite, ProcessingEnvironment processingEnv) throws IOException
 	{
-		String fileName = ic.typeElement.getSimpleName().toString().replace( "Usecase", "" ) + "RestController.java";
-		File file = new File( DIR + ic.getControllerPackage().replaceAll( "\\.", "/" ), fileName );
+		File file = new File( DIR + getControllerPackage(ic).replaceAll( "\\.", "/" ), getControllerName( ic ) + ".java");
 		System.out.println("Writing out object " + file.getAbsolutePath() );
 		FileUtils.write(file, objectToWrite, Charset.defaultCharset());
+	}
+
+	private String getControllerName( UsecaseInfo info )
+	{
+		return info.typeElement.getSimpleName().toString().replace( "Usecase", "" ) + "RestController";
+	}
+
+	private String getControllerPackage( UsecaseInfo info )
+	{
+		return info.typePackage.replace( "usecases", "controllers" );
+	}
+
+	private String getEntityPackage( UsecaseInfo info )
+	{
+		return info.typePackage.replace( "usecases", "entities" );
+	}
+
+	// Account -> accountMapper
+	private String getMapperVariableName( String entityName )
+	{
+		return entityName.substring(0, 1).toLowerCase() + entityName.substring(1) + "Mapper";
 	}
 
 	@Override
 	public String build(UsecaseInfo ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap, ProcessingEnvironment processingEnv ) throws IOException {
 
 		String usecaseName = ic.typeElement.getSimpleName().toString();
-		String fullUsecaseName = ( (Symbol.ClassSymbol) ic.typeElement ).className();
-
-		String controllerName = usecaseName + "RestController";
+		String controllerName = getControllerName( ic );
 
 		// Loop through the exposed method to get Mapper needed
 		Map<ExecutableElement, String> readListMethods = Maps.newHashMap();
 		Map<ExecutableElement, String> readSingleMethods = Maps.newHashMap();
 		List<ExecutableElement> nonReadMethods = Lists.newArrayList();
+
+		Types typeUilts = processingEnv.getTypeUtils();
+		Elements elementUtils = processingEnv.getElementUtils();
 		for (ExecutableElement e : ic.getAllMethodsExposed()) {
 			TypeMirror returnType = e.getReturnType();
 
@@ -59,18 +80,18 @@ public class UsecaseControllerGenerator extends AbstractGenerator<LeanUsecase, U
 			//TypeMirror obType = elementUtils.getTypeElement("io.reactivex.Observable").asType();
 			//if ( typeUilts.isAssignable( returnType, obType ) && TypeKind.DECLARED.equals( returnType.getKind() ) )
 			String returnTypeName = ( (Type.ClassType) returnType ).asElement().getQualifiedName().toString();
-			if( returnTypeName.toString().indexOf( "Observable" ) != -1 )
+			if( returnTypeName.contains( "Observable" ) )
 			{
 				TypeMirror obParamType = ( (DeclaredType) returnType ).getTypeArguments().get( 0 );
 				String obParamTypeName = ( (Type.ClassType) obParamType ).asElement().getQualifiedName().toString();
 				//TypeMirror listType = elementUtils.getTypeElement("java.util.List").asType();
 				//if( typeUilts.isAssignable( obParamType, listType ) && TypeKind.DECLARED.equals( obParamType.getKind() ))
-				if ( TypeKind.DECLARED.equals( obParamType.getKind() ) && obParamTypeName.indexOf( "List" ) != -1 )
+				if ( TypeKind.DECLARED.equals( obParamType.getKind() ) && obParamTypeName.contains( "List" ) )
 				{
 					//It is Observable of list
 					TypeMirror listParamType = ( (DeclaredType) obParamType ).getTypeArguments().get( 0 );
 					String listParamTypeName = ( (Type.ClassType) listParamType ).asElement().getQualifiedName().toString();
-					//Get the detailed object type
+					//Get the list's entity type
 					String realEntityName =
 							listParamTypeName.substring( listParamTypeName.lastIndexOf( '.' ) + 1 ).replaceAll( "Ref", "" );
 					readListMethods.put( e, realEntityName );
@@ -87,18 +108,21 @@ public class UsecaseControllerGenerator extends AbstractGenerator<LeanUsecase, U
 			{
 				nonReadMethods.add( e );
 			}
-
 		}
 
 		final StringBuilder sb = new StringBuilder();
 
-		sb.append( "package " ).append( ic.getControllerPackage() ).append( ";\n" );
+		sb.append( "package " ).append( getControllerPackage(ic) ).append( ";\n" );
 		sb.append( "\n" );
-		sb.append( "import " ).append( fullUsecaseName ).append( ";\n" );
+		sb.append( "import " ).append( ( (Symbol.ClassSymbol) ic.typeElement ).className() ).append( ";\n" );
+
+		// entity definition in feature-wise package?
+		sb.append( "import " ).append( getEntityPackage( ic ) ).append( ".*;\n" );
+
 		sb.append( "import com.central1.lean.entities.*;\n" );
 		sb.append( "import com.central1.lean.mapping.Mapper;\n");
 		sb.append( "import com.central1.leanannotations.LeanEntryPoint;\n" );
-
+		sb.append( "\n" );
 		sb.append( "import io.reactivex.Observable;\n");
 		sb.append( "import org.springframework.web.bind.annotation.*;\n");
 		sb.append( "import org.springframework.messaging.handler.annotation.DestinationVariable;\n");
@@ -117,20 +141,16 @@ public class UsecaseControllerGenerator extends AbstractGenerator<LeanUsecase, U
 		entities.addAll( readSingleMethods.values() );
 		Map<String, String> eMappers = Maps.newHashMap();
 		entities.forEach( e ->
-				eMappers.put( e.substring(0, 1).toLowerCase() + e.substring(1) + "Mapper",  "Mapper<" + e + ", " + e + "Ref>" )
+				eMappers.put( getMapperVariableName( e ),  "Mapper<" + e + ", " + e + "Ref>" )
 		);
 
-		eMappers.entrySet().forEach( entry ->
-				sb.append( "	private final ").append( entry.getValue() ).append(" " ).append( entry.getKey() ).append( ";\n" )
-		);
+		eMappers.forEach( ( key, value ) -> sb.append( "	private final " ).append( value ).append( " " ).append( key ).append( ";\n" ) );
 
 		sb.append( "\n" );
-		sb.append( "	public ").append( controllerName ).append( "(" );
-		eMappers.entrySet().forEach( entry ->
-				sb.append( "		" ).append( entry.getValue() ).append(" " ).append( entry.getKey() ).append( ", \n" )
-		);
-		sb.append( usecaseName ).append( " usecase )");
-		sb.append( "{\n");
+		sb.append( "	public ").append( controllerName ).append( "(\n" );
+		eMappers.forEach( ( key, value ) -> sb.append( "		" ).append( value ).append( " " ).append( key ).append( ", \n" ) );
+		sb.append( "		" ).append( usecaseName ).append( " usecase )");
+		sb.append( "\n{\n");
 		sb.append("		this.usecase = usecase;\n" );
 		eMappers.keySet().forEach( key ->
 				sb.append("		this." ).append( key ).append( "= " ).append( key ).append( ";\n" )
@@ -138,25 +158,32 @@ public class UsecaseControllerGenerator extends AbstractGenerator<LeanUsecase, U
 		sb.append( "	}\n" );
 		sb.append("\n");
 
-		Types typeUilts = processingEnv.getTypeUtils();
-		Elements elementUtils = processingEnv.getElementUtils();
-
-		readListMethods.entrySet().forEach( entry -> {
-			String realReturnType = "Observable<List<" + entry.getValue() + ">>";
-			String methodName = entry.getKey().getSimpleName().toString();
+		readListMethods.forEach( (method, entityName) -> {
+			String listReturnType = "Observable<List<" + entityName + ">>";
+			String methodName = method.getSimpleName().toString();
 			sb.append( "	@SubscribeMapping( value = \"/" ).append( methodName ).append( "\")\n" );
-			sb.append( "	public " ).append( realReturnType ).append(" ").append( methodName );
-			handleParams( entry.getKey(), entry.getValue(), sb, true  );
+			sb.append( "	public " ).append( listReturnType ).append(" ").append( methodName );
+			handleParams( method, entityName, sb, true  );
+			sb.append( "	}\n" );
+			sb.append( "\n" );
+
+			//Should we always automatically generate the single entity mapper method assuming they should not be in the usecase
+			String singleReturnType = "Observable<" + entityName + ">";
+			String entityRef = entityName + "Ref";
+			sb.append( "	@SubscribeMapping( value = \"/" ).append( methodName ).append( "/{ref}\")\n" );
+			sb.append( "	public " ).append( singleReturnType ).append(" get").append( entityName );
+			sb.append( "( @DestinationVariable( \"ref\" ) " ).append( entityRef ).append( " ref ) {\n" );
+			sb.append( "		return " ).append( getMapperVariableName( entityName ) ).append( ".getEntity( ref );\n" );
 			sb.append( "	}\n" );
 			sb.append( "\n" );
 		} );
 
-		readSingleMethods.entrySet().forEach( entry -> {
-			String realReturnType = "Observable<" + entry.getValue() + ">";
-			String methodName = entry.getKey().getSimpleName().toString();
+		readSingleMethods.forEach( (method, entityName) -> {
+			String realReturnType = "Observable<" + entityName + ">";
+			String methodName = method.getSimpleName().toString();
 			sb.append( "	@SubscribeMapping( value = \"/" ).append( methodName ).append( "\")\n" );
 			sb.append( "	public " ).append( realReturnType ).append(" ").append( methodName );
-			handleParams( entry.getKey(), entry.getValue(), sb, false );
+			handleParams( method, entityName, sb, false );
 			sb.append( "	}\n" );
 			sb.append( "\n" );
 		});
@@ -184,6 +211,7 @@ public class UsecaseControllerGenerator extends AbstractGenerator<LeanUsecase, U
 		return sb.toString();
 	}
 
+
 	private void handleParams( ExecutableElement e, String entityName, StringBuilder sb, boolean isList )
 	{
 		sb.append( "(" );
@@ -203,14 +231,14 @@ public class UsecaseControllerGenerator extends AbstractGenerator<LeanUsecase, U
 		sb.append( " ) {\n" );
 
 		String usecaseCall = "usecase." + e.getSimpleName().toString() + "(" + StringUtils.join( usecaseParams, ", ") + ")";
-		String mapper = entityName.substring(0, 1).toLowerCase() + entityName.substring(1) + "Mapper";
+		String mapper = getMapperVariableName( entityName );
 		if ( isList )
 		{
 			sb.append( "		return getListObservable( " ).append( usecaseCall ).append( ", " ).append( mapper ).append( " );\n" );
 		}
 		else
 		{
-			sb.append( "		return " ).append( mapper ).append( ".getEntity( " ).append( usecaseCall ).append( " );\n" );
+			sb.append( "		return " ).append( usecaseCall ).append( ".flatMap( " ).append( mapper ).append( "::getEntity );\n" );
 		}
 	}
 }

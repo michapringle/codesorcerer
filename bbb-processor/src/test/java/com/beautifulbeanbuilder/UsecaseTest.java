@@ -1,12 +1,18 @@
 package com.beautifulbeanbuilder;
 
+import com.beautifulbeanbuilder.generators.usecase.UsecaseProcessor;
 import com.central1.leanannotations.LeanUsecase;
+import com.google.common.collect.ImmutableList;
 import com.google.testing.compile.JavaFileObjects;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import javax.tools.JavaFileObject;
+import java.util.Arrays;
+
+import static com.google.common.truth.Truth.assertAbout;
+import static com.google.testing.compile.JavaSourcesSubjectFactory.javaSources;
 
 @RunWith(JUnit4.class)
 public class UsecaseTest
@@ -46,7 +52,7 @@ public class UsecaseTest
 						"			return Observable.empty();									",
 						"		}																							",
 						"		@Expose																",
-						"		public Single<Object> updateAccount( @Nonnull AccountRef ref, @Nonnull String newName )",
+						"		public Single<Object> updateAccount( @Nonnull AccountRef ref, @Nonnull String newName, @Nonnull boolean test )",
 						"		{																						",
 						"			return Single.just( new Object() );									",
 						"		}																							",
@@ -91,11 +97,10 @@ public class UsecaseTest
 						"	}",
 						"}                                                                                                                                       "
 				);
-		Helper.hasNoCompileErrors( o1 );
 
-//		assertAbout(javaSources()).that( Arrays.asList(o1))
-//				.withCompilerOptions( ImmutableList.of("-XprintRounds"))
-//				.processedWith(new UsecaseProcessor())
-//				.compilesWithoutError();
+		assertAbout(javaSources()).that( Arrays.asList(o1))
+				.withCompilerOptions( ImmutableList.of("-XprintRounds"))
+				.processedWith(new UsecaseProcessor() )
+				.compilesWithoutError();
 	}
 }

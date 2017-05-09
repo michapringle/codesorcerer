@@ -205,7 +205,15 @@ public class UsecaseControllerGenerator extends AbstractGenerator<LeanUsecase, U
 			{
 				e.getParameters().forEach( paramElement -> {
 					String paraName = paramElement.getSimpleName().toString();
-					methodParams.add( requestBodyName + ".get" + paraName.substring(0, 1).toUpperCase() + paraName.substring(1) + "()");
+					String requestBodyCall = paraName.substring( 0, 1 ).toUpperCase() + paraName.substring( 1 ) + "()";
+					if( typeUilts.isAssignable( paramElement.asType(), elementUtils.getTypeElement( "java.lang.Boolean" ).asType() ) )
+					{
+						methodParams.add( requestBodyName + ".is" + requestBodyCall );
+					}
+					else
+					{
+						methodParams.add( requestBodyName + ".get" + requestBodyCall );
+					}
 				}  );
 			}
 			sb.append( "		return usecase." ).append( e.getSimpleName() ).append( "( ").append( StringUtils.join( methodParams, ", " )).append( " );\n" );

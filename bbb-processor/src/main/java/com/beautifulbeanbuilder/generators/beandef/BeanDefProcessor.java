@@ -4,6 +4,7 @@ import com.beautifulbeanbuilder.processor.AbstractProcessor;
 
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 
@@ -14,6 +15,9 @@ public class BeanDefProcessor extends AbstractProcessor<BeanDefInfo> {
 
     @Override
     public BeanDefInfo buildInput(TypeElement te, String currentTypeName, String currentTypePackage) {
+        if (te.getKind() == ElementKind.ANNOTATION_TYPE) {
+            return null;
+        }
         checkBBBUsage(te);
         printBeanStatus(te);
         return new BeanDefInfoBuilder().init(processingEnv, te, currentTypeName, currentTypePackage);

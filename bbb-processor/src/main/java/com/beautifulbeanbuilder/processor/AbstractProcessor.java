@@ -169,17 +169,18 @@ public abstract class AbstractProcessor<Input> extends javax.annotation.processi
             for (Map.Entry<AbstractGenerator, Object> e : processedBuilders.entrySet()) {
                 final AbstractGenerator generator = e.getKey();
                 final Object value = e.getValue();
-                if(value != null) {
+                if (value != null) {
                     final Input ic = buildInput(te, currentTypeName, currentTypePackage);
-                    generator.write(ic, value, processingEnv);
-                    allObjects.put(generator, value);
+                    if (ic != null) {
+                        generator.write(ic, value, processingEnv);
+                        allObjects.put(generator, value);
+                    }
                 }
 
-                if(roundEnvironment.processingOver()) {
+                if (roundEnvironment.processingOver()) {
                     generator.processingOver(allObjects.get(generator));
                 }
             }
-
 
 
         } catch (Exception ex) {
@@ -208,10 +209,12 @@ public abstract class AbstractProcessor<Input> extends javax.annotation.processi
             //Make sure they want the same input class
             Class g1 = g.getInputClass();
             Class<Input> g2 = getInputClass();
-            if(g1 == g2) {
+            if (g1 == g2) {
                 Input ic = buildInput(te, currentTypeName, currentTypePackage);
-                final Object builder = g.build(ic, processedBuilders, processingEnv);
-                processedBuilders.put(g, builder);
+                if (ic != null) {
+                    final Object builder = g.build(ic, processedBuilders, processingEnv);
+                    processedBuilders.put(g, builder);
+                }
             }
         } catch (Exception e) {
             throw Throwables.propagate(e);

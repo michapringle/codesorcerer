@@ -1,25 +1,90 @@
 package com.beautifulbeanbuilder;
 
 
-import com.beautifulbeanbuilder.generators.beandef.BeanDefProcessor;
-import com.beautifulbeanbuilder.generators.restcontroller.RestControllerProcessor;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Ordering;
 import com.google.testing.compile.JavaFileObjects;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import javax.annotation.Nonnull;
 import javax.tools.JavaFileObject;
 import java.math.BigDecimal;
-import java.util.*;
-
-import static com.google.common.truth.Truth.assertAbout;
-import static com.google.testing.compile.JavaSourcesSubjectFactory.javaSources;
 
 @RunWith(JUnit4.class)
 public class RestControllerTest {
+
+    @Test
+    public void simpl2e() throws Exception {
+
+        JavaFileObject o1 = JavaFileObjects
+                .forSourceLines("test.Test", "",
+                        "package test;                                                                                                  ",
+                        "                                                                                                   ",
+                        "import " + BBBJson.class.getName() + ";                                                  ",
+                        "import " + BigDecimal.class.getName() + ";                                                  ",
+                        "import " + BBBImmutable.class.getName() + ";                                                  ",
+                        "import " + BasicTypescriptMapping.class.getName() + ";                                                  ",
+                        "import " + TypescriptController.class.getName() + ";                                                  ",
+                        "import " + TypescriptMapping.class.getName() + ";                                                  ",
+                        "import " + BBBTypescript.class.getName() + ";                                                  ",
+                        "import io.reactivex.Observable;                                                                                                          ",
+                        "import io.reactivex.Single;                                                                                                          ",
+                        "import org.springframework.messaging.simp.annotation.SubscribeMapping;                                                     ",
+                        "import org.springframework.web.bind.annotation.RequestBody;                                                     ",
+                        "import org.springframework.web.bind.annotation.RequestMapping;                                                     ",
+                        "import org.springframework.web.bind.annotation.RestController;                                                     ",
+                        "                                                                                                                                                               ",
+                        "import java.util.List;                                                                                                          ",
+                        "import java.util.ArrayList;                                                                                                          ",
+                        "                                                                                                          ",
+                        "import static org.springframework.web.bind.annotation.RequestMethod.POST;                                                     ",
+                        "public class Test {                                                     ",
+
+                        "                                                                                                                                                    ",
+                        "   @TypescriptMapping(javaClass = Observable.class, typescriptClassName = \"AccountRef\", typescriptImportLocation = \"./acctRef-ddp\")                                                                                                                                                 ",
+                        "   @TypescriptMapping(javaClass = Single.class, typescriptClassName = \"Sing\", typescriptImportLocation = \"./acctRef-ddp\")                                                                                                                                                 ",
+                        "   @BasicTypescriptMapping                                                 ",
+                        "   public @interface C1Mappings {                                                  ",
+                        "   }                                                                                                                                       ",
+                        "                                                                                                                                                    ",
+                        "   @TypescriptController                                                 ",
+                        "   @C1Mappings                                                 ",
+                        "   public @interface C1Controller {                                                  ",
+                        "   }                                                                                                                                                                                ",
+                        "                                                                                                                                                    ",
+                        "   @C1Mappings                                                                                                                                                ",
+                        "   @BBBTypescript                                 ",
+                        "   @BBBJson                                                        ",
+                        "   @BBBImmutable                                                        ",
+                        "   public @interface C1Bean {                                                  ",
+                        "   }                                                                                                                                                                                ",
+                        "                                                                                                                                                    ",
+                        "   @C1Bean                                                                                                                                                ",
+                        "   public interface AccountDef {                                                  ",
+                        "      String getName();                                                  ",
+                        "      int getAmount();                                                  ",
+                        "      BigDecimal getBDec();                                                  ",
+                        "   }                                                                                                                                       ",
+                        "                                                                                                                                                    ",
+                        "   @C1Controller                                                                                                                                                ",
+                        "   @RestController                                                                                                          ",
+                        "   public class AccountsRestController {                                                     ",
+                        "                                                                                   ",
+                        "            @RequestMapping(value = \"/api/accounts/\", method = POST)                                                     ",
+                        "            public Single<Boolean> addAccount(@RequestBody Account a) {                                                     ",
+                        "                return Single.just(Boolean.TRUE);                                                     ",
+                        "            }                                                                                                          ",
+                        "                                                                                                          ",
+                        "            @SubscribeMapping(\"/queue/accounts\")                                                                                                          ",
+                        "            public Observable<List<Account>> accounts() {                                                     ",
+                        "                return Observable.just(new ArrayList<Account>());                                                     ",
+                        "            }                                                                                                          ",
+                        "   }                                                                                                                                                               ",
+                        "}                                                                                                                                                               "
+
+                );
+        Helper.hasNoCompileErrors(o1);
+    }
+
 
     @Test
     public void simple() throws Exception {
@@ -76,7 +141,7 @@ public class RestControllerTest {
                         "   }                                                                                                                                                               "
                 );
 
-        Helper.hasNoCompileErrors( o1, o2);
+        Helper.hasNoCompileErrors(o1, o2);
     }
 
 }

@@ -6,6 +6,7 @@ import com.beautifulbeanbuilder.processor.AbstractJavaGenerator;
 import com.central1.leanannotations.LeanUsecase;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Type;
 import org.apache.commons.lang3.StringUtils;
 
@@ -17,6 +18,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import java.io.IOException;
+import java.io.Writer;
 import java.util.*;
 
 public class UsecaseControllerGenerator extends AbstractGenerator<LeanUsecase, UsecaseInfo, String>
@@ -29,8 +31,10 @@ public class UsecaseControllerGenerator extends AbstractGenerator<LeanUsecase, U
 	public void write(UsecaseInfo ic, String objectToWrite, ProcessingEnvironment processingEnv) throws IOException
 	{
 		final String controller = getControllerPackage( ic ) + "." + getControllerName( ic );
-		System.out.println("Writing out object " + controller );
-		processingEnv.getFiler().createSourceFile( controller ).openWriter().append( objectToWrite );
+		System.out.println("Writing out object " + controller + "\n"  + objectToWrite );
+		Writer writer = processingEnv.getFiler().createSourceFile( controller ).openWriter();
+		writer.append( objectToWrite );
+		writer.close();
 	}
 
 	private String getControllerName( UsecaseInfo info )
@@ -122,8 +126,10 @@ public class UsecaseControllerGenerator extends AbstractGenerator<LeanUsecase, U
 			}
 
 			e.getParameters().forEach( paramElement -> {
-				types.add( ( (Type.ClassType) paramElement.asType() ).asElement().toString() );
-
+				if ( !( ( (Symbol.VarSymbol) paramElement ).asType() ).isPrimitive() )
+				{
+					types.add( ( (Type.ClassType) paramElement.asType() ).asElement().toString() );
+				}
 			} );
 		}
 

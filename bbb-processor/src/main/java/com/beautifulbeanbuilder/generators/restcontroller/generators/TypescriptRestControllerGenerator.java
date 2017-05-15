@@ -9,8 +9,8 @@ import com.beautifulbeanbuilder.processor.AbstractJavaGenerator;
 import com.beautifulbeanbuilder.typescript.TSUtils;
 import com.google.common.collect.Sets;
 import org.apache.commons.io.FileUtils;
+import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.simp.annotation.SubscribeMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
@@ -22,11 +22,12 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class TypescriptRestControllerGenerator extends AbstractGenerator<TypescriptController, RestControllerInfo, String> {
 
     @Override
-    public void processingOver(Collection<String> objects) {
+    public void processingOver(Collection<String> objects, ProcessingEnvironment processingEnv) {
     }
 
     @Override
@@ -34,10 +35,9 @@ public class TypescriptRestControllerGenerator extends AbstractGenerator<Typescr
         FileUtils.write(new File(TypescriptGenerator.DIR, ic.getCurrentTypePackage() + "." + ic.typeElement.getSimpleName() + ".ts"), objectToWrite, Charset.defaultCharset());
     }
 
-    Set<TypeMirror> referenced = Sets.newHashSet();
-
     @Override
     public String build(RestControllerInfo ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap, ProcessingEnvironment processingEnv) throws IOException {
+        Set<TypescriptMapping> mappings = TSUtils.getAllMappings(ic.typeElement);
         String serviceName = ic.typeElement.getSimpleName().toString();
 
 
@@ -55,64 +55,86 @@ public class TypescriptRestControllerGenerator extends AbstractGenerator<Typescr
         sb.append("@Injectable()\n");
         sb.append("export class " + serviceName + "Service {\n");
 
+        sb.append("//-----------------Constructor\n");
         sb.append("     constructor( private stompClient: StompClient, private http: Http) {}\n");
-
         sb.append("\n");
 
+        sb.append("//-----------------Stomp Methods\n");
         for (ExecutableElement e : ic.getAllMethodsStomp()) {
             addReferences(e);
 
             SubscribeMapping rm = e.getAnnotation(SubscribeMapping.class);
-            sb.append("     public readonly " + e.getSimpleName() + " : " + TSUtils.convertTypes(e.getReturnType()) + " = this.stompClient.topic( '" + rm.value()[0] + "' );\n");
+
+            //Topic
+            String topic = rm.value()[0];
+            for (VariableElement v : e.getParameters()) {
+                DestinationVariable dv = v.getAnnotation(DestinationVariable.class);
+                topic = topic.replace("{" + dv.value() + "}", "' + " + dv.value() + " + '");
+            }
+
+            //Parameters
+            String tsParameterList = e.getParameters()
+                    .stream()
+                    .map(v -> {
+                        DestinationVariable dv = v.getAnnotation(DestinationVariable.class);
+                        String tsType = TSUtils.convertToTypescriptType(v.asType(), mappings, processingEnv);
+                        return dv.value() + " : " + tsType;
+                        //topic = topic.replace("{" + dv.value() + "}", "' + " + dv.value() + "'");
+                    })
+                    .collect(Collectors.joining(","));
+
+            sb.append("\n");
+            sb.append("public " + e.getSimpleName() + "(" + tsParameterList + "): " + TSUtils.convertToTypescriptType(e.getReturnType(), mappings, processingEnv) + " {\n");
+            sb.append("    return this.stompClient.topic('" + topic + "')\n");
+            sb.append("}\n");
         }
+        sb.append("\n");
 
 
-        for (ExecutableElement e : ic.getAllMethodsRest()) {
+        sb.append("//-----------------Rest Methods\n");
+        for (
+                ExecutableElement e : ic.getAllMethodsRest())
+
+        {
             addReferences(e);
 
             sb.append("\n");
 
-            RequestMapping rm = e.getAnnotation(RequestMapping.class);
-            boolean post = Arrays.stream(rm.method()).anyMatch(x -> x == RequestMethod.POST);
-            if (post) {
-                List<? extends VariableElement> mmm = e.getParameters();
-                VariableElement requestBodyParameter = e.getParameters().stream().filter(p -> p.getAnnotation(RequestBody.class) != null).findFirst().get();
-                referenced.add(requestBodyParameter.asType());
-                String body = TSUtils.convertTypes(requestBodyParameter.asType());
-                sb.append("     public " + e.getSimpleName() + "( body : " + body + ") : " + TSUtils.convertTypes(e.getReturnType()) + " {\n");
-                sb.append("         return this.http.post( '" + rm.value()[0] + "', body )\n");
-                sb.append("                         .map( r => r.json());\n");
-                sb.append("     }\n");
+            final RequestMapping rm = e.getAnnotation(RequestMapping.class);
+            final boolean post = Arrays.stream(rm.method()).allMatch(x -> x == RequestMethod.POST);
+            if (!post) {
+                throw new RuntimeException("Can only handle posts");
             }
 
-            boolean get = Arrays.stream(rm.method()).anyMatch(x -> x == RequestMethod.GET);
-            if (get) {
-                sb.append("     public " + e.getSimpleName() + "() : " + TSUtils.convertTypes(e.getReturnType()) + " {\n");
-                sb.append("         return this.http.get( '" + rm.value()[0] + "')\n");
-                sb.append("                         .map( r => r.json());\n");
-                sb.append("     }\n");
+            final List<? extends VariableElement> parameters = e.getParameters();
+            if (parameters.size() != 1) {
+                throw new RuntimeException("Can only handle a single body parameter");
             }
+
+            final VariableElement requestBodyParameter = e.getParameters().get(0);
+            referenced.add(requestBodyParameter.asType());
+
+            String body = TSUtils.convertToTypescriptType(requestBodyParameter.asType(), mappings, processingEnv);
+            sb.append("     public " + e.getSimpleName() + "( body : " + body + ") : " + TSUtils.convertToTypescriptType(e.getReturnType(), mappings, processingEnv) + " {\n");
+            sb.append("         return this.http.post( '" + rm.value()[0] + "', body )\n");
+            sb.append("                         .map( r => r.json());\n");
+            sb.append("     }\n");
 
 
         }
         sb.append(" }\n");
         sb.append("\n");
-        //   sb.append("}");
 
-//        TypescriptMappings tm = ic.typeElement.getAnnotation(TypescriptMappings.class);
-        Set<TypescriptMapping> mappings = TSUtils.getAllMappings(ic.typeElement);
         String imports = TSUtils.convertToImportStatements(referenced, mappings, processingEnv);
-
         String x = sb.toString().replace("*IMPORTS*", imports);
 
-        //   System.out.println(x);
         return x;
     }
 
+    private Set<TypeMirror> referenced = Sets.newHashSet();
+
     private void addReferences(ExecutableElement e) {
-        referenced.add(e.getReturnType());
-        RequestMapping rm = e.getAnnotation(RequestMapping.class);
-        e.getParameters().stream().forEach(p -> referenced.add(p.asType()));
+        referenced.addAll(TSUtils.getReferences(e));
     }
 
 }

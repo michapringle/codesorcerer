@@ -29,9 +29,9 @@ public abstract class AbstractGenerator<T extends Annotation, Input, Output> {
         return (Class<Input>) typeInput.getRawType();
     }
 
-    public abstract Output build(Input ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap, ProcessingEnvironment processingEnv) throws IOException;
+    public abstract Output build(Input ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap, ProcessingEnvironment processingEnv) throws Exception;
 
-    public abstract void write(Input ic, Output objectToWrite, ProcessingEnvironment processingEnv) throws IOException;
+    public abstract void write(Input ic, Output objectToWrite, ProcessingEnvironment processingEnv) throws Exception;
 
-    public abstract void processingOver(Collection<Output> objects) throws IOException;
+    public abstract void processingOver(Collection<Output> objects, ProcessingEnvironment processingEnv) throws Exception;
 }

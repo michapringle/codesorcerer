@@ -10,5 +10,6 @@ public @interface TypescriptMapping {
 
         String typescriptClassName();
         String typescriptImportLocation() default "";
-
+        String typescriptPackageName() default "";
+        String typescriptPackageVersion() default "";
 }

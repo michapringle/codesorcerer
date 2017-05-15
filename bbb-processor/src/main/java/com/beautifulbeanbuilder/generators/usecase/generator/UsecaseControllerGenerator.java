@@ -24,7 +24,7 @@ import java.util.*;
 public class UsecaseControllerGenerator extends AbstractGenerator<LeanUsecase, UsecaseInfo, String>
 {
 	@Override
-	public void processingOver(Collection<String> objects) {
+	public void processingOver(Collection<String> objects, ProcessingEnvironment processingEnv) {
 	}
 
 	@Override

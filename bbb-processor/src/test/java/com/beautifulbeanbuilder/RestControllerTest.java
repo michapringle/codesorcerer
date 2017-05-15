@@ -40,8 +40,8 @@ public class RestControllerTest {
                         "public class Test {                                                     ",
 
                         "                                                                                                                                                    ",
-                        "   @TypescriptMapping(javaClass = Observable.class, typescriptClassName = \"AccountRef\", typescriptImportLocation = \"./acctRef-ddp\")                                                                                                                                                 ",
-                        "   @TypescriptMapping(javaClass = Single.class, typescriptClassName = \"Sing\", typescriptImportLocation = \"./acctRef-ddp\")                                                                                                                                                 ",
+                        "   @TypescriptMapping(javaClass = Observable.class, typescriptClassName = \"Observable\", typescriptImportLocation = \"./rxjs\")                                                                                                                                                 ",
+                        "   @TypescriptMapping(javaClass = Single.class, typescriptClassName = \"ObservableSING\", typescriptImportLocation = \"./rxjs\")                                                                                                                                                 ",
                         "   @BasicTypescriptMapping                                                 ",
                         "   public @interface C1Mappings {                                                  ",
                         "   }                                                                                                                                       ",
@@ -97,13 +97,16 @@ public class RestControllerTest {
                         "import " + BigDecimal.class.getName() + ";                                                  ",
                         "import " + BBBImmutable.class.getName() + ";                                                  ",
                         "import " + BBBTypescript.class.getName() + ";                                                  ",
+                        "import " + BasicTypescriptMapping.class.getName() + ";                                                  ",
                         "                                                                                                                                                    ",
                         "   @BBBTypescript                                                 ",
                         "   @BBBJson                                                        ",
                         "   @BBBImmutable                                                        ",
+                        "   @BasicTypescriptMapping                                                       ",
                         "   public interface AccountDef {                                                  ",
                         "      String getName();                                                  ",
                         "      int getAmount();                                                  ",
+                        "      Long getAmount2();                                                  ",
                         "      BigDecimal getBDec();                                                  ",
                         "}                                                                                                                                       "
                 );

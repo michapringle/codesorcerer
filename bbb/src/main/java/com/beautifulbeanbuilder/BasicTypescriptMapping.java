@@ -1,22 +1,20 @@
 package com.beautifulbeanbuilder;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
 //Primitives
-@TypescriptMapping(javaClassName = "int", typescriptClassName = "number")
-@TypescriptMapping(javaClassName = "long", typescriptClassName = "number")
-@TypescriptMapping(javaClassName = "boolean", typescriptClassName = "boolean")
+@TypescriptMapping(javaClass = int.class, typescriptClassName = "number")
+@TypescriptMapping(javaClass = long.class, typescriptClassName = "number")
+@TypescriptMapping(javaClass = boolean.class, typescriptClassName = "boolean")
 
 //Basic Java types
-@TypescriptMapping(javaClassName = "java.lang.String", typescriptClassName = "string")
-@TypescriptMapping(javaClassName = "java.lang.Boolean", typescriptClassName = "boolean")
-@TypescriptMapping(javaClassName = "java.lang.Integer", typescriptClassName = "number")
-@TypescriptMapping(javaClassName = "java.lang.Long", typescriptClassName = "number")
-@TypescriptMapping(javaClassName = "java.math.BigDecimal", typescriptClassName = "number")
-@TypescriptMapping(javaClassName = "java.math.BigInteger", typescriptClassName = "number")
-
-//Standard library types
-@TypescriptMapping(javaClassName = "org.joda.money.Money", typescriptClassName = "string")
-@TypescriptMapping(javaClassName = "io.reactivex.Observable", typescriptClassName = "Observable", typescriptImportLocation = "./rxjs")
-@TypescriptMapping(javaClassName = "io.reactivex.Single", typescriptClassName = "Observable", typescriptImportLocation = "./rxjs")
+@TypescriptMapping(javaClass = String.class, typescriptClassName = "string")
+@TypescriptMapping(javaClass = Boolean.class, typescriptClassName = "boolean")
+@TypescriptMapping(javaClass = Integer.class, typescriptClassName = "number")
+@TypescriptMapping(javaClass = Long.class, typescriptClassName = "number")
+@TypescriptMapping(javaClass = BigDecimal.class, typescriptClassName = "number")
+@TypescriptMapping(javaClass = BigInteger.class, typescriptClassName = "number")
 
 public @interface BasicTypescriptMapping {
 }

@@ -31,7 +31,7 @@ public abstract class AbstractJavaGenerator<T extends Annotation> extends Abstra
 
 
     @Override
-    public void processingOver(Collection<TypeSpec.Builder> objects) {
+    public void processingOver(Collection<TypeSpec.Builder> objects, ProcessingEnvironment processingEnv) {
         //Do nothing?
     }
 

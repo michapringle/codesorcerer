@@ -18,6 +18,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
+import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
 import java.util.List;
@@ -85,7 +86,7 @@ public abstract class AbstractProcessor<Input> extends javax.annotation.processi
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
 
         //See if any of these annotations extend from a generator annotation
-        if (!shouldClaimTheseAnnotations(annotations)) {
+        if (!shouldClaimTheseAnnotations(annotations) && !roundEnv.processingOver()) {
             return false;
         }
 
@@ -97,11 +98,25 @@ public abstract class AbstractProcessor<Input> extends javax.annotation.processi
         });
         final Set<TypeElement> types = ElementFilter.typesIn(elementThatNeedProcessing);
 
+        //Process
         for (TypeElement te : types) {
             String currentTypeName = te.getSimpleName().toString();
             String currentTypePackage = elementUtils.getPackageOf(te).toString();
             process(te, currentTypeName, currentTypePackage, roundEnv);
         }
+
+        //Processing Over
+        if (roundEnv.processingOver()) {
+            //TODO: Move to entryset
+            for(AbstractGenerator g : allObjects.keySet()) {
+                try {
+                    g.processingOver(allObjects.get(g), processingEnv);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
 
         //return true;
         return false;
@@ -176,12 +191,7 @@ public abstract class AbstractProcessor<Input> extends javax.annotation.processi
                         allObjects.put(generator, value);
                     }
                 }
-
-                if (roundEnvironment.processingOver()) {
-                    generator.processingOver(allObjects.get(generator));
-                }
             }
-
 
         } catch (Exception ex) {
             ex.printStackTrace();

@@ -198,7 +198,7 @@ public class UsecaseControllerGenerator extends AbstractGenerator<LeanUsecase, U
 			String methodName = e.getSimpleName().toString();
 			String requestBodyName = methodName + "Request";
 			String requestBodyType = requestBodyName.substring(0, 1).toUpperCase() + requestBodyName.substring(1);
-			sb.append( "	@RequestMapping( value = \"/" ).append( e.getSimpleName() ).append( "\", method = POST)\n" );
+			sb.append( "	@RequestMapping( value = \"/" ).append( e.getSimpleName() ).append( "\", method = RequestMethod.POST)\n" );
 			sb.append( "	public Single<WriteOperationResult> " ).append( e.getSimpleName() );
 			sb.append( "( @RequestBody ").append( requestBodyType ).append( " " ).append( requestBodyName ).append( ") {\n" );
 

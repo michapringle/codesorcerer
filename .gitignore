@@ -1,4 +1,6 @@
-typescript/
+bbb/typescript/
+bbb-processor/typescript/
+/typescript/
 .idea
 .DS_Store
 .cache

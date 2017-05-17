@@ -14,6 +14,7 @@ public class TypescriptTest {
     public void simple() throws Exception {
         compiles("",
                 "          @BBBTypescript                                                 ",
+                "          @BasicTypescriptMapping                                                       ",
                 "          @BBBJson                                                        ",
                 "          @BBBImmutable                                                        ",
                 "          public interface BeanDef {                                                  ",
@@ -25,9 +26,26 @@ public class TypescriptTest {
     }
 
     @Test
+    public void collections() throws Exception {
+        compiles("",
+                "          @BBBTypescript                                                 ",
+                "          @BasicTypescriptMapping                                                       ",
+                "          @BBBJson                                                        ",
+                "          @BBBImmutable                                                        ",
+                "          public interface BeanCollDef {                                                  ",
+                "            List<String> getNames();                                                  ",
+                "            Set<Integer> getAges();                                                  ",
+                "            Map<String, Integer> getNameToAge();                                                  ",
+                "          }                                                                          ",
+                "                                                                                  "
+        );
+    }
+
+    @Test
     public void nonnull() throws Exception {
         compiles("",
                 "          @BBBTypescript                                                 ",
+                "          @BasicTypescriptMapping                                                       ",
                 "          @BBBJson                                                        ",
                 "          @BBBImmutable                                                        ",
                 "          public interface BeanNonDef {                                                  ",
@@ -42,6 +60,7 @@ public class TypescriptTest {
     public void bothNullNonNull() throws Exception {
         compiles("",
                 "          @BBBTypescript                                                 ",
+                "          @BasicTypescriptMapping                                                       ",
                 "          @BBBJson                                                        ",
                 "          @BBBImmutable                                                        ",
                 "          public interface BeanBothDef {                                                  ",

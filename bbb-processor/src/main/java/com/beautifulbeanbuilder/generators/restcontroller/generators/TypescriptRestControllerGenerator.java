@@ -28,6 +28,7 @@ public class TypescriptRestControllerGenerator extends AbstractGenerator<Typescr
 
     @Override
     public void processingOver(Collection<String> objects, ProcessingEnvironment processingEnv) {
+
     }
 
     @Override

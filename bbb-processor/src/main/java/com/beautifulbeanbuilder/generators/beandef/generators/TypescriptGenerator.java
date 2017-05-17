@@ -1,6 +1,7 @@
 package com.beautifulbeanbuilder.generators.beandef.generators;
 
 import com.beautifulbeanbuilder.BBBTypescript;
+import com.beautifulbeanbuilder.PackageJson;
 import com.beautifulbeanbuilder.TypescriptMapping;
 import com.beautifulbeanbuilder.generators.beandef.BeanDefFieldInfo;
 import com.beautifulbeanbuilder.generators.beandef.BeanDefInfo;
@@ -8,7 +9,6 @@ import com.beautifulbeanbuilder.processor.AbstractGenerator;
 import com.beautifulbeanbuilder.processor.AbstractJavaGenerator;
 import com.beautifulbeanbuilder.typescript.TSUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -16,7 +16,6 @@ import org.apache.commons.lang3.StringUtils;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.type.TypeMirror;
-import javax.xml.bind.annotation.XmlRootElement;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -33,13 +32,6 @@ public class TypescriptGenerator extends AbstractGenerator<BBBTypescript, BeanDe
         Set<TypeMirror> mappings;
     }
 
-    @XmlRootElement
-    public static class PackageJson {
-        public String name;
-        public String version;
-        public Map<String, String> dependencies = Maps.newHashMap();
-    }
-
 
     public static final File DIR = new File("typescript");
 
@@ -49,6 +41,7 @@ public class TypescriptGenerator extends AbstractGenerator<BBBTypescript, BeanDe
 
         PackageJson packageJson = new PackageJson();
         packageJson.version = "0.0.0.0.0-SNAPSHOT";
+        packageJson.version = "1.0.0";
 
         //Calc lowest common package name
         String pkg = null;
@@ -73,11 +66,8 @@ public class TypescriptGenerator extends AbstractGenerator<BBBTypescript, BeanDe
             }
         }
 
-        ObjectMapper mapper = new ObjectMapper();
-        String x = mapper.writeValueAsString(packageJson);
-
         FileUtils.forceMkdirParent(DIR);
-        FileUtils.write(new File(DIR, "package.json"), x, Charset.defaultCharset());
+        FileUtils.write(new File(DIR, "package.json"), packageJson.toJson(), Charset.defaultCharset());
     }
 
     @Override
@@ -193,17 +183,23 @@ public class TypescriptGenerator extends AbstractGenerator<BBBTypescript, BeanDe
     }
 
     private void buildWith(BeanDefInfo ic, StringBuilder sb, Set<TypescriptMapping> mappings, ProcessingEnvironment processingEnv) {
-        String allParams = ic.beanDefFieldInfos.stream()
-                .map(i -> "this._" + i.nameMangled)
-                .collect(Collectors.joining(", "));
 
         for (int x = 0; x < ic.beanDefFieldInfos.size(); x++) {
             BeanDefFieldInfo i = ic.beanDefFieldInfos.get(x);
-            final String allParamsWithOneReplaced = allParams.replace("this._" + i.nameMangled, i.nameMangled);
+
+            //compute the list of parameters, with only one not having 'this.' before
+            String allParams = ic.beanDefFieldInfos.stream()
+                    .map(p -> {
+                        if(p.name.equals(i.name)) {
+                            return p.nameMangled;
+                        }
+                        return "this._" + p.nameMangled;
+                    })
+                    .collect(Collectors.joining(", "));
 
             String returnType = ic.immutableClassName + "Nullable";
             sb.append("public with" + i.nameUpper + "(" + i.nameMangled + " : " + TSUtils.convertToTypescriptType(i.getter.getReturnType(), mappings, processingEnv) + ") : " + ic.immutableClassName + " {\n");
-            sb.append("  return new " + ic.immutableClassName + "(" + allParamsWithOneReplaced + ");\n");
+            sb.append("  return new " + ic.immutableClassName + "(" + allParams + ");\n");
             sb.append("}\n");
             sb.append("\n");
         }
@@ -285,7 +281,7 @@ public class TypescriptGenerator extends AbstractGenerator<BBBTypescript, BeanDe
                 .map(i -> i.nameMangled + " : " + TSUtils.convertToTypescriptType(i.getter.getReturnType(), mappings, processingEnv))
                 .collect(Collectors.joining(", "));
 
-        sb.append("private constructor( " + allParams + ") {\n");
+        sb.append("public constructor( " + allParams + ") {\n");
         for (BeanDefFieldInfo i : ic.beanDefFieldInfos) {
             sb.append("  this._" + i.nameMangled + " = " + i.nameMangled + ";\n");
         }

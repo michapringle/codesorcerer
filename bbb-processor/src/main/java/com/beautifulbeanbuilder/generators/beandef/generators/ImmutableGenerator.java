@@ -1,12 +1,9 @@
 package com.beautifulbeanbuilder.generators.beandef.generators;
 
 import com.beautifulbeanbuilder.BBBImmutable;
-import com.beautifulbeanbuilder.generators.beandef.Types;
-import com.beautifulbeanbuilder.generators.beandef.BeanDefFieldInfo;
-import com.beautifulbeanbuilder.generators.beandef.BeanDefInfo;
-import com.beautifulbeanbuilder.generators.beandef.BeanDefInfoBuilder;
-import com.beautifulbeanbuilder.generators.beandef.BeanDefProcessor;
-import com.beautifulbeanbuilder.processor.AbstractJavaGenerator;
+import com.beautifulbeanbuilder.generators.beandef.*;
+import com.beautifulbeanbuilder.processor.AbstractGenerator;
+import com.beautifulbeanbuilder.processor.AbstractJavaBeanGenerator;
 import com.google.auto.common.MoreTypes;
 import com.google.common.collect.Lists;
 import com.squareup.javapoet.*;
@@ -27,7 +24,8 @@ import java.util.stream.IntStream;
 
 import static com.google.common.collect.Iterables.toArray;
 
-public class ImmutableGenerator extends AbstractJavaGenerator<BBBImmutable> {
+public class ImmutableGenerator extends AbstractJavaBeanGenerator<BBBImmutable>
+{
 
 
     private boolean isBBB(BeanDefFieldInfo i) {
@@ -38,7 +36,7 @@ public class ImmutableGenerator extends AbstractJavaGenerator<BBBImmutable> {
                 BeanDefProcessor.hasAnnotation(MoreTypes.asElement(returnTypeMirror), BBBImmutable.class);
     }
 
-    public TypeSpec.Builder build(BeanDefInfo ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap, ProcessingEnvironment processingEnvironment) throws IOException {
+    public TypeSpec.Builder build(BeanDefInfo ic, Map<AbstractGenerator, Object> generatorBuilderMap, ProcessingEnvironment processingEnvironment) throws IOException {
         TypeSpec.Builder classBuilder = buildClass(ic.typeImmutable);
 
         classBuilder.addAnnotation(Immutable.class);

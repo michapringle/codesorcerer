@@ -2,9 +2,10 @@ package com.beautifulbeanbuilder.generators.beandef.generators;
 
 import com.beautifulbeanbuilder.BBBGuava;
 import com.beautifulbeanbuilder.BBBImmutable;
-import com.beautifulbeanbuilder.generators.beandef.Types;
 import com.beautifulbeanbuilder.generators.beandef.BeanDefInfo;
-import com.beautifulbeanbuilder.processor.AbstractJavaGenerator;
+import com.beautifulbeanbuilder.generators.beandef.Types;
+import com.beautifulbeanbuilder.processor.AbstractGenerator;
+import com.beautifulbeanbuilder.processor.AbstractJavaBeanGenerator;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 import com.squareup.javapoet.*;
@@ -18,14 +19,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class GuavaGenerator extends AbstractJavaGenerator<BBBGuava> {
+public class GuavaGenerator extends AbstractJavaBeanGenerator<BBBGuava>
+{
 
     @Override
     public List<Class<? extends Annotation>> requires() {
         return Collections.singletonList(BBBImmutable.class);
     }
 
-    public TypeSpec.Builder build(BeanDefInfo ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap, ProcessingEnvironment processingEnvironment) throws IOException {
+    public TypeSpec.Builder build(BeanDefInfo ic, Map<AbstractGenerator, Object> generatorBuilderMap, ProcessingEnvironment processingEnvironment) throws IOException {
         ClassName typeGuava = ClassName.get(ic.pkg, ic.immutableClassName + "Guava");
 
         TypeSpec.Builder classBuilder = buildClass(typeGuava);

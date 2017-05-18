@@ -2,7 +2,6 @@ package com.beautifulbeanbuilder.generators.usecase.generator;
 
 import com.beautifulbeanbuilder.generators.usecase.UsecaseInfo;
 import com.beautifulbeanbuilder.processor.AbstractGenerator;
-import com.beautifulbeanbuilder.processor.AbstractJavaGenerator;
 import com.central1.leanannotations.LeanUsecase;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -54,7 +53,7 @@ public class UsecaseControllerGenerator extends AbstractGenerator<LeanUsecase, U
 	}
 
 	@Override
-	public String build(UsecaseInfo ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap, ProcessingEnvironment processingEnv ) throws IOException {
+	public String build(UsecaseInfo ic, Map<AbstractGenerator, Object> generatorBuilderMap, ProcessingEnvironment processingEnv ) throws IOException {
 
 		String usecaseName = ic.typeElement.getSimpleName().toString();
 		String controllerName = getControllerName( ic );

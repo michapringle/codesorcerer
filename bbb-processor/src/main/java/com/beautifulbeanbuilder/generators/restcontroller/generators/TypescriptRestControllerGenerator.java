@@ -5,7 +5,6 @@ import com.beautifulbeanbuilder.TypescriptMapping;
 import com.beautifulbeanbuilder.generators.beandef.generators.TypescriptGenerator;
 import com.beautifulbeanbuilder.generators.restcontroller.RestControllerInfo;
 import com.beautifulbeanbuilder.processor.AbstractGenerator;
-import com.beautifulbeanbuilder.processor.AbstractJavaGenerator;
 import com.beautifulbeanbuilder.typescript.TSUtils;
 import com.google.common.collect.Sets;
 import org.apache.commons.io.FileUtils;
@@ -37,7 +36,7 @@ public class TypescriptRestControllerGenerator extends AbstractGenerator<Typescr
     }
 
     @Override
-    public String build(RestControllerInfo ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap, ProcessingEnvironment processingEnv) throws IOException {
+    public String build(RestControllerInfo ic, Map<AbstractGenerator, Object> generatorBuilderMap, ProcessingEnvironment processingEnv) throws IOException {
         Set<TypescriptMapping> mappings = TSUtils.getAllMappings(ic.typeElement);
         String serviceName = ic.typeElement.getSimpleName().toString();
 

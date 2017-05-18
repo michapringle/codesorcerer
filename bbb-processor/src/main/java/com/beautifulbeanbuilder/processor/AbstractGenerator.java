@@ -3,7 +3,6 @@ package com.beautifulbeanbuilder.processor;
 import com.google.common.reflect.TypeToken;
 
 import javax.annotation.processing.ProcessingEnvironment;
-import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.Collections;
@@ -29,7 +28,7 @@ public abstract class AbstractGenerator<T extends Annotation, Input, Output> {
         return (Class<Input>) typeInput.getRawType();
     }
 
-    public abstract Output build(Input ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap, ProcessingEnvironment processingEnv) throws Exception;
+    public abstract Output build(Input ic, Map<AbstractGenerator, Object> generatorBuilderMap, ProcessingEnvironment processingEnv) throws Exception;
 
     public abstract void write(Input ic, Output objectToWrite, ProcessingEnvironment processingEnv) throws Exception;
 

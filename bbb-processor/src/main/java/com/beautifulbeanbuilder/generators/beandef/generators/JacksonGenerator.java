@@ -3,7 +3,8 @@ package com.beautifulbeanbuilder.generators.beandef.generators;
 import com.beautifulbeanbuilder.BBBJson;
 import com.beautifulbeanbuilder.BBBMutable;
 import com.beautifulbeanbuilder.generators.beandef.BeanDefInfo;
-import com.beautifulbeanbuilder.processor.AbstractJavaGenerator;
+import com.beautifulbeanbuilder.processor.AbstractGenerator;
+import com.beautifulbeanbuilder.processor.AbstractJavaBeanGenerator;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -24,14 +25,15 @@ import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Map;
 
-public class JacksonGenerator extends AbstractJavaGenerator<BBBJson> {
+public class JacksonGenerator extends AbstractJavaBeanGenerator<BBBJson>
+{
 
     @Override
     public List<Class<? extends Annotation>> requires() {
         return ImmutableList.of(BBBMutable.class);
     }
 
-    public TypeSpec.Builder build(BeanDefInfo ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap, ProcessingEnvironment processingEnvironment) throws IOException {
+    public TypeSpec.Builder build(BeanDefInfo ic, Map<AbstractGenerator, Object> generatorBuilderMap, ProcessingEnvironment processingEnvironment) throws IOException {
         ClassName typeJackson = ClassName.get(ic.pkg, ic.immutableClassName + "Jackson");
 
         //TODO: dont depend on mutable

@@ -6,9 +6,7 @@ import com.beautifulbeanbuilder.TypescriptMapping;
 import com.beautifulbeanbuilder.generators.beandef.BeanDefFieldInfo;
 import com.beautifulbeanbuilder.generators.beandef.BeanDefInfo;
 import com.beautifulbeanbuilder.processor.AbstractGenerator;
-import com.beautifulbeanbuilder.processor.AbstractJavaGenerator;
 import com.beautifulbeanbuilder.typescript.TSUtils;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -77,7 +75,7 @@ public class TypescriptGenerator extends AbstractGenerator<BBBTypescript, BeanDe
     }
 
     @Override
-    public Out build(BeanDefInfo ic, Map<AbstractJavaGenerator, Object> generatorBuilderMap, ProcessingEnvironment processingEnv) throws IOException {
+    public Out build(BeanDefInfo ic, Map<AbstractGenerator, Object> generatorBuilderMap, ProcessingEnvironment processingEnv) throws IOException {
 
         Set<TypescriptMapping> mappings = TSUtils.getAllMappings(ic.typeElement);
 

@@ -8,7 +8,7 @@ import com.central1.leanannotations.LeanEntryPoint;
 import com.central1.leanannotations.LeanUsecase;
 import com.google.common.collect.Lists;
 import com.squareup.javapoet.*;
-import com.sun.tools.javac.code.Type;
+import io.reactivex.Observable;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.simp.annotation.SubscribeMapping;
@@ -67,7 +67,7 @@ public class UsecaseControllerGenerator extends AbstractJavaGenerator<LeanUsecas
 		final FieldSpec usecaseField = FieldSpec.builder( TypeName.get( ic.typeElement.asType() ), "usecase", Modifier.FINAL, Modifier.PRIVATE ).build();
 		classBuilder.addField( usecaseField );
 
-		process( ic, classBuilder );
+		process( ic, classBuilder, processingEnv );
 
 		MethodSpec.Builder constructorBuilder = MethodSpec.constructorBuilder().addModifiers( Modifier.PUBLIC );
 		classBuilder.build().fieldSpecs.forEach(
@@ -92,21 +92,11 @@ public class UsecaseControllerGenerator extends AbstractJavaGenerator<LeanUsecas
 									ClassName.get( "com.central1.lean.entities", "EntityRef" ),
 									t ) );
 
+		ClassName obClassName = ClassName.bestGuess( Observable.class.getName() );
+		ClassName listClassName = ClassName.bestGuess( List.class.getName() );
 
-		ParameterizedTypeName returnType = ParameterizedTypeName.get(
-				ClassName.get( "io.reactivex", "Observable" ),
-				ParameterizedTypeName.get(
-						ClassName.get( "java.util", "List" ),
-						t )
-		);
-
-		ParameterizedTypeName param1Type = ParameterizedTypeName.get(
-				ClassName.get( "io.reactivex", "Observable" ),
-				ParameterizedTypeName.get(
-						ClassName.get( "java.util", "List" ),
-						r )
-		);
-
+		ParameterizedTypeName returnType = ParameterizedTypeName.get( obClassName, ParameterizedTypeName.get( listClassName, t ) );
+		ParameterizedTypeName param1Type = ParameterizedTypeName.get( obClassName, ParameterizedTypeName.get( listClassName, r ) );
 		ParameterizedTypeName param2Type = ParameterizedTypeName.get( ClassName.get( "com.central1.lean.mapping", "Mapper" ), r, t );
 
 		MethodSpec spec = MethodSpec.methodBuilder("getListObservable")
@@ -125,7 +115,11 @@ public class UsecaseControllerGenerator extends AbstractJavaGenerator<LeanUsecas
 		classBuilder.addMethod( spec );
 	}
 
-	private void process( UsecaseInfo ic, TypeSpec.Builder classBuilder )
+	private TypeMirror getTypeMirror( String className, ProcessingEnvironment processingEnv )
+	{
+		return processingEnv.getTypeUtils().erasure(processingEnv.getElementUtils().getTypeElement( className ).asType());
+	}
+	private void process( UsecaseInfo ic, TypeSpec.Builder classBuilder, ProcessingEnvironment processingEnv )
 	{
 		String stompReadPrefix = "/queue/" + ic.typeElement.getQualifiedName().toString() + "/";
 		String stompPocPrefix = "/stomp-poc/" + ic.typeElement.getQualifiedName().toString() + "/";
@@ -135,16 +129,12 @@ public class UsecaseControllerGenerator extends AbstractJavaGenerator<LeanUsecas
 			TypeMirror returnType = e.getReturnType();
 
 			// Check wether returnType is Observable.
-			//TypeMirror obType = elementUtils.getTypeElement("io.reactivex.Observable").asType();
-			//if ( typeUilts.isAssignable( returnType, obType ) && TypeKind.DECLARED.equals( returnType.getKind() ) )
-			String returnTypeName = ( (Type.ClassType) returnType ).asElement().getQualifiedName().toString();
-			if ( returnTypeName.contains( "Observable" ) )
+			TypeMirror obType = getTypeMirror( Observable.class.getName(), processingEnv );
+			if ( processingEnv.getTypeUtils().isAssignable( returnType, obType ) && TypeKind.DECLARED.equals( returnType.getKind() ) )
 			{
 				TypeMirror obParamType = ( (DeclaredType) returnType ).getTypeArguments().get( 0 );
-				String obParamTypeName = ( (Type.ClassType) obParamType ).asElement().getQualifiedName().toString();
-				//TypeMirror listType = elementUtils.getTypeElement("java.util.List").asType();
-				//if( typeUilts.isAssignable( obParamType, listType ) && TypeKind.DECLARED.equals( obParamType.getKind() ))
-				if ( TypeKind.DECLARED.equals( obParamType.getKind() ) && obParamTypeName.contains( "List" ) )
+				TypeMirror listType = getTypeMirror( List.class.getName(), processingEnv );
+				if( processingEnv.getTypeUtils().isAssignable( obParamType, listType ) && TypeKind.DECLARED.equals( obParamType.getKind() ))
 				{
 					//It is Observable of list. Need to get the list's entity type.
 					TypeMirror entityRefType = ( (DeclaredType) obParamType ).getTypeArguments().get( 0 );
@@ -157,7 +147,6 @@ public class UsecaseControllerGenerator extends AbstractJavaGenerator<LeanUsecas
 			}
 			else
 			{
-				//nonReadMethods.add( e );
 				processPostMethods( e, stompPocPrefix, classBuilder );
 			}
 		}
@@ -171,6 +160,7 @@ public class UsecaseControllerGenerator extends AbstractJavaGenerator<LeanUsecas
 		{
 
 			final ClassName entityType = ClassName.bestGuess( entityRefType.toString().replaceAll( "Ref", "" ) );
+			final ClassName obClassName = ClassName.bestGuess( Observable.class.getName() );
 
 			// Create a corresponding mapper class field
 			final ParameterizedTypeName parameterizedTypeName = ParameterizedTypeName.get(
@@ -188,7 +178,7 @@ public class UsecaseControllerGenerator extends AbstractJavaGenerator<LeanUsecas
 				// Automatically generate a mapper method for the entity
 				if( isList )
 				{
-					ParameterizedTypeName stompEntityReturnType = ParameterizedTypeName.get( ClassName.get( "io.reactivex", "Observable" ), entityType );
+					ParameterizedTypeName stompEntityReturnType = ParameterizedTypeName.get( obClassName, entityType );
 					String methodName = "get" + entityType.simpleName();
 					MethodSpec.Builder stompEntityMethod = MethodSpec.methodBuilder( methodName )
 							.addModifiers( Modifier.PUBLIC )
@@ -206,14 +196,11 @@ public class UsecaseControllerGenerator extends AbstractJavaGenerator<LeanUsecas
 			ParameterizedTypeName stompReturnType;
 			if ( isList )
 			{
-				stompReturnType = ParameterizedTypeName.get(
-						ClassName.get( "io.reactivex", "Observable" ),
-						ParameterizedTypeName.get( ClassName.get( "java.util", "List" ), entityType )
-				);
+				stompReturnType = ParameterizedTypeName.get( obClassName, ParameterizedTypeName.get( ClassName.bestGuess( List.class.getName() ), entityType ) );
 			}
 			else
 			{
-				stompReturnType = ParameterizedTypeName.get( ClassName.get( "io.reactivex", "Observable" ), entityType );
+				stompReturnType = ParameterizedTypeName.get( obClassName, entityType );
 			}
 
 			MethodSpec.Builder stompMethod = MethodSpec.methodBuilder( e.getSimpleName().toString() )

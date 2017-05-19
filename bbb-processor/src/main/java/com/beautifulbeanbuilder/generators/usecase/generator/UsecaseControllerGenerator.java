@@ -1,39 +1,47 @@
 package com.beautifulbeanbuilder.generators.usecase.generator;
 
+import com.beautifulbeanbuilder.BBBJson;
 import com.beautifulbeanbuilder.generators.usecase.UsecaseInfo;
 import com.beautifulbeanbuilder.processor.AbstractGenerator;
+import com.beautifulbeanbuilder.processor.AbstractJavaGenerator;
+import com.central1.leanannotations.LeanEntryPoint;
 import com.central1.leanannotations.LeanUsecase;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.sun.tools.javac.code.Symbol;
+import com.squareup.javapoet.*;
 import com.sun.tools.javac.code.Type;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.messaging.handler.annotation.DestinationVariable;
+import org.springframework.messaging.simp.annotation.SubscribeMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.Elements;
-import javax.lang.model.util.Types;
+import java.io.File;
 import java.io.IOException;
-import java.io.Writer;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
-public class UsecaseControllerGenerator extends AbstractGenerator<LeanUsecase, UsecaseInfo, String>
+public class UsecaseControllerGenerator extends AbstractJavaGenerator<LeanUsecase, UsecaseInfo>
 {
 	@Override
-	public void processingOver(Collection<String> objects, ProcessingEnvironment processingEnv) {
-	}
-
-	@Override
-	public void write(UsecaseInfo ic, String objectToWrite, ProcessingEnvironment processingEnv) throws IOException
+	public void write( UsecaseInfo info, TypeSpec.Builder objectToWrite, ProcessingEnvironment processingEnv ) throws IOException
 	{
-		final String controller = getControllerPackage( ic ) + "." + getControllerName( ic );
-		System.out.println("Writing out object " + controller + "\n"  + objectToWrite );
-		Writer writer = processingEnv.getFiler().createSourceFile( controller ).openWriter();
-		writer.append( objectToWrite );
-		writer.close();
+		if ( objectToWrite != null )
+		{
+			JavaFile javaFile = JavaFile.builder( getControllerPackage( info ), objectToWrite.build() ).build();
+			System.out.println( "Writing out object " + javaFile.packageName + "." + javaFile.typeSpec.name );
+			javaFile.writeTo( new File( "generated" ) );
+			javaFile.writeTo( processingEnv.getFiler() );
+		}
 	}
 
 	private String getControllerName( UsecaseInfo info )
@@ -46,51 +54,91 @@ public class UsecaseControllerGenerator extends AbstractGenerator<LeanUsecase, U
 		return info.typePackage.replace( "usecases", "controllers" );
 	}
 
-	// Account -> accountMapper
-	private String getMapperVariableName( String entityName )
+	@Override
+	public TypeSpec.Builder build( UsecaseInfo ic, Map<AbstractGenerator, Object> generatorBuilderMap, ProcessingEnvironment processingEnv )
+			throws IOException
 	{
-		return entityName.substring(0, 1).toLowerCase() + entityName.substring(1) + "Mapper";
+		final ClassName controller = ClassName.get( getControllerPackage( ic ), getControllerName( ic ) );
+		final TypeSpec.Builder classBuilder = buildClass( controller );
+
+		classBuilder.addAnnotation( RestController.class );
+		classBuilder.addAnnotation( LeanEntryPoint.class );
+
+		final FieldSpec usecaseField = FieldSpec.builder( TypeName.get( ic.typeElement.asType() ), "usecase", Modifier.FINAL, Modifier.PRIVATE ).build();
+		classBuilder.addField( usecaseField );
+
+		process( ic, classBuilder );
+
+		MethodSpec.Builder constructorBuilder = MethodSpec.constructorBuilder().addModifiers( Modifier.PUBLIC );
+		classBuilder.build().fieldSpecs.forEach(
+				f ->
+				{
+					constructorBuilder.addParameter( ParameterSpec.builder( f.type, f.name ).build() );
+					constructorBuilder.addStatement( "this." + f.name + "= " + f.name );
+				}
+		);
+		classBuilder.addMethod( constructorBuilder.addModifiers( Modifier.PUBLIC ).build() );
+
+		addEntityMapperMethod( classBuilder );
+
+		return classBuilder;
 	}
 
-	@Override
-	public String build(UsecaseInfo ic, Map<AbstractGenerator, Object> generatorBuilderMap, ProcessingEnvironment processingEnv ) throws IOException {
+	private void addEntityMapperMethod( TypeSpec.Builder classBuilder )
+	{
+		TypeVariableName t = TypeVariableName.get( "T" );
+		TypeVariableName r = TypeVariableName.get( "R",
+								ParameterizedTypeName.get(
+									ClassName.get( "com.central1.lean.entities", "EntityRef" ),
+									t ) );
 
-		String usecaseName = ic.typeElement.getSimpleName().toString();
-		String controllerName = getControllerName( ic );
 
-		// Keep a unique list of all types used (so that to be imported)
-		final Set<String> types = new TreeSet<>();
-		types.add( "io.reactivex.Observable");
-		types.add( "io.reactivex.Single");
-		types.add( "org.springframework.web.bind.annotation.*");
-		types.add( "org.springframework.messaging.handler.annotation.DestinationVariable");
-		types.add( "org.springframework.messaging.simp.annotation.SubscribeMapping");
+		ParameterizedTypeName returnType = ParameterizedTypeName.get(
+				ClassName.get( "io.reactivex", "Observable" ),
+				ParameterizedTypeName.get(
+						ClassName.get( "java.util", "List" ),
+						t )
+		);
 
-		types.add( "java.util.List" );
-		types.add( "java.util.Arrays" );
+		ParameterizedTypeName param1Type = ParameterizedTypeName.get(
+				ClassName.get( "io.reactivex", "Observable" ),
+				ParameterizedTypeName.get(
+						ClassName.get( "java.util", "List" ),
+						r )
+		);
 
-		types.add( "com.central1.leanannotations.LeanEntryPoint" );
-		types.add( "com.central1.lean.entities.EntityRef" );
-		types.add( "com.central1.lean.mapping.Mapper");
-		types.add( "com.central1.lean.status.WriteOperationResult" );
+		ParameterizedTypeName param2Type = ParameterizedTypeName.get( ClassName.get( "com.central1.lean.mapping", "Mapper" ), r, t );
 
-		types.add( ic.typeElement.asType().toString() );
+		MethodSpec spec = MethodSpec.methodBuilder("getListObservable")
+				.addModifiers( Modifier.PRIVATE )
+				.addTypeVariable( t )
+				.addTypeVariable( r )
+				.addParameter( param1Type, "refList" )
+				.addParameter( param2Type,"mapper" )
+				.returns( returnType )
+				.addStatement( "return refList.switchMap( refs -> {\n"
+						+ "\t\t\tfinal Iterable<Observable<T>> iterable = refs.stream().map( mapper::getEntity )::iterator;\n"
+						+ "\t\t\treturn Observable.combineLatest( iterable, arr -> $T.asList( (T[]) arr ) );\n"
+						+ "\t\t} )", Arrays.class )
+				.build();
 
-		// Loop through the exposed method to get Mapper of method to detailed entity type, i.e. method getAccounts -> Account
-		Map<ExecutableElement, String> readListMethods = Maps.newHashMap();
-		Map<ExecutableElement, String> readSingleMethods = Maps.newHashMap();
-		List<ExecutableElement> nonReadMethods = Lists.newArrayList();
+		classBuilder.addMethod( spec );
+	}
 
-		Types typeUilts = processingEnv.getTypeUtils();
-		Elements elementUtils = processingEnv.getElementUtils();
-		for (ExecutableElement e : ic.getAllMethodsExposed()) {
+	private void process( UsecaseInfo ic, TypeSpec.Builder classBuilder )
+	{
+		String stompReadPrefix = "/queue/" + ic.typeElement.getQualifiedName().toString() + "/";
+		String stompPocPrefix = "/stomp-poc/" + ic.typeElement.getQualifiedName().toString() + "/";
+
+		for ( ExecutableElement e : ic.getAllMethodsExposed() )
+		{
 			TypeMirror returnType = e.getReturnType();
 
-			// Make sure returnType is Observable
+			// Check wether returnType is Observable.
 			//TypeMirror obType = elementUtils.getTypeElement("io.reactivex.Observable").asType();
 			//if ( typeUilts.isAssignable( returnType, obType ) && TypeKind.DECLARED.equals( returnType.getKind() ) )
 			String returnTypeName = ( (Type.ClassType) returnType ).asElement().getQualifiedName().toString();
-			if( returnTypeName.contains( "Observable" ) )
+			if ( returnTypeName.contains( "Observable" ) )
 			{
 				TypeMirror obParamType = ( (DeclaredType) returnType ).getTypeArguments().get( 0 );
 				String obParamTypeName = ( (Type.ClassType) obParamType ).asElement().getQualifiedName().toString();
@@ -99,177 +147,156 @@ public class UsecaseControllerGenerator extends AbstractGenerator<LeanUsecase, U
 				if ( TypeKind.DECLARED.equals( obParamType.getKind() ) && obParamTypeName.contains( "List" ) )
 				{
 					//It is Observable of list. Need to get the list's entity type.
-					TypeMirror listParamType = ( (DeclaredType) obParamType ).getTypeArguments().get( 0 );
-					String listParamTypeName = ( (Type.ClassType) listParamType ).asElement().getQualifiedName().toString();
-					String realEntityName =
-							listParamTypeName.substring( listParamTypeName.lastIndexOf( '.' ) + 1 ).replaceAll( "Ref", "" );
-					readListMethods.put( e, realEntityName );
-
-					types.add( listParamTypeName );
-					types.add( listParamTypeName.replaceAll( "Ref", "" ) );
+					TypeMirror entityRefType = ( (DeclaredType) obParamType ).getTypeArguments().get( 0 );
+					processStompMethod( e, entityRefType, stompReadPrefix, true, classBuilder );
 				}
 				else
 				{
-					//Is it possible to have a Observable<Entity>?
-					String realEntityName =
-							obParamTypeName.substring( obParamTypeName.lastIndexOf( '.' ) + 1 ).replaceAll( "Ref", "" );
-					readSingleMethods.put( e, realEntityName );
-
-					types.add( obParamTypeName );
-					types.add( obParamTypeName.replaceAll( "Ref", "" ) );
+					processStompMethod( e, obParamType, stompReadPrefix, false, classBuilder );
 				}
 			}
 			else
 			{
-				nonReadMethods.add( e );
+				//nonReadMethods.add( e );
+				processPostMethods( e, stompPocPrefix, classBuilder );
 			}
-
-			e.getParameters().forEach( paramElement -> {
-				if ( !( ( (Symbol.VarSymbol) paramElement ).asType() ).isPrimitive() )
-				{
-					types.add( ( (Type.ClassType) paramElement.asType() ).asElement().toString() );
-				}
-			} );
 		}
-
-		final StringBuilder sb = new StringBuilder();
-		sb.append( "@LeanEntryPoint\n" );
-		sb.append( "@RestController\n" );
-		sb.append( "public class " ).append( controllerName ).append( " {\n" );
-		sb.append( "	private final ").append( usecaseName ).append( " usecase;\n" );
-
-		Set<String> entities = new HashSet<>( readListMethods.values() );
-		entities.addAll( readSingleMethods.values() );
-		Map<String, String> eMappers = Maps.newHashMap();
-		entities.forEach( e ->
-				eMappers.put( getMapperVariableName( e ),  "Mapper<" + e + "Ref, " + e + ">" )
-		);
-
-		eMappers.forEach( ( key, value ) -> sb.append( "	private final " ).append( value ).append( " " ).append( key ).append( ";\n" ) );
-
-		sb.append( "\n" );
-		sb.append( "	public ").append( controllerName ).append( "(\n" );
-		eMappers.forEach( ( key, value ) -> sb.append( "		" ).append( value ).append( " " ).append( key ).append( ", \n" ) );
-		sb.append( "		" ).append( usecaseName ).append( " usecase )");
-		sb.append( "\n{\n");
-		sb.append("		this.usecase = usecase;\n" );
-		eMappers.keySet().forEach( key ->
-				sb.append("		this." ).append( key ).append( "= " ).append( key ).append( ";\n" )
-		);
-		sb.append( "	}\n" );
-		sb.append("\n");
-
-		readListMethods.forEach( (method, entityName) ->
-				{
-					String listReturnType = "Observable<List<" + entityName + ">>";
-					String methodName = method.getSimpleName().toString();
-					sb.append( "	@SubscribeMapping( value = \"/" ).append( methodName ).append( "\")\n" );
-					sb.append( "	public " ).append( listReturnType ).append( " " ).append( methodName );
-					handleParams( method, entityName, sb, true );
-					sb.append( "	}\n" );
-					sb.append( "\n" );
-				}
-		);
-
-		entities.forEach( entityName -> {
-			//Should we always automatically generate the single entity mapper method assuming they should not be in the usecase
-			String singleReturnType = "Observable<" + entityName + ">";
-			String entityRef = entityName + "Ref";
-			sb.append( "	@SubscribeMapping( value = \"/get" ).append( entityName ).append( "/{ref}\")\n" );
-			sb.append( "	public " ).append( singleReturnType ).append(" get").append( entityName );
-			sb.append( "( @DestinationVariable( \"ref\" ) " ).append( entityRef ).append( " ref ) {\n" );
-			sb.append( "		return " ).append( getMapperVariableName( entityName ) ).append( ".getEntity( ref );\n" );
-			sb.append( "	}\n" );
-			sb.append( "\n" );
-		} );
-
-		readSingleMethods.forEach( (method, entityName) -> {
-			String realReturnType = "Observable<" + entityName + ">";
-			String methodName = method.getSimpleName().toString();
-			sb.append( "	@SubscribeMapping( value = \"/" ).append( methodName ).append( "\")\n" );
-			sb.append( "	public " ).append( realReturnType ).append(" ").append( methodName );
-			handleParams( method, entityName, sb, false );
-			sb.append( "	}\n" );
-			sb.append( "\n" );
-		});
-
-		nonReadMethods.forEach( e -> {
-			String methodName = e.getSimpleName().toString();
-			String requestBodyName = methodName + "Request";
-			String requestBodyType = requestBodyName.substring(0, 1).toUpperCase() + requestBodyName.substring(1);
-			sb.append( "	@RequestMapping( value = \"/" ).append( e.getSimpleName() ).append( "\", method = RequestMethod.POST)\n" );
-			sb.append( "	public Single<WriteOperationResult> " ).append( e.getSimpleName() );
-			sb.append( "( @RequestBody ").append( requestBodyType ).append( " " ).append( requestBodyName ).append( ") {\n" );
-
-			List<String> methodParams = Lists.newArrayList();
-			if ( e.getParameters().size() > 0 )
-			{
-				e.getParameters().forEach( paramElement -> {
-					String paraName = paramElement.getSimpleName().toString();
-					String requestBodyCall = paraName.substring( 0, 1 ).toUpperCase() + paraName.substring( 1 ) + "()";
-					if( typeUilts.isAssignable( paramElement.asType(), elementUtils.getTypeElement( "java.lang.Boolean" ).asType() ) )
-					{
-						methodParams.add( requestBodyName + ".is" + requestBodyCall );
-					}
-					else
-					{
-						methodParams.add( requestBodyName + ".get" + requestBodyCall );
-					}
-				}  );
-			}
-			sb.append( "		return usecase." ).append( e.getSimpleName() ).append( "( ").append( StringUtils.join( methodParams, ", " )).append( " );\n" );
-			sb.append( "	}\n" );
-			sb.append( "\n" );
-		} );
-
-		sb.append( "	private <T, R extends EntityRef<T>> Observable<List<T>> getListObservable( Observable<List<R>> refList, Mapper<R, T> mapper )\n" );
-		sb.append( "{\n" );
-		sb.append( "		return refList.switchMap( refs -> {\n" );
-		sb.append( "			final Iterable<Observable<T>> iterable = refs.stream().map( mapper::getEntity )::iterator;\n");
-		sb.append( "			return Observable.combineLatest( iterable, arr -> Arrays.asList( (T[]) arr ) );\n" );
-		sb.append( "		} );\n" );
-		sb.append( "	}\n");
-
-		sb.append("}\n" );
-
-		//Get the package line and imports
-		StringBuilder startBuilder = new StringBuilder( );
-		startBuilder.append( "package " ).append( getControllerPackage(ic) ).append( ";\n" );
-		startBuilder.append( "\n" );
-		types.forEach( s -> startBuilder.append( "import " ).append( s ).append( ";\n" ) );
-		startBuilder.append( "\n" );
-
-		return startBuilder.toString() + sb.toString();
 	}
 
-
-	private void handleParams( ExecutableElement e, String entityName, StringBuilder sb, boolean isList )
+	private void processStompMethod( ExecutableElement e,  TypeMirror entityRefType, String stompPrefix, boolean isList, TypeSpec.Builder classBuilder )
 	{
-		sb.append( "(" );
-
-		List<String> requestParams = Lists.newArrayList();
-		List<String> usecaseParams = Lists.newArrayList();
-		if ( e.getParameters().size() > 0 )
+		//It is Observable of list. Need to get the list's entity type.
+		//TypeMirror entityRefType = ( (DeclaredType) obParamType ).getTypeArguments().get( 0 );
+		if ( StringUtils.endsWith( entityRefType.toString(), "Ref" ) )
 		{
-			e.getParameters().forEach( paramElement -> {
-				String paraType = ( (Type.ClassType) paramElement.asType() ).asElement().getQualifiedName().toString();
-				String paraName = paramElement.getSimpleName().toString();
-				requestParams.add( "@DestinationVariable( \"" + paraName + "\" ) " + paraType.substring( paraType.lastIndexOf( '.' ) + 1 ) + " " + paraName );
-				usecaseParams.add( paraName );
-			}  );
-		}
-		sb.append( StringUtils.join( requestParams, ", ") );
-		sb.append( " ) {\n" );
 
-		String usecaseCall = "usecase." + e.getSimpleName().toString() + "(" + StringUtils.join( usecaseParams, ", ") + ")";
-		String mapper = getMapperVariableName( entityName );
-		if ( isList )
-		{
-			sb.append( "		return getListObservable( " ).append( usecaseCall ).append( ", " ).append( mapper ).append( " );\n" );
+			final ClassName entityType = ClassName.bestGuess( entityRefType.toString().replaceAll( "Ref", "" ) );
+
+			// Create a corresponding mapper class field
+			final ParameterizedTypeName parameterizedTypeName = ParameterizedTypeName.get(
+					ClassName.get( "com.central1.lean.mapping", "Mapper" ),
+					TypeName.get( entityRefType ), entityType
+			);
+			final String eRefName = entityRefType.toString().substring( entityRefType.toString().lastIndexOf( '.' ) + 1 );
+			final String mapperName = eRefName.substring( 0, 1 ).toLowerCase() + eRefName.substring( 1 ) + "Mapper";
+			final FieldSpec.Builder fieldBuilder = FieldSpec.builder( parameterizedTypeName, mapperName, Modifier.PRIVATE, Modifier.FINAL );
+
+			if( classBuilder.build().fieldSpecs.stream().noneMatch( f -> f.type.equals( fieldBuilder.build().type ) ) )
+			{
+				classBuilder.addField( fieldBuilder.build() );
+
+				// Automatically generate a mapper method for the entity
+				if( isList )
+				{
+					ParameterizedTypeName stompEntityReturnType = ParameterizedTypeName.get( ClassName.get( "io.reactivex", "Observable" ), entityType );
+					String methodName = "get" + entityType.simpleName();
+					MethodSpec.Builder stompEntityMethod = MethodSpec.methodBuilder( methodName )
+							.addModifiers( Modifier.PUBLIC )
+							.returns( stompEntityReturnType )
+							.addAnnotation( AnnotationSpec.builder( SubscribeMapping.class )
+									.addMember( "value", "\"$L/{$L}\"", stompPrefix + methodName, "ref" )
+									.build() )
+							.addParameter( TypeName.get( entityRefType ), "ref" )
+							.addStatement( "return " + mapperName + ".getEntity( ref )" );
+					classBuilder.addMethod( stompEntityMethod.build() );
+				}
+			}
+
+			// Create stomp method
+			ParameterizedTypeName stompReturnType;
+			if ( isList )
+			{
+				stompReturnType = ParameterizedTypeName.get(
+						ClassName.get( "io.reactivex", "Observable" ),
+						ParameterizedTypeName.get( ClassName.get( "java.util", "List" ), entityType )
+				);
+			}
+			else
+			{
+				stompReturnType = ParameterizedTypeName.get( ClassName.get( "io.reactivex", "Observable" ), entityType );
+			}
+
+			MethodSpec.Builder stompMethod = MethodSpec.methodBuilder( e.getSimpleName().toString() )
+					.addModifiers( Modifier.PUBLIC )
+					.returns( stompReturnType );
+
+			// This only handles read method with one parameter
+			if ( e.getParameters().size() == 1 )
+			{
+				VariableElement p = e.getParameters().get( 0 );
+				String pName = p.getSimpleName().toString();
+				stompMethod
+						.addAnnotation( AnnotationSpec.builder( SubscribeMapping.class )
+								.addMember( "value", "\"$L/{$L}\"", stompPrefix + e.getSimpleName(), pName )
+								.build() )
+						.addParameter( ParameterSpec.builder( TypeName.get( p.asType() ), pName )
+								.addAnnotation( AnnotationSpec.builder( DestinationVariable.class ).addMember( "value", "$S", pName )
+										.build() )
+								.build() );
+				if( isList )
+				{
+					stompMethod.addStatement( "return getListObservable( this.usecase." + e.getSimpleName() + "(" + pName + "), " + mapperName + ")" );
+				}
+				else
+				{
+					stompMethod.addStatement( "return this.usecase." + e.getSimpleName() + "(" + pName + ").flatMap( " + mapperName + "::getEntity  )" );
+				}
+			}
+			else
+			{
+				stompMethod
+						.addAnnotation( AnnotationSpec.builder( SubscribeMapping.class )
+								.addMember( "value", "$S", stompPrefix + e.getSimpleName() )
+								.build() );
+				if ( isList )
+				{
+					stompMethod.addStatement( "return getListObservable( this.usecase." + e.getSimpleName() + ".() )" );
+				}
+				else
+				{
+					stompMethod.addStatement( "return this.usecase." + e.getSimpleName() + ".().flatMap( " + mapperName + "::getEntity  )" );
+				}
+			}
+			classBuilder.addMethod( stompMethod.build() );
+
 		}
 		else
 		{
-			sb.append( "		return " ).append( usecaseCall ).append( ".flatMap( " ).append( mapper ).append( "::getEntity );\n" );
+			throw new IllegalArgumentException( "Usecase should only return Observable of EntityRef" );
 		}
+	}
+
+	private void processPostMethods( ExecutableElement e, String stompPrefix, TypeSpec.Builder classBuilder )
+	{
+		// Add inner class for request body bean def
+		String methodName = e.getSimpleName().toString();
+		String requestBodyName = methodName + "Request";
+		String requestBeanName = requestBodyName.substring( 0,1 ).toUpperCase() + requestBodyName.substring( 1 );
+		String requestVar = "requestBean";
+
+		TypeSpec.Builder rbeanBuilder = TypeSpec.interfaceBuilder( requestBeanName + "Def" ).addAnnotation( BBBJson.class );
+		List<String> paramCalls = Lists.newArrayList();
+		e.getParameters().forEach( p ->
+		{
+			String getterName = "get" + p.getSimpleName().toString().substring( 0, 1 ).toUpperCase() + p.getSimpleName().toString().substring( 1 );
+			MethodSpec.Builder getter = MethodSpec.methodBuilder( getterName )
+					.addModifiers( Modifier.PUBLIC, Modifier.ABSTRACT )
+					.returns( TypeName.get( p.asType() ) );
+			rbeanBuilder.addMethod( getter.build() );
+
+			paramCalls.add( requestVar + "." + getterName + "()" );
+		});
+		classBuilder.addType( rbeanBuilder.build() );
+
+		MethodSpec.Builder postMethod = MethodSpec.methodBuilder( methodName )
+				.addAnnotation( AnnotationSpec.builder(RequestMapping.class )
+								.addMember( "value",  "$S", stompPrefix + e.getSimpleName() )
+								.addMember( "method",  "$T.POST", RequestMethod.class )
+								.build()  )
+				.returns( TypeName.get( e.getReturnType() ) )
+				.addParameter( ParameterSpec.builder( ClassName.bestGuess( requestBeanName ), requestVar ).addAnnotation( RequestBody.class ).build() )
+				.addStatement( "return this.usecase." + methodName + "(" + StringUtils.join( paramCalls, ", " ) + ")" );
+		classBuilder.addMethod( postMethod.build() );
+
 	}
 }

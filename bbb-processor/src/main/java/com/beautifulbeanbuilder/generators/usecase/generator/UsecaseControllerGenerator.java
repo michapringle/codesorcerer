@@ -87,10 +87,7 @@ public class UsecaseControllerGenerator extends AbstractJavaGenerator<LeanUsecas
 	private void addEntityMapperMethod( TypeSpec.Builder classBuilder )
 	{
 		TypeVariableName t = TypeVariableName.get( "T" );
-		TypeVariableName r = TypeVariableName.get( "R",
-								ParameterizedTypeName.get(
-									ClassName.get( "com.central1.lean.entities", "EntityRef" ),
-									t ) );
+		TypeVariableName r = TypeVariableName.get( "R", ClassName.get( "com.central1.lean.entities", "EntityRef" ) );
 
 		ClassName obClassName = ClassName.bestGuess( Observable.class.getName() );
 		ClassName listClassName = ClassName.bestGuess( List.class.getName() );

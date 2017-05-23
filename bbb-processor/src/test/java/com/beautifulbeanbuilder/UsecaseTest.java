@@ -30,7 +30,7 @@ public class UsecaseTest
 						"import io.reactivex.Observable;",
 						"import javax.annotation.Nonnull;",
 
-						"public interface Mapper<R extends EntityRef<T>, T> { ",
+						"public interface Mapper<R extends EntityRef, T> { ",
 						"	Observable<T> getEntity( @Nonnull R ref );",
 						"}"
 				);
@@ -42,14 +42,11 @@ public class UsecaseTest
 						"import javax.annotation.Nonnull;",
 						"import java.io.Serializable;",
 						"  ",
-						"public abstract class EntityRef<T> implements Serializable {",
+						"public abstract class EntityRef implements Serializable {",
 						"	@Nonnull",
 						"	private final String id;",
-						"	@Nonnull",
-						"	private final Class<T> entityType;",
-						"	public EntityRef( String id, Class<T> entityType ) {",
+						"	public EntityRef( String id ) {",
 						"		this.id = id;",
-						"		this.entityType = entityType;",
 						"	}",
 						"}"
 				);
@@ -58,9 +55,9 @@ public class UsecaseTest
 				.forSourceLines( "com.central1.lean.accounts.entities.AccountRef", "",
 						"package com.central1.lean.accounts.entities;",
 						"import com.central1.lean.entities.EntityRef;",
-						"public class AccountRef extends EntityRef<Account> {",
+						"public class AccountRef extends EntityRef {",
 						"		public AccountRef( final String id ) {",
-						"			super( id, Account.class );						",
+						"			super( id );						",
 						"		}										",
 						"}											"
 				);
@@ -83,9 +80,9 @@ public class UsecaseTest
 				.forSourceLines( "com.central1.lean.accounts.entities.AccountGroupRef", "",
 						"package com.central1.lean.accounts.entities;",
 						"import com.central1.lean.entities.EntityRef;",
-						"public class AccountGroupRef extends EntityRef<AccountGroup> {",
+						"public class AccountGroupRef extends EntityRef {",
 						"		public AccountGroupRef( final String id ) {",
-						"			super( id, AccountGroup.class );						",
+						"			super( id );						",
 						"		}										",
 						"}											"
 				);

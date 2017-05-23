@@ -48,19 +48,15 @@ public class EntityRefGenerator extends AbstractJavaGenerator<LeanEntity, Entity
 		final ClassName entityRefClass = ClassName.get( info.typePackage,  getRefName( info ));
 		final TypeSpec.Builder classBuilder = buildClass( entityRefClass );
 
-		final ClassName entityType = ClassName.bestGuess( StringUtils.replacePattern( info.typeElement.getQualifiedName().toString(), "Def$", "" ) );
-		classBuilder.superclass( ParameterizedTypeName.get(
-											ClassName.get( "com.central1.lean.entities", "EntityRef" ),
-											entityType ) );
+		classBuilder.superclass( ClassName.get( "com.central1.lean.entities", "EntityRef" ) );
 
 		MethodSpec.Builder constructorbuilder = MethodSpec.constructorBuilder().addModifiers( Modifier.PUBLIC );
 		constructorbuilder.addAnnotation( JsonCreator.class )
 				.addParameter( ParameterSpec.builder( String.class, "id" )
 								.addAnnotation( AnnotationSpec.builder( JsonProperty.class ).addMember( "value", "$S", "id" ).build() )
 								.build() )
-				.addStatement( "super( id, $T.class)", entityType );
+				.addStatement( "super( id )" );
 		classBuilder.addMethod( constructorbuilder.build() );
-
 		return classBuilder;
 	}
 }

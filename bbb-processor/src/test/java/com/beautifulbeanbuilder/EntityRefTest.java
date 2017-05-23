@@ -27,14 +27,11 @@ public class EntityRefTest
 						"import javax.annotation.Nonnull;",
 						"import java.io.Serializable;",
 						"  ",
-						"public abstract class EntityRef<T> implements Serializable {",
+						"public abstract class EntityRef implements Serializable {",
 						"	@Nonnull",
 						"	private final String id;",
-						"	@Nonnull",
-						"	private final Class<T> entityType;",
-						"	public EntityRef( String id, Class<T> entityType ) {",
+						"	public EntityRef( String id ) {",
 						"		this.id = id;",
-						"		this.entityType = entityType;",
 						"	}",
 						"}"
 				);
@@ -42,12 +39,21 @@ public class EntityRefTest
 		JavaFileObject accountDef = JavaFileObjects
 				.forSourceLines( "com.central1.lean.accounts.entities.AccountDef", "",
 						"package com.central1.lean.accounts.entities;",
+						"import com.beautifulbeanbuilder.LeanEntityRefTypescript;",
 						"import com.beautifulbeanbuilder.BBBImmutable;",
+						"import com.beautifulbeanbuilder.BBBTypescript;",
+						"import com.beautifulbeanbuilder.BasicTypescriptMapping;",
+						"import com.beautifulbeanbuilder.TypescriptMapping;",
 						"import com.central1.leanannotations.LeanEntity;",
 						"import javax.annotation.Nonnull; 			",
 						"											",
-						"@BBBImmutable								",
 						"@LeanEntity 								",
+						"@LeanEntityRefTypescript								",
+						"@TypescriptMapping(javaClassName = \"AccountRef\", typescriptClassName = \"AccountRef\", typescriptImportLocation = \"@c1/sdk\",\n"
+								+ "        typescriptPackageName=\"@c1/sdk\", typescriptPackageVersion=\"^1.23\")											",
+						"@BasicTypescriptMapping					",
+						"@BBBImmutable								",
+						"@BBBTypescript								",
 						"public interface AccountDef { 						",
 						"		@Nonnull								",
 						"		AccountRef getRef(); 				",
@@ -58,7 +64,7 @@ public class EntityRefTest
 
 		assertAbout(javaSources()).that( Arrays.asList( entityRef, accountDef))
 				.withCompilerOptions( ImmutableList.of("-XprintRounds"))
-				.processedWith( new BeanDefProcessor(), new EntityProcessor() )
+				.processedWith( new EntityProcessor(), new BeanDefProcessor() )
 				.compilesWithoutError();
 	}
 }

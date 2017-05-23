@@ -24,11 +24,12 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
-import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
+import static org.apache.commons.lang3.StringUtils.removeEnd;
 
 public class UsecaseControllerGenerator extends AbstractJavaGenerator<LeanUsecase, UsecaseInfo>
 {
@@ -39,14 +40,18 @@ public class UsecaseControllerGenerator extends AbstractJavaGenerator<LeanUsecas
 		{
 			JavaFile javaFile = JavaFile.builder( getControllerPackage( info ), objectToWrite.build() ).build();
 			System.out.println( "Writing out object " + javaFile.packageName + "." + javaFile.typeSpec.name );
-			javaFile.writeTo( new File( "generated" ) );
 			javaFile.writeTo( processingEnv.getFiler() );
 		}
 	}
 
 	private String getControllerName( UsecaseInfo info )
 	{
-		return info.typeElement.getSimpleName().toString().replace( "Usecase", "" ) + "RestController";
+		return info.typeElement.getSimpleName().toString().replace( "Usecase", "" ) + "Controller";
+	}
+
+	private String getEntitiesPackage( UsecaseInfo info )
+	{
+		return info.typePackage.replace( "usecases", "entities" );
 	}
 
 	private String getControllerPackage( UsecaseInfo info )
@@ -104,9 +109,9 @@ public class UsecaseControllerGenerator extends AbstractJavaGenerator<LeanUsecas
 				.addParameter( param2Type,"mapper" )
 				.returns( returnType )
 				.addStatement( "return refList.switchMap( refs -> {\n"
-						+ "\t\t\tfinal Iterable<Observable<T>> iterable = refs.stream().map( mapper::getEntity )::iterator;\n"
+						+ "\t\t\tfinal $T<Observable<T>> iterable = refs.stream().map( mapper::getEntity )::iterator;\n"
 						+ "\t\t\treturn Observable.combineLatest( iterable, arr -> $T.asList( (T[]) arr ) );\n"
-						+ "\t\t} )", Arrays.class )
+						+ "\t\t} )", Iterable.class, Arrays.class )
 				.build();
 
 		classBuilder.addMethod( spec );
@@ -116,6 +121,7 @@ public class UsecaseControllerGenerator extends AbstractJavaGenerator<LeanUsecas
 	{
 		return processingEnv.getTypeUtils().erasure(processingEnv.getElementUtils().getTypeElement( className ).asType());
 	}
+
 	private void process( UsecaseInfo ic, TypeSpec.Builder classBuilder, ProcessingEnvironment processingEnv )
 	{
 		String stompReadPrefix = "/queue/" + ic.typeElement.getQualifiedName().toString() + "/";
@@ -135,36 +141,37 @@ public class UsecaseControllerGenerator extends AbstractJavaGenerator<LeanUsecas
 				{
 					//It is Observable of list. Need to get the list's entity type.
 					TypeMirror entityRefType = ( (DeclaredType) obParamType ).getTypeArguments().get( 0 );
-					processStompMethod( e, entityRefType, stompReadPrefix, true, classBuilder );
+					processStompMethod( ic, e, entityRefType, stompReadPrefix, true, classBuilder );
 				}
 				else
 				{
-					processStompMethod( e, obParamType, stompReadPrefix, false, classBuilder );
+					processStompMethod( ic, e, obParamType, stompReadPrefix, false, classBuilder );
 				}
 			}
 			else
 			{
-				processPostMethods( e, stompPocPrefix, classBuilder );
+				processPostMethods( ic, e, stompPocPrefix, classBuilder );
 			}
 		}
 	}
 
-	private void processStompMethod( ExecutableElement e,  TypeMirror entityRefType, String stompPrefix, boolean isList, TypeSpec.Builder classBuilder )
+	private void processStompMethod( UsecaseInfo info, ExecutableElement e,  TypeMirror entityRefTm,
+			String stompPrefix, boolean isList, TypeSpec.Builder classBuilder )
 	{
 		//It is Observable of list. Need to get the list's entity type.
 		//TypeMirror entityRefType = ( (DeclaredType) obParamType ).getTypeArguments().get( 0 );
-		if ( StringUtils.endsWith( entityRefType.toString(), "Ref" ) )
+		if ( StringUtils.endsWith( entityRefTm.toString(), "Ref" ) )
 		{
-
-			final ClassName entityType = ClassName.bestGuess( entityRefType.toString().replaceAll( "Ref", "" ) );
+			final ClassName entityType = ClassName.bestGuess( getFQEntityName( info, removeEnd( entityRefTm.toString(), "Ref") ) );
+			final ClassName entityRefType = ClassName.bestGuess( getFQEntityName( info, entityRefTm.toString() ) );
 			final ClassName obClassName = ClassName.bestGuess( Observable.class.getName() );
 
 			// Create a corresponding mapper class field
 			final ParameterizedTypeName parameterizedTypeName = ParameterizedTypeName.get(
 					ClassName.get( "com.central1.lean.mapping", "Mapper" ),
-					TypeName.get( entityRefType ), entityType
+					entityRefType, entityType
 			);
-			final String eRefName = entityRefType.toString().substring( entityRefType.toString().lastIndexOf( '.' ) + 1 );
+			final String eRefName = entityRefTm.toString().substring( entityRefTm.toString().lastIndexOf( '.' ) + 1 );
 			final String mapperName = eRefName.substring( 0, 1 ).toLowerCase() + eRefName.substring( 1 ) + "Mapper";
 			final FieldSpec.Builder fieldBuilder = FieldSpec.builder( parameterizedTypeName, mapperName, Modifier.PRIVATE, Modifier.FINAL );
 
@@ -183,7 +190,7 @@ public class UsecaseControllerGenerator extends AbstractJavaGenerator<LeanUsecas
 							.addAnnotation( AnnotationSpec.builder( SubscribeMapping.class )
 									.addMember( "value", "\"$L/{$L}\"", stompPrefix + methodName, "ref" )
 									.build() )
-							.addParameter( TypeName.get( entityRefType ), "ref" )
+							.addParameter( entityRefType, "ref" )
 							.addStatement( "return " + mapperName + ".getEntity( ref )" );
 					classBuilder.addMethod( stompEntityMethod.build() );
 				}
@@ -204,7 +211,7 @@ public class UsecaseControllerGenerator extends AbstractJavaGenerator<LeanUsecas
 					.addModifiers( Modifier.PUBLIC )
 					.returns( stompReturnType );
 
-			// This only handles read method with one parameter
+			// This only handles read method with at most one parameter
 			if ( e.getParameters().size() == 1 )
 			{
 				VariableElement p = e.getParameters().get( 0 );
@@ -213,7 +220,7 @@ public class UsecaseControllerGenerator extends AbstractJavaGenerator<LeanUsecas
 						.addAnnotation( AnnotationSpec.builder( SubscribeMapping.class )
 								.addMember( "value", "\"$L/{$L}\"", stompPrefix + e.getSimpleName(), pName )
 								.build() )
-						.addParameter( ParameterSpec.builder( TypeName.get( p.asType() ), pName )
+						.addParameter( ParameterSpec.builder( getFQParameterClassName( info, p ), pName )
 								.addAnnotation( AnnotationSpec.builder( DestinationVariable.class ).addMember( "value", "$S", pName )
 										.build() )
 								.build() );
@@ -234,11 +241,11 @@ public class UsecaseControllerGenerator extends AbstractJavaGenerator<LeanUsecas
 								.build() );
 				if ( isList )
 				{
-					stompMethod.addStatement( "return getListObservable( this.usecase." + e.getSimpleName() + ".() )" );
+					stompMethod.addStatement( "return getListObservable( this.usecase." + e.getSimpleName() + "(), " + mapperName +" )" );
 				}
 				else
 				{
-					stompMethod.addStatement( "return this.usecase." + e.getSimpleName() + ".().flatMap( " + mapperName + "::getEntity  )" );
+					stompMethod.addStatement( "return this.usecase." + e.getSimpleName() + "().flatMap( " + mapperName + "::getEntity  )" );
 				}
 			}
 			classBuilder.addMethod( stompMethod.build() );
@@ -250,7 +257,7 @@ public class UsecaseControllerGenerator extends AbstractJavaGenerator<LeanUsecas
 		}
 	}
 
-	private void processPostMethods( ExecutableElement e, String stompPrefix, TypeSpec.Builder classBuilder )
+	private void processPostMethods( UsecaseInfo info, ExecutableElement e, String stompPrefix, TypeSpec.Builder classBuilder )
 	{
 		// Add inner class for request body bean def
 		String methodName = e.getSimpleName().toString();
@@ -262,10 +269,11 @@ public class UsecaseControllerGenerator extends AbstractJavaGenerator<LeanUsecas
 		List<String> paramCalls = Lists.newArrayList();
 		e.getParameters().forEach( p ->
 		{
+			System.out.println(" Parameter: "  +p.getSimpleName() + " -- " + p.asType());
 			String getterName = "get" + p.getSimpleName().toString().substring( 0, 1 ).toUpperCase() + p.getSimpleName().toString().substring( 1 );
 			MethodSpec.Builder getter = MethodSpec.methodBuilder( getterName )
 					.addModifiers( Modifier.PUBLIC, Modifier.ABSTRACT )
-					.returns( TypeName.get( p.asType() ) );
+					.returns( getFQParameterClassName( info,  p ) );
 			rbeanBuilder.addMethod( getter.build() );
 
 			paramCalls.add( requestVar + "." + getterName + "()" );
@@ -282,5 +290,14 @@ public class UsecaseControllerGenerator extends AbstractJavaGenerator<LeanUsecas
 				.addStatement( "return this.usecase." + methodName + "(" + StringUtils.join( paramCalls, ", " ) + ")" );
 		classBuilder.addMethod( postMethod.build() );
 
+	}
+
+	private ClassName getFQParameterClassName( UsecaseInfo info, VariableElement p )
+	{
+		return ClassName.bestGuess( getFQEntityName( info, p.asType().toString() ) );
+	}
+
+	private String getFQEntityName( UsecaseInfo info, String bestGuessClassName ) {
+		return ( bestGuessClassName.indexOf( '.' ) == -1 ) ? getEntitiesPackage( info ) + "." + bestGuessClassName : bestGuessClassName;
 	}
 }

@@ -21,7 +21,6 @@ public class EntityRefTypescriptGenerator extends AbstractGenerator<LeanEntityRe
 	@Override
 	public void processingOver( Collection<String> objects, ProcessingEnvironment processingEnv )
 	{
-
 	}
 
 	@Override

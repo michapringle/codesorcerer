@@ -11,7 +11,6 @@ import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Modifier;
-import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
@@ -26,7 +25,6 @@ public class EntityRefGenerator extends AbstractJavaGenerator<LeanEntity, Entity
 		{
 			JavaFile javaFile = JavaFile.builder( info.typePackage, objectToWrite.build() ).build();
 			System.out.println( "Writing out object " + javaFile.packageName + "." + javaFile.typeSpec.name );
-			javaFile.writeTo( new File( "generated" ) );
 			javaFile.writeTo( processingEnv.getFiler() );
 		}
 	}

@@ -1,6 +1,7 @@
 package com.beautifulbeanbuilder;
 
 import com.beautifulbeanbuilder.generators.beandef.BeanDefProcessor;
+import com.beautifulbeanbuilder.generators.entity.EntityProcessor;
 import com.beautifulbeanbuilder.generators.usecase.UsecaseProcessor;
 import com.central1.leanannotations.LeanUsecase;
 import com.google.common.collect.ImmutableList;
@@ -51,28 +52,48 @@ public class UsecaseTest
 						"}"
 				);
 
-		JavaFileObject accountRef = JavaFileObjects
-				.forSourceLines( "com.central1.lean.accounts.entities.AccountRef", "",
-						"package com.central1.lean.accounts.entities;",
-						"import com.central1.lean.entities.EntityRef;",
-						"public class AccountRef extends EntityRef {",
-						"		public AccountRef( final String id ) {",
-						"			super( id );						",
-						"		}										",
-						"}											"
+		JavaFileObject c1Entity = JavaFileObjects
+				.forSourceLines( "com.central1.lean.entities.C1Entity", "",
+						"package com.central1.lean.entities;\n"
+								+ "\n"
+								+ "import com.beautifulbeanbuilder.BBBImmutable;\n"
+								+ "import com.beautifulbeanbuilder.BBBJson;\n"
+								+ "import com.beautifulbeanbuilder.LeanEntityRefTypescript;\n"
+								+ "import com.central1.leanannotations.LeanEntity;\n"
+								+ "\n"
+								+ "@LeanEntity\n"
+								+ "@LeanEntityRefTypescript\n"
+								+ "@BBBImmutable\n"
+								+ "@BBBJson\n"
+								+ "public @interface C1Entity\n"
+								+ "{\n"
+								+ "}"
 				);
 
 		JavaFileObject account = JavaFileObjects
-				.forSourceLines( "com.central1.lean.accounts.entities.Account", "",
+				.forSourceLines( "com.central1.lean.accounts.entities.AccountDef", "",
 						"package com.central1.lean.accounts.entities;",
-						"	public class Account { 						",
-						"		private AccountRef ref;					",
-						"		public Account( AccountRef ref ) {		",
-						" 			this.ref = ref;						",
-						"		}										",
-						"		public AccountRef getRef() { 			",
-						"  			return ref;							",
-						"		}										",
+//						"import com.beautifulbeanbuilder.BBBImmutable;\n",
+//						"import com.beautifulbeanbuilder.BBBJson;\n",
+//						"import com.beautifulbeanbuilder.LeanEntityRefTypescript;\n",
+//						"import com.central1.leanannotations.LeanEntity;",
+						"import com.central1.lean.entities.C1Entity;",
+						"import javax.annotation.Nonnull;\n",
+						"\n",
+						"@C1Entity\n",
+//						"@LeanEntityRefTypescript\n",
+//						"@BBBJson\n",
+//						"@BBBImmutable",
+						"	public interface AccountDef { 						",
+						"		@Nonnull\n",
+						"		AccountRef getRef();\n",
+//						"		private AccountRef ref;					",
+//						"		public Account( AccountRef ref ) {		",
+//						" 			this.ref = ref;						",
+//						"		}										",
+//						"		public AccountRef getRef() { 			",
+//						"  			return ref;							",
+//						"		}										",
 						"	}											"
 				);
 
@@ -127,6 +148,11 @@ public class UsecaseTest
 						"			return Observable.just( new ArrayList<AccountRef>() );									",
 						"		}																							",
 						"		@Expose																",
+						"		public Observable<List<AccountGroupRef>> getAccountGroups()",
+						"		{																						",
+						"			return Observable.just( new ArrayList<AccountGroupRef>() );									",
+						"		}																							",
+						"		@Expose																",
 						"		public Single<Object> updateAccount( @Nonnull AccountRef ref, @Nonnull String newName, @Nonnull boolean test )",
 						"		{																						",
 						"			return Single.just( new Object() );									",
@@ -135,9 +161,9 @@ public class UsecaseTest
 						"}                                                                                                                                       "
 				);
 
-		assertAbout(javaSources()).that( Arrays.asList(mapper, entityRef, account, accountRef, accountGroup, accountGroupRef, usecase))
+		assertAbout(javaSources()).that( Arrays.asList(mapper, entityRef, c1Entity, account, accountGroup, accountGroupRef, usecase))
 				.withCompilerOptions( ImmutableList.of("-XprintRounds"))
-				.processedWith(new UsecaseProcessor(), new BeanDefProcessor() )
+				.processedWith( new EntityProcessor(), new BeanDefProcessor(), new UsecaseProcessor() )
 				.compilesWithoutError();
 	}
 }

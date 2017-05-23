@@ -141,7 +141,7 @@ public class BeanDefInfoBuilder {
         return TypeName.get(returnTypeMirror);
     }
 
-    private String getBBBFQName(TypeMirror returnTypeMirror) {
+    public static String getBBBFQName(TypeMirror returnTypeMirror) {
         //test.ParentDef.SubDef ==> test.Sub
         TypeElement te = MoreTypes.asTypeElement(returnTypeMirror);
 

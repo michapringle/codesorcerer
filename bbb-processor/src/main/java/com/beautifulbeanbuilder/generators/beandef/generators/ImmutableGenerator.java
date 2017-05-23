@@ -148,28 +148,6 @@ public class ImmutableGenerator extends AbstractJavaBeanGenerator<BBBImmutable>
             a.addMethod(doneMethod.build());
         }
 
-//        //Callbacks
-//        ic.beanDefFieldInfos.stream().filter(i -> isBBB(i)).forEach(i -> {
-//            MethodSpec.Builder m = MethodSpec.methodBuilder("newCallback" + i.nameUpper);
-//            m.addModifiers(Modifier.PRIVATE);
-//            m.returns(ParameterizedTypeName.get(Types.jpCallback, i.nReturnType));
-//            //m.addParameter(ic.typeMutable, "m");
-//
-//            TypeSpec callback = TypeSpec.anonymousClassBuilder("")
-//                    .addSuperinterface(ParameterizedTypeName.get(Types.jpCallback, i.nReturnType))
-//                    .addMethod(MethodSpec.methodBuilder("update")
-//                            .addAnnotation(Override.class)
-//                            .addModifiers(Modifier.PUBLIC)
-//                            .addParameter(i.nReturnType, "val")
-//                            .returns(void.class)
-//                            .addStatement("" + i.nameMangled + " = val")
-//                            .build())
-//                    .build();
-//
-//            m.addStatement("return $L", callback);
-//            a.addMethod(m.build());
-//        });
-
         classBuilder.addType(a.build());
     }
 
@@ -422,13 +400,11 @@ public class ImmutableGenerator extends AbstractJavaBeanGenerator<BBBImmutable>
             m1.addParameter(a.nReturnType, a.nameMangled);
             MethodSpec.Builder m2 = MethodSpec.methodBuilder("new" + a.nameUpper);
             m2.addModifiers(Modifier.ABSTRACT, Modifier.PUBLIC);
-            //m2.addParameter(a.nReturnType, a.nameMangled);
             MethodSpec.Builder m3 = MethodSpec.methodBuilder(a.nameMangled);
             m3.addModifiers(Modifier.ABSTRACT, Modifier.PUBLIC);
             m3.addParameter(a.nReturnType, a.nameMangled);
             MethodSpec.Builder m4 = MethodSpec.methodBuilder("new" + a.nameUpper);
             m4.addModifiers(Modifier.ABSTRACT, Modifier.PUBLIC);
-            //m4.addParameter(a.nReturnType, a.nameMangled);
 
             if (x < ic.nonNullBeanDefFieldInfos.size() - 1) {
                 int xx = x + 1;
@@ -443,7 +419,6 @@ public class ImmutableGenerator extends AbstractJavaBeanGenerator<BBBImmutable>
                 if (isBBB(a)) {
                     ClassName classNameSubBeanRequires0 = ClassName.bestGuess(a.returnType + "." + "SubBeanRequires0");
                     m2.returns(ParameterizedTypeName.get(classNameSubBeanRequires0, classNameBeanRequiresXX));
-                    //m4.returns(ParameterizedTypeName.get(classNameSubBeanRequires0, classNameSubBeanRequiresXX));
                     m4.returns(ParameterizedTypeName.get(classNameSubBeanRequires0, ParameterizedTypeName.get(classNameSubBeanRequiresXX, Types.jpP)));
                 }
 

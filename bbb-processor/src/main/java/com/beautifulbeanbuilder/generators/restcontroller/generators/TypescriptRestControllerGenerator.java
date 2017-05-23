@@ -45,7 +45,6 @@ public class TypescriptRestControllerGenerator extends AbstractGenerator<Typescr
         //  sb.append("namespace '" + ic.getCurrentTypePackage() +"' {");
         sb.append("import {Injectable} from '@angular/core';\n");
         sb.append("import {Http} from '@angular/http';\n");
-        sb.append("import {StompClient} from './stomp.client';\n");
 
 
         //import {Account} from "test";

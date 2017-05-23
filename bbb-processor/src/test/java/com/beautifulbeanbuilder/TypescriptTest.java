@@ -73,5 +73,28 @@ public class TypescriptTest {
         );
     }
 
+
+    @Test
+    public void subbean() throws Exception {
+        compiles("",
+                "          @BBBTypescript                                                 ",
+                "          @BasicTypescriptMapping                                                       ",
+                "          @BBBJson                                                        ",
+                "          @BBBImmutable                                                        ",
+                "          public interface BeanParentDef {                                                  ",
+                "            BeanChildDef getChild();                                                  ",
+                "          }                                                                          ",
+                "                                                                                  ",
+                "          @BBBTypescript                                                 ",
+                "          @BasicTypescriptMapping                                                       ",
+                "          @BBBJson                                                        ",
+                "          @BBBImmutable                                                        ",
+                "          public interface BeanChildDef {                                                  ",
+                "            String getName();                                                  ",
+                "          }                                                                          ",
+                "                                                                                  "
+        );
+    }
+
 }
 

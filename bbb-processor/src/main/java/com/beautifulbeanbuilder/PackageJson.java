@@ -12,6 +12,7 @@ public class PackageJson {
     public String version;
     public Map<String, String> dependencies = Maps.newHashMap();
     public Map<String, String> devDependencies = Maps.newHashMap();
+    public Map<String, String> peerDependencies = Maps.newHashMap();
 
     public String toJson() {
         try {

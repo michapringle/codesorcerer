@@ -112,8 +112,8 @@ public final class TSUtils {
 
         //Recurseive step
         if (t instanceof Type.ErrorType) {
-            //final String typeName = t.toString();
-            final String typeName = BeanDefInfoBuilder.getBBBFQName(t);
+            final String typeName = t.toString();
+            //final String typeName = BeanDefInfoBuilder.getBBBFQName(t);
             return find(mappings, typeName, processingEnv);
         } else if (t instanceof Type.JCVoidType) {
             return null;
@@ -143,19 +143,24 @@ public final class TSUtils {
             return first.get();
         }
 
-        final String typeName2 = StringUtils.substringAfterLast(typeName, ".");;
-        String name = typeName;
+        String name2;
         if (typeName.contains(".")) {
-            name = typeName;
-        }
-        else {
+            name2 = typeName;
+        } else {
             JavacFiler f = (JavacFiler) processingEnvironment.getFiler();
-            name = f.getGeneratedSourceNames().stream()
+            name2 = f.getGeneratedSourceNames().stream()
                     .filter(n -> n.equals(typeName) || n.endsWith("." + typeName))
                     .findFirst()
                     .orElseThrow(() -> new RuntimeException("ErrorType - No Typescript mapping to " + typeName + " in " + mappings));
         }
-        final String name2 = name;
+
+
+        String typeName2;
+        if (typeName.contains(".")) {
+            typeName2 = StringUtils.substringAfterLast(typeName, ".");
+        } else {
+            typeName2 = typeName;
+        }
 
         return new TypescriptMapping() {
             @Override

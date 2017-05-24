@@ -146,13 +146,11 @@ public class BeanDefInfoBuilder {
         TypeElement te = MoreTypes.asTypeElement(returnTypeMirror);
 
         Element cur = te;
-        while (cur instanceof TypeElement) {
+        while (!(cur instanceof PackageElement)) {
             cur = cur.getEnclosingElement();
         }
         String pkgOfBean = ((PackageElement) cur).getQualifiedName().toString();
-
         String beanName = removeEnd(te.getSimpleName().toString(), "Def");
-
         return pkgOfBean + "." + beanName;
     }
 

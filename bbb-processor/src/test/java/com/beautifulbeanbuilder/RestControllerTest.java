@@ -41,7 +41,7 @@ public class RestControllerTest {
 
                         "                                                                                                                                                    ",
                         "   @TypescriptMapping(javaClass = Observable.class, typescriptClassName = \"Observable\", typescriptImportLocation = \"./rxjs\")                                                                                                                                                 ",
-                        "   @TypescriptMapping(javaClass = Single.class, typescriptClassName = \"ObservableSING\", typescriptImportLocation = \"./rxjs\")                                                                                                                                                 ",
+                        "   @TypescriptMapping(javaClass = Single.class, typescriptClassName = \"Single\", typescriptImportLocation = \"./rxjs\")                                                                                                                                                 ",
                         "   @BasicTypescriptMapping                                                 ",
                         "   public @interface C1Mappings {                                                  ",
                         "   }                                                                                                                                       ",

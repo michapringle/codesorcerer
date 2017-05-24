@@ -59,12 +59,13 @@ public class TypescriptGenerator extends AbstractGenerator<BBBTypescript, BeanDe
             Set<TypescriptMapping> mappings = TSUtils.getAllMappings(o.ic.typeElement);
             for (TypescriptMapping tm : mappings) {
                 if (!tm.typescriptPackageName().isEmpty()) {
-                    packageJson.devDependencies.put(tm.typescriptPackageName(), tm.typescriptPackageVersion());
+                    packageJson.peerDependencies.put(tm.typescriptPackageName(), tm.typescriptPackageVersion());
                 }
             }
         }
-        packageJson.devDependencies.put("class-transformer", "^0.1.6");
-        packageJson.devDependencies.put("stomp-client", "^0.0.1");
+        packageJson.peerDependencies.put("class-transformer", "^0.1.6");
+        packageJson.peerDependencies.put("@c1/stomp-client", "^0.0.1");
+        packageJson.peerDependencies.put("qwest", "^4.4.6");
 
         FileUtils.forceMkdirParent(DIR);
         FileUtils.write(new File(DIR, "package.json"), packageJson.toJson(), Charset.defaultCharset());

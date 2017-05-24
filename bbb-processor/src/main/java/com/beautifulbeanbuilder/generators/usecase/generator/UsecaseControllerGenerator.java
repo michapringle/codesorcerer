@@ -269,7 +269,6 @@ public class UsecaseControllerGenerator extends AbstractJavaGenerator<LeanUsecas
 		List<String> paramCalls = Lists.newArrayList();
 		e.getParameters().forEach( p ->
 		{
-			System.out.println(" Parameter: "  +p.getSimpleName() + " -- " + p.asType());
 			String getterName = "get" + p.getSimpleName().toString().substring( 0, 1 ).toUpperCase() + p.getSimpleName().toString().substring( 1 );
 			MethodSpec.Builder getter = MethodSpec.methodBuilder( getterName )
 					.addModifiers( Modifier.PUBLIC, Modifier.ABSTRACT )

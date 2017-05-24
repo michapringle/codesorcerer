@@ -54,15 +54,18 @@ public class TypescriptGenerator extends AbstractGenerator<BBBTypescript, BeanDe
         packageJson.name = pkg;
 
 
-        //Add dependencies
+        //Add devDependencies
         for (Out o : objects) {
             Set<TypescriptMapping> mappings = TSUtils.getAllMappings(o.ic.typeElement);
             for (TypescriptMapping tm : mappings) {
                 if (!tm.typescriptPackageName().isEmpty()) {
-                    packageJson.dependencies.put(tm.typescriptPackageName(), tm.typescriptPackageVersion());
+                    packageJson.peerDependencies.put(tm.typescriptPackageName(), tm.typescriptPackageVersion());
                 }
             }
         }
+        packageJson.peerDependencies.put("class-transformer", "^0.1.6");
+        packageJson.peerDependencies.put("@c1/stomp-client", "^0.0.1");
+        packageJson.peerDependencies.put("qwest", "^4.4.6");
 
         FileUtils.forceMkdirParent(DIR);
         FileUtils.write(new File(DIR, "package.json"), packageJson.toJson(), Charset.defaultCharset());
@@ -80,10 +83,11 @@ public class TypescriptGenerator extends AbstractGenerator<BBBTypescript, BeanDe
         Set<TypescriptMapping> mappings = TSUtils.getAllMappings(ic.typeElement);
 
         StringBuilder sb = new StringBuilder();
+        sb.append("import {Type, Expose} from 'class-transformer';\n");
         sb.append("*IMPORTS*");
 
         buildBuilder(ic, sb, mappings, processingEnv);
-        buildInterface(ic, sb, mappings, processingEnv);
+        buildClass(ic, sb, mappings, processingEnv);
 
         //Register
         ic.beanDefFieldInfos.forEach(i -> addReferences(i.getter));
@@ -97,7 +101,7 @@ public class TypescriptGenerator extends AbstractGenerator<BBBTypescript, BeanDe
         return out;
     }
 
-    private void buildInterface(BeanDefInfo ic, StringBuilder sb, Set<TypescriptMapping> mappings, ProcessingEnvironment processingEnv) {
+    private void buildClass(BeanDefInfo ic, StringBuilder sb, Set<TypescriptMapping> mappings, ProcessingEnvironment processingEnv) {
         sb.append("export class " + ic.immutableClassName + " {\n");
 
 
@@ -279,11 +283,15 @@ public class TypescriptGenerator extends AbstractGenerator<BBBTypescript, BeanDe
                 .map(i -> i.nameMangled + " : " + TSUtils.convertToTypescriptType(i.getter.getReturnType(), mappings, processingEnv))
                 .collect(Collectors.joining(", "));
 
+
         sb.append("public constructor( " + allParams + ") {\n");
         for (BeanDefFieldInfo i : ic.beanDefFieldInfos) {
             sb.append("  this._" + i.nameMangled + " = " + i.nameMangled + ";\n");
         }
         sb.append("}");
+        sb.append("\n");
+
+        sb.append("public constructor() {}");
         sb.append("\n");
     }
 
@@ -296,7 +304,14 @@ public class TypescriptGenerator extends AbstractGenerator<BBBTypescript, BeanDe
 
     private void buildFields2(BeanDefInfo ic, StringBuilder sb, Set<TypescriptMapping> mappings, ProcessingEnvironment processingEnv) {
         for (BeanDefFieldInfo i : ic.beanDefFieldInfos) {
-            sb.append(" private readonly _" + i.nameMangled + ": " + TSUtils.convertToTypescriptType(i.getter.getReturnType(), mappings, processingEnv) + ";\n");
+            String typ = TSUtils.convertToTypescriptType(i.getter.getReturnType(), mappings, processingEnv);
+
+            String ann = "";
+            if(!typ.equals("string") && !typ.equals("number") && !typ.equals("boolean")) {
+                ann = "@Type(() => " + typ + ")";
+            }
+
+            sb.append(ann + "  @Expose({ name: '" + i.nameMangled + "' })" + " private _" + i.nameMangled + ": " + typ + ";\n");
         }
         sb.append("\n");
     }

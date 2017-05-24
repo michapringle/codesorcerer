@@ -1,9 +1,11 @@
 package com.beautifulbeanbuilder.typescript;
 
 import com.beautifulbeanbuilder.TypescriptMapping;
+import com.beautifulbeanbuilder.generators.beandef.BeanDefInfoBuilder;
 import com.google.common.collect.Sets;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.processing.JavacFiler;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import javax.annotation.processing.ProcessingEnvironment;
@@ -14,9 +16,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
 import java.lang.annotation.Annotation;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -113,72 +113,91 @@ public final class TSUtils {
         //Recurseive step
         if (t instanceof Type.ErrorType) {
             final String typeName = t.toString();
-
-            JavacFiler f = (JavacFiler) processingEnv.getFiler();
-            final String name = f.getGeneratedSourceNames().stream()
-                    .filter(n -> n.endsWith("." + t.toString()))
-                    .findFirst()
-                    .orElseThrow(() -> new RuntimeException("ErrorType - No Typescript mapping to " + typeName + " in " + mappings));
-
-
-            return new TypescriptMapping() {
-                @Override
-                public Class<? extends Annotation> annotationType() {
-                    return TypescriptMapping.class;
-                }
-
-                @Override
-                public String javaClassName() {
-                    return null;
-                }
-
-                @Override
-                public Class javaClass() {
-                    return null;
-                }
-
-                @Override
-                public String typescriptClassName() {
-                    return typeName;
-                }
-
-                @Override
-                public String typescriptImportLocation() {
-                    return name;
-                }
-
-                @Override
-                public String typescriptPackageName() {
-                    return null;
-                }
-
-                @Override
-                public String typescriptPackageVersion() {
-                    return null;
-                }
-            };
+            //final String typeName = BeanDefInfoBuilder.getBBBFQName(t);
+            return find(mappings, typeName, processingEnv);
         } else if (t instanceof Type.JCVoidType) {
             return null;
         } else if (t instanceof Type.JCPrimitiveType) {
             Type.JCPrimitiveType ct = (Type.JCPrimitiveType) t;
             final String typeName = ct.asElement().getQualifiedName().toString();
-
-            return mappings.stream()
-                    .filter(x -> getClassName(x).equals(typeName))
-                    .findFirst()
-                    .orElseThrow(() -> new RuntimeException("PrimType - No Typescript mapping to " + typeName + " in " + mappings));
+            //final String typeName = BeanDefInfoBuilder.getBBBFQName(t);
+            return find(mappings, typeName, processingEnv);
         } else if (t instanceof Type.ClassType) {
-            Type.ClassType ct = (Type.ClassType) t;
-            final String typeName = ct.asElement().getQualifiedName().toString();
-
-            return mappings.stream()
-                    .filter(x -> getClassName(x).equals(typeName))
-                    .findFirst()
-                    .orElseThrow(() -> new RuntimeException("ClassType - No Typescript mapping to " + typeName + " in " + mappings));
+            //Type.ClassType ct = (Type.ClassType) t;
+            //final String typeName = ct.asElement().getQualifiedName().toString();
+            final String typeName = BeanDefInfoBuilder.getBBBFQName(t);
+            return find(mappings, typeName, processingEnv);
         } else {
             throw new RuntimeException("Unknown compiler type " + t.getClass());
         }
+    }
 
+
+    private static TypescriptMapping find(Set<TypescriptMapping> mappings, String typeName, ProcessingEnvironment processingEnvironment) {
+
+        Optional<TypescriptMapping> first = mappings.stream()
+                .filter(x -> getClassName(x).equals(typeName))
+                .findFirst();
+
+        if (first.isPresent()) {
+            return first.get();
+        }
+
+        String name2;
+        if (typeName.contains(".")) {
+            name2 = typeName;
+        } else {
+            JavacFiler f = (JavacFiler) processingEnvironment.getFiler();
+            name2 = f.getGeneratedSourceNames().stream()
+                    .filter(n -> n.equals(typeName) || n.endsWith("." + typeName))
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("ErrorType - No Typescript mapping to " + typeName + " in " + mappings));
+        }
+
+
+        String typeName2;
+        if (typeName.contains(".")) {
+            typeName2 = StringUtils.substringAfterLast(typeName, ".");
+        } else {
+            typeName2 = typeName;
+        }
+
+        return new TypescriptMapping() {
+            @Override
+            public Class<? extends Annotation> annotationType() {
+                return TypescriptMapping.class;
+            }
+
+            @Override
+            public String javaClassName() {
+                return null;
+            }
+
+            @Override
+            public Class javaClass() {
+                return null;
+            }
+
+            @Override
+            public String typescriptClassName() {
+                return typeName2;
+            }
+
+            @Override
+            public String typescriptImportLocation() {
+                return name2;
+            }
+
+            @Override
+            public String typescriptPackageName() {
+                return null;
+            }
+
+            @Override
+            public String typescriptPackageVersion() {
+                return null;
+            }
+        };
     }
 
     private static String convertToImportStatement(TypescriptMapping mapping) {
@@ -191,7 +210,7 @@ public final class TSUtils {
         final String simpleName = mapping.typescriptClassName();
         final String loc = mapping.typescriptImportLocation();
         final String className = getClassName(mapping);
-        System.out.println("Mapping " + className + " to " + simpleName + " " + loc);
+        //System.out.println("Mapping " + className + " to " + simpleName + " " + loc);
         return "import {" + simpleName + "} from '" + loc + "';";
     }
 
@@ -222,7 +241,6 @@ public final class TSUtils {
             throw new RuntimeException("Unknown type " + tm);
         }
     }
-
 
 
     public static Set<TypeMirror> getReferences(ExecutableElement e) {

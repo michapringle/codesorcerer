@@ -7,6 +7,7 @@ import com.beautifulbeanbuilder.generators.restcontroller.RestControllerInfo;
 import com.beautifulbeanbuilder.processor.AbstractGenerator;
 import com.beautifulbeanbuilder.typescript.TSUtils;
 import com.google.common.collect.Sets;
+import com.sun.tools.javac.code.Type;
 import org.apache.commons.io.FileUtils;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.simp.annotation.SubscribeMapping;
@@ -42,10 +43,11 @@ public class TypescriptRestControllerGenerator extends AbstractGenerator<Typescr
 
 
         final StringBuilder sb = new StringBuilder();
-        //  sb.append("namespace '" + ic.getCurrentTypePackage() +"' {");
-        sb.append("import {Injectable} from '@angular/core';\n");
-        sb.append("import {Http} from '@angular/http';\n");
-        sb.append("import {StompClient} from './stomp.client';\n");
+        sb.append("import {Injectable} from 'injection-js';\n");
+        sb.append("import * as qwest from 'qwest';\n");
+        sb.append("import {StompClient} from '@c1/stomp-client';\n");
+        sb.append("import {Observable, BehaviorSubject} from 'rxjs';\n");
+        sb.append("import {plainToClass} from 'class-transformer';\n");
 
 
         //import {Account} from "test";
@@ -56,7 +58,7 @@ public class TypescriptRestControllerGenerator extends AbstractGenerator<Typescr
         sb.append("export class " + serviceName + "Service {\n");
 
         sb.append("//-----------------Constructor\n");
-        sb.append("     constructor( private stompClient: StompClient, private http: Http) {}\n");
+        sb.append("     constructor( private stompClient: StompClient ) {}\n");
         sb.append("\n");
 
         sb.append("//-----------------Stomp Methods\n");
@@ -79,23 +81,23 @@ public class TypescriptRestControllerGenerator extends AbstractGenerator<Typescr
                         DestinationVariable dv = v.getAnnotation(DestinationVariable.class);
                         String tsType = TSUtils.convertToTypescriptType(v.asType(), mappings, processingEnv);
                         return dv.value() + " : " + tsType;
-                        //topic = topic.replace("{" + dv.value() + "}", "' + " + dv.value() + "'");
                     })
                     .collect(Collectors.joining(","));
 
             sb.append("\n");
-            sb.append("public " + e.getSimpleName() + "(" + tsParameterList + "): " + TSUtils.convertToTypescriptType(e.getReturnType(), mappings, processingEnv) + " {\n");
+            String fullReturnType = TSUtils.convertToTypescriptType(e.getReturnType(), mappings, processingEnv);
+            String innerReturnType = getInnerType(e.getReturnType(), mappings, processingEnv);
+
+            sb.append("public " + e.getSimpleName() + "(" + tsParameterList + "): " + fullReturnType + " {\n");
             sb.append("    return this.stompClient.topic('" + topic + "')\n");
+            sb.append("       .map(x => plainToClass(" + innerReturnType + ", x));\n");
             sb.append("}\n");
         }
         sb.append("\n");
 
 
         sb.append("//-----------------Rest Methods\n");
-        for (
-                ExecutableElement e : ic.getAllMethodsRest())
-
-        {
+        for (ExecutableElement e : ic.getAllMethodsRest()) {
             addReferences(e);
 
             sb.append("\n");
@@ -115,21 +117,57 @@ public class TypescriptRestControllerGenerator extends AbstractGenerator<Typescr
             referenced.add(requestBodyParameter.asType());
 
             String body = TSUtils.convertToTypescriptType(requestBodyParameter.asType(), mappings, processingEnv);
-            sb.append("     public " + e.getSimpleName() + "( body : " + body + ") : " + TSUtils.convertToTypescriptType(e.getReturnType(), mappings, processingEnv) + " {\n");
-            sb.append("         return this.http.post( '" + rm.value()[0] + "', body )\n");
-            sb.append("                         .map( r => r.json());\n");
-            sb.append("     }\n");
+            String url = rm.value()[0];
 
+            String fullReturnType = TSUtils.convertToTypescriptType(e.getReturnType(), mappings, processingEnv);
+            String innerReturnType = getInnerType(e.getReturnType(), mappings, processingEnv);
 
+            sb.append("public " + e.getSimpleName() + "( body : " + body + ") : " + fullReturnType + " {\n");
+            sb.append("   let o = new BehaviorSubject<" + innerReturnType + ">();\n");
+            sb.append("   qwest.post( '" + url + "', body )\n");
+            sb.append("       .then((xhr, response) => {\n");
+            sb.append("            let x = plainToClass(" + innerReturnType + ", response);\n");
+            sb.append("            o.next(x);\n");
+            sb.append("        })\n");
+            sb.append("       .catch((e, xhr, response)  => {\n");
+            sb.append("            o.error(e);\n");
+            sb.append("        });\n");
+            sb.append("   return o.asObservable();\n");
+            sb.append("}\n");
         }
-        sb.append(" }\n");
-        sb.append("\n");
+
+        sb.append("}\n");
 
         String imports = TSUtils.convertToImportStatements(referenced, mappings, processingEnv);
         String x = sb.toString().replace("*IMPORTS*", imports);
 
         return x;
     }
+
+    private String getInnerType(TypeMirror e, Set<TypescriptMapping> mappings, ProcessingEnvironment processingEnv) {
+        System.out.println("start return type " + e);
+        if (e instanceof Type.ClassType) {
+            Type.ClassType ct = (Type.ClassType) e;
+            String name = ct.asElement().toString();
+            if(name.equals(io.reactivex.Observable.class.getName()) ) {
+                return getInnerType(ct.getTypeArguments().get(0), mappings, processingEnv);
+            }
+            if(name.equals(io.reactivex.Single.class.getName()) ) {
+                return getInnerType(ct.getTypeArguments().get(0), mappings, processingEnv);
+            }
+            if(name.equals(List.class.getName()) ) {
+                return getInnerType(ct.getTypeArguments().get(0), mappings, processingEnv);
+            }
+        }
+        if (e instanceof Type.ArrayType) {
+            Type.ArrayType ct = (Type.ArrayType) e;
+            return getInnerType(ct.elemtype, mappings, processingEnv);
+        }
+
+        System.out.println("return type " + e);
+        return TSUtils.convertToTypescriptType(e, mappings, processingEnv);
+    }
+
 
     private Set<TypeMirror> referenced = Sets.newHashSet();
 

@@ -141,18 +141,16 @@ public class BeanDefInfoBuilder {
         return TypeName.get(returnTypeMirror);
     }
 
-    private String getBBBFQName(TypeMirror returnTypeMirror) {
+    public static String getBBBFQName(TypeMirror returnTypeMirror) {
         //test.ParentDef.SubDef ==> test.Sub
         TypeElement te = MoreTypes.asTypeElement(returnTypeMirror);
 
         Element cur = te;
-        while (cur instanceof TypeElement) {
+        while (!(cur instanceof PackageElement)) {
             cur = cur.getEnclosingElement();
         }
         String pkgOfBean = ((PackageElement) cur).getQualifiedName().toString();
-
         String beanName = removeEnd(te.getSimpleName().toString(), "Def");
-
         return pkgOfBean + "." + beanName;
     }
 

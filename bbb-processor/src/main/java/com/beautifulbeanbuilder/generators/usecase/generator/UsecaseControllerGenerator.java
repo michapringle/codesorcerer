@@ -1,6 +1,9 @@
 package com.beautifulbeanbuilder.generators.usecase.generator;
 
+import com.beautifulbeanbuilder.BBBImmutable;
 import com.beautifulbeanbuilder.BBBJson;
+import com.beautifulbeanbuilder.BBBTypescript;
+import com.beautifulbeanbuilder.TypescriptController;
 import com.beautifulbeanbuilder.generators.usecase.UsecaseInfo;
 import com.beautifulbeanbuilder.processor.AbstractGenerator;
 import com.beautifulbeanbuilder.processor.AbstractJavaGenerator;
@@ -66,6 +69,7 @@ public class UsecaseControllerGenerator extends AbstractJavaGenerator<LeanUsecas
 		final ClassName controller = ClassName.get( getControllerPackage( ic ), getControllerName( ic ) );
 		final TypeSpec.Builder classBuilder = buildClass( controller );
 
+		classBuilder.addAnnotation( TypescriptController.class );
 		classBuilder.addAnnotation( RestController.class );
 		classBuilder.addAnnotation( LeanEntryPoint.class );
 
@@ -265,7 +269,10 @@ public class UsecaseControllerGenerator extends AbstractJavaGenerator<LeanUsecas
 		String requestBeanName = requestBodyName.substring( 0,1 ).toUpperCase() + requestBodyName.substring( 1 );
 		String requestVar = "requestBean";
 
-		TypeSpec.Builder rbeanBuilder = TypeSpec.interfaceBuilder( requestBeanName + "Def" ).addAnnotation( BBBJson.class );
+		TypeSpec.Builder rbeanBuilder = TypeSpec.interfaceBuilder( requestBeanName + "Def" );
+		rbeanBuilder.addAnnotation( BBBImmutable.class );
+		rbeanBuilder.addAnnotation( BBBJson.class );
+		rbeanBuilder.addAnnotation( BBBTypescript.class );
 		List<String> paramCalls = Lists.newArrayList();
 		e.getParameters().forEach( p ->
 		{

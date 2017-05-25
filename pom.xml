@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.bbb</groupId>
     <artifactId>bbb-parent</artifactId>
-    <version>2.0.7</version>
+    <version>2.0.8</version>
     <packaging>pom</packaging>
 
     <modules>

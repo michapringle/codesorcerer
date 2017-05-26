@@ -9,7 +9,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>codesorcerer</module>
         <module>targets</module>
         <module>spells</module>
         <module>processor</module>

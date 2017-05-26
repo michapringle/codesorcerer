@@ -1,5 +1,9 @@
-package com.beautifulbeanbuilder.generators.beandef;
+package com.beautifulbeanbuilder.generators.def;
 
+import com.beautifulbeanbuilder.abstracts.AbstractInputBuilder;
+import com.beautifulbeanbuilder.generators.def.spells.Types;
+import com.beautifulbeanbuilder.typescript.TSUtils;
+import com.beautifulbeanbuilder.generators.def.BeanDefInfo.BeanDefFieldInfo;
 import com.google.auto.common.MoreElements;
 import com.google.auto.common.MoreTypes;
 import com.google.common.collect.ImmutableSet;
@@ -12,7 +16,10 @@ import com.sun.tools.javac.code.Type;
 
 import javax.annotation.Nonnull;
 import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.*;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.*;
 import javax.lang.model.util.ElementFilter;
 import java.util.List;
@@ -24,7 +31,15 @@ import static com.google.common.collect.Iterables.toArray;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.*;
 
-public class BeanDefInfoBuilder {
+public class BeanDefInputBuilder extends AbstractInputBuilder<BeanDefInfo> {
+
+    @Override
+    public BeanDefInfo buildInput(TypeElement te) {
+        checkBBBUsage(te);
+        printBeanStatus(te);
+        return init(processingEnvironment, te);
+    }
+
 
     public static final Set<String> KEYWORDS = ImmutableSet.of("abstract", "continue", "for", "new", "switch",
             "assert", "default", "goto", "package", "synchronized",
@@ -38,9 +53,11 @@ public class BeanDefInfoBuilder {
             "const", "float", "native", "super", "while");
 
 
-    public BeanDefInfo init(ProcessingEnvironment processingEnv, TypeElement te, String currentTypeName, String currentTypePackage) {
+    private BeanDefInfo init(ProcessingEnvironment processingEnv, TypeElement te) {
 
         final BeanDefInfo ic = new BeanDefInfo();
+        String currentTypeName = te.getSimpleName().toString();
+        String currentTypePackage = processingEnv.getElementUtils().getPackageOf(te).toString();
 
         String pkg = removeEnd(currentTypePackage, ".def");
         String bbbWithNoDef = removeEnd(currentTypeName, "Def");
@@ -142,16 +159,7 @@ public class BeanDefInfoBuilder {
     }
 
     public static String getBBBFQName(TypeMirror returnTypeMirror) {
-        //test.ParentDef.SubDef ==> test.Sub
-        TypeElement te = MoreTypes.asTypeElement(returnTypeMirror);
-
-        Element cur = te;
-        while (!(cur instanceof PackageElement)) {
-            cur = cur.getEnclosingElement();
-        }
-        String pkgOfBean = ((PackageElement) cur).getQualifiedName().toString();
-        String beanName = removeEnd(te.getSimpleName().toString(), "Def");
-        return pkgOfBean + "." + beanName;
+        return removeEnd(TSUtils.getFQName(returnTypeMirror), "Def");
     }
 
 
@@ -209,6 +217,16 @@ public class BeanDefInfoBuilder {
 
         //Add them
         list.addAll(newTs);
+    }
+
+    private void printBeanStatus(TypeElement te) {
+//        System.out.println("* Making it beautiful - " + te.getQualifiedName());
+    }
+
+    private void checkBBBUsage(TypeElement te) {
+        if (!endsWith(te.getSimpleName(), "Def")) {
+            throw new RuntimeException("Must end with Def");
+        }
     }
 
 

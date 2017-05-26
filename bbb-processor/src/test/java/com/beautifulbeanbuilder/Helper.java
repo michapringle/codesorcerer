@@ -1,9 +1,7 @@
 package com.beautifulbeanbuilder;
 
 
-import com.beautifulbeanbuilder.generators.beandef.BeanDefProcessor;
-import com.beautifulbeanbuilder.generators.restcontroller.RestControllerProcessor;
-import com.google.common.collect.ImmutableList;
+import com.beautifulbeanbuilder.processor.CodeSorcererProcessor;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
 import com.google.testing.compile.JavaFileObjects;
@@ -24,6 +22,7 @@ public class Helper {
 
     public static JavaFileObject forStandardDef(String... lines) {
 
+        long now = System.currentTimeMillis();
         List<String> start = Arrays.asList(
                 "          package test;                                                  ",
                 "                                                            ",
@@ -41,7 +40,7 @@ public class Helper {
                 "          import " + ArrayList.class.getName() + ";                                                  ",
                 "          import " + HashMap.class.getName() + ";                                                  ",
                 "                                                            ",
-                "          public class Container {"
+                "          public class Container" + now + " {"
         );
 
         List<String> end = Arrays.asList("          }");
@@ -49,15 +48,15 @@ public class Helper {
         Iterable allLines = Iterables.concat(start, Arrays.asList(lines), end);
 
         return JavaFileObjects
-                .forSourceLines("test.Container", allLines);
+                .forSourceLines("test.Container"+now, allLines);
 
     }
 
 
     public static void hasCompileError(JavaFileObject source, String msg) {
         assertAbout(javaSource()).that(source)
-                .withCompilerOptions(ImmutableList.of("-XprintRounds"))
-                .processedWith(new BeanDefProcessor(), new RestControllerProcessor())
+                //.withCompilerOptions(ImmutableList.of("-XprintRounds"))
+                .processedWith(new CodeSorcererProcessor())
                 .failsToCompile()
                 .withErrorContaining(msg);
     }
@@ -65,8 +64,8 @@ public class Helper {
 
     public static void hasNoCompileErrors(JavaFileObject... source) {
         assertAbout(javaSources()).that(Arrays.asList(source))
-                .withCompilerOptions(ImmutableList.of("-XprintRounds", "-proc:only"))
-                .processedWith(new BeanDefProcessor(), new RestControllerProcessor())
+                //.withCompilerOptions(ImmutableList.of("-XprintRounds", "-proc:only"))
+                .processedWith(new CodeSorcererProcessor())
                 .compilesWithoutError();
     }
 }

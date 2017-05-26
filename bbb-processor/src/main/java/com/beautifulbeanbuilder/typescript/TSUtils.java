@@ -1,7 +1,10 @@
 package com.beautifulbeanbuilder.typescript;
 
+import com.beautifulbeanbuilder.Collector;
 import com.beautifulbeanbuilder.TypescriptMapping;
-import com.beautifulbeanbuilder.generators.beandef.BeanDefInfoBuilder;
+import com.beautifulbeanbuilder.generators.def.BeanDefInputBuilder;
+import com.google.auto.common.MoreTypes;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.processing.JavacFiler;
@@ -9,18 +12,34 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.AnnotationMirror;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.*;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
 import java.lang.annotation.Annotation;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 public final class TSUtils {
+
+
+
+    public static String getFQName(TypeMirror returnTypeMirror) {
+        //test.ParentDef.SubDef ==> test.Sub
+        TypeElement te = MoreTypes.asTypeElement(returnTypeMirror);
+
+        Element cur = te;
+        while (!(cur instanceof PackageElement)) {
+            cur = cur.getEnclosingElement();
+        }
+        String pkgOfBean = ((PackageElement) cur).getQualifiedName().toString();
+        String beanName = te.getSimpleName().toString();
+        return pkgOfBean + "." + beanName;
+    }
 
     public static Set<TypescriptMapping> getAllMappings(TypeElement e) {
         return getAllAnnotationOnElement(e, TypescriptMapping.class);
@@ -113,19 +132,19 @@ public final class TSUtils {
         //Recurseive step
         if (t instanceof Type.ErrorType) {
             final String typeName = t.toString();
-            //final String typeName = BeanDefInfoBuilder.getBBBFQName(t);
+            //final String typeName = BeanDefInputBuilder.getBBBFQName(t);
             return find(mappings, typeName, processingEnv);
         } else if (t instanceof Type.JCVoidType) {
             return null;
         } else if (t instanceof Type.JCPrimitiveType) {
             Type.JCPrimitiveType ct = (Type.JCPrimitiveType) t;
             final String typeName = ct.asElement().getQualifiedName().toString();
-            //final String typeName = BeanDefInfoBuilder.getBBBFQName(t);
+            //final String typeName = BeanDefInputBuilder.getBBBFQName(t);
             return find(mappings, typeName, processingEnv);
         } else if (t instanceof Type.ClassType) {
             //Type.ClassType ct = (Type.ClassType) t;
             //final String typeName = ct.asElement().getQualifiedName().toString();
-            final String typeName = BeanDefInfoBuilder.getBBBFQName(t);
+            final String typeName = BeanDefInputBuilder.getBBBFQName(t);
             return find(mappings, typeName, processingEnv);
         } else {
             throw new RuntimeException("Unknown compiler type " + t.getClass());
@@ -135,12 +154,11 @@ public final class TSUtils {
 
     private static TypescriptMapping find(Set<TypescriptMapping> mappings, String typeName, ProcessingEnvironment processingEnvironment) {
 
-        Optional<TypescriptMapping> first = mappings.stream()
-                .filter(x -> getClassName(x).equals(typeName))
-                .findFirst();
-
-        if (first.isPresent()) {
-            return first.get();
+        final Iterable<TypescriptMapping> allMappings = Iterables.concat(mappings, Collector.get("mappings"));
+        for(TypescriptMapping tm : allMappings) {
+            if(getClassName(tm).equals(typeName)) {
+                return tm;
+            }
         }
 
         String name2;
@@ -151,7 +169,13 @@ public final class TSUtils {
             name2 = f.getGeneratedSourceNames().stream()
                     .filter(n -> n.equals(typeName) || n.endsWith("." + typeName))
                     .findFirst()
-                    .orElseThrow(() -> new RuntimeException("ErrorType - No Typescript mapping to " + typeName + " in " + mappings));
+                    .orElse(null);
+                    //.orElseThrow(() -> new RuntimeException("ErrorType - No Typescript mapping to " + typeName + " in " + mappings));
+        }
+
+        //Look into results...
+        if( name2 == null) {
+
         }
 
 
@@ -204,13 +228,12 @@ public final class TSUtils {
 
         //If there is not location, then we dont need to import it
         // eg: boolean
-        if (mapping.typescriptImportLocation().isEmpty()) {
+        if (isBlank(mapping.typescriptImportLocation())) {
             return "";
         }
         final String simpleName = mapping.typescriptClassName();
         final String loc = mapping.typescriptImportLocation();
         final String className = getClassName(mapping);
-        //System.out.println("Mapping " + className + " to " + simpleName + " " + loc);
         return "import {" + simpleName + "} from '" + loc + "';";
     }
 

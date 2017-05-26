@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 public class RestControllerTest {
 
     @Test
-    public void simpl2e() throws Exception {
+    public void simple2() throws Exception {
 
         JavaFileObject o1 = JavaFileObjects
                 .forSourceLines("test.Test", "",
@@ -54,7 +54,6 @@ public class RestControllerTest {
                         "   @C1Mappings                                                                                                                                                ",
                         "   @BBBTypescript                                 ",
                         "   @BBBJson                                                        ",
-                        "   @BBBImmutable                                                        ",
                         "   public @interface C1Bean {                                                  ",
                         "   }                                                                                                                                                                                ",
                         "                                                                                                                                                    ",
@@ -145,6 +144,7 @@ public class RestControllerTest {
                 );
 
         Helper.hasNoCompileErrors(o1, o2);
+        Helper.hasNoCompileErrors(o2, o1);
     }
 
 }

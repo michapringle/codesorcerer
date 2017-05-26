@@ -1,4 +1,4 @@
-package com.beautifulbeanbuilder;
+package com.beautifulbeanbuilder.typescript;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;

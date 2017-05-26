@@ -1,33 +1,32 @@
-package com.beautifulbeanbuilder.generators.beandef.generators;
+package com.beautifulbeanbuilder.generators.def.spells;
 
 import com.beautifulbeanbuilder.BBBGuava;
 import com.beautifulbeanbuilder.BBBImmutable;
-import com.beautifulbeanbuilder.generators.beandef.BeanDefInfo;
-import com.beautifulbeanbuilder.generators.beandef.Types;
-import com.beautifulbeanbuilder.processor.AbstractGenerator;
-import com.beautifulbeanbuilder.processor.AbstractJavaBeanGenerator;
+import com.beautifulbeanbuilder.generators.def.BeanDefInfo;
+import com.beautifulbeanbuilder.abstracts.AbstractSpell;
+import com.beautifulbeanbuilder.abstracts.AbstractJavaBeanSpell;
+import com.beautifulbeanbuilder.processor.CodeSorcererProcessor;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 import com.squareup.javapoet.*;
 
-import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Modifier;
-import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
-public class GuavaGenerator extends AbstractJavaBeanGenerator<BBBGuava>
-{
+public class GuavaSpell extends AbstractJavaBeanSpell<BBBGuava> {
+
 
     @Override
-    public List<Class<? extends Annotation>> requires() {
-        return Collections.singletonList(BBBImmutable.class);
+    public int getRunOrder() {
+        return 200;
     }
 
-    public TypeSpec.Builder build(BeanDefInfo ic, Map<AbstractGenerator, Object> generatorBuilderMap, ProcessingEnvironment processingEnvironment) throws IOException {
+    @Override
+    public void build(CodeSorcererProcessor.Result<AbstractSpell<BBBGuava, BeanDefInfo, TypeSpec.Builder>, BeanDefInfo, TypeSpec.Builder> result) throws Exception {
+        BeanDefInfo ic = result.input;
         ClassName typeGuava = ClassName.get(ic.pkg, ic.immutableClassName + "Guava");
 
         TypeSpec.Builder classBuilder = buildClass(typeGuava);
@@ -144,7 +143,7 @@ public class GuavaGenerator extends AbstractJavaBeanGenerator<BBBGuava>
             classBuilder.addField(f.build());
         });
 
-        return classBuilder;
+        result.output = classBuilder;
     }
 
 }

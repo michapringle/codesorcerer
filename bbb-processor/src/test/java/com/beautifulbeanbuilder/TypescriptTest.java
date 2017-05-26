@@ -17,7 +17,7 @@ public class TypescriptTest {
                 "          @BasicTypescriptMapping                                                       ",
                 "          @BBBJson                                                        ",
                 "          @BBBImmutable                                                        ",
-                "          public interface BeanDef {                                                  ",
+                "          public interface BeanSimple1Def {                                                  ",
                 "            String getName();                                                  ",
                 "            int getAge();                                                  ",
                 "          }                                                                          ",

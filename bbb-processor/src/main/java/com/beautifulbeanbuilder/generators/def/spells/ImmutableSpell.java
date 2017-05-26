@@ -1,9 +1,12 @@
-package com.beautifulbeanbuilder.generators.beandef.generators;
+package com.beautifulbeanbuilder.generators.def.spells;
 
 import com.beautifulbeanbuilder.BBBImmutable;
-import com.beautifulbeanbuilder.generators.beandef.*;
-import com.beautifulbeanbuilder.processor.AbstractGenerator;
-import com.beautifulbeanbuilder.processor.AbstractJavaBeanGenerator;
+import com.beautifulbeanbuilder.generators.def.BeanDefInfo;
+import com.beautifulbeanbuilder.generators.def.BeanDefInfo.BeanDefFieldInfo;
+import com.beautifulbeanbuilder.generators.def.BeanDefInputBuilder;
+import com.beautifulbeanbuilder.abstracts.AbstractJavaBeanSpell;
+import com.beautifulbeanbuilder.abstracts.AbstractSpell;
+import com.beautifulbeanbuilder.processor.CodeSorcererProcessor;
 import com.google.auto.common.MoreTypes;
 import com.google.common.collect.Lists;
 import com.squareup.javapoet.*;
@@ -12,31 +15,34 @@ import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
 import javax.annotation.concurrent.ThreadSafe;
-import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.TypeMirror;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.google.common.collect.Iterables.toArray;
 
-public class ImmutableGenerator extends AbstractJavaBeanGenerator<BBBImmutable>
+public class ImmutableSpell extends AbstractJavaBeanSpell<BBBImmutable>
 {
 
+    @Override
+    public int getRunOrder() {
+        return 100;
+    }
 
     private boolean isBBB(BeanDefFieldInfo i) {
         final TypeMirror returnTypeMirror = i.getter.getReturnType();
 
-        return !BeanDefInfoBuilder.isPrimitive(returnTypeMirror) &&
-                !BeanDefInfoBuilder.isArray(returnTypeMirror) &&
-                BeanDefProcessor.hasAnnotation(MoreTypes.asElement(returnTypeMirror), BBBImmutable.class);
+        return !BeanDefInputBuilder.isPrimitive(returnTypeMirror) &&
+                !BeanDefInputBuilder.isArray(returnTypeMirror) &&
+                CodeSorcererProcessor.hasAnnotation(MoreTypes.asElement(returnTypeMirror), BBBImmutable.class);
     }
 
-    public TypeSpec.Builder build(BeanDefInfo ic, Map<AbstractGenerator, Object> generatorBuilderMap, ProcessingEnvironment processingEnvironment) throws IOException {
+    @Override
+    public void build(CodeSorcererProcessor.Result<AbstractSpell<BBBImmutable, BeanDefInfo, TypeSpec.Builder>, BeanDefInfo, TypeSpec.Builder> result) throws Exception {
+        BeanDefInfo ic = result.input;
         TypeSpec.Builder classBuilder = buildClass(ic.typeImmutable);
 
         classBuilder.addAnnotation(Immutable.class);
@@ -68,7 +74,7 @@ public class ImmutableGenerator extends AbstractJavaBeanGenerator<BBBImmutable>
         addEquals(ic, classBuilder);
         addSimpleBuilders(ic, classBuilder);
 
-        return classBuilder;
+        result.output = classBuilder;
     }
 
     private void addAbstract(BeanDefInfo ic, TypeSpec.Builder classBuilder) {

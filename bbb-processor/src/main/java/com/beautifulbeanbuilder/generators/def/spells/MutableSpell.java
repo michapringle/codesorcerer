@@ -1,58 +1,60 @@
-package com.beautifulbeanbuilder.generators.beandef.generators;
+package com.beautifulbeanbuilder.generators.def.spells;
 
-import com.beautifulbeanbuilder.BBBImmutable;
 import com.beautifulbeanbuilder.BBBMutable;
-import com.beautifulbeanbuilder.generators.beandef.BeanDefInfo;
-import com.beautifulbeanbuilder.processor.AbstractGenerator;
-import com.beautifulbeanbuilder.processor.AbstractJavaBeanGenerator;
+import com.beautifulbeanbuilder.generators.def.BeanDefInfo;
+import com.beautifulbeanbuilder.abstracts.AbstractJavaBeanSpell;
+import com.beautifulbeanbuilder.abstracts.AbstractSpell;
+import com.beautifulbeanbuilder.processor.CodeSorcererProcessor;
 import com.squareup.javapoet.*;
 
-import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Modifier;
-import java.io.IOException;
-import java.lang.annotation.Annotation;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.Collection;
 
-public class MutableGenerator extends AbstractJavaBeanGenerator<BBBMutable>
-{
+public class MutableSpell extends AbstractJavaBeanSpell<BBBMutable> {
 
 
     @Override
-    public List<Class<? extends Annotation>> requires() {
-        return Collections.singletonList(BBBImmutable.class);
+    public int getRunOrder() {
+        return 200;
     }
 
     @Override
-    public TypeSpec.Builder build(BeanDefInfo ic, Map<AbstractGenerator, Object> generatorBuilderMap, ProcessingEnvironment processingEnvironment) throws IOException {
-        ClassName typeMutable = ClassName.get(ic.pkg, ic.immutableClassName + "Mutable");
+    public void build(CodeSorcererProcessor.Result<AbstractSpell<BBBMutable, BeanDefInfo, TypeSpec.Builder>, BeanDefInfo, TypeSpec.Builder> result) throws Exception {
+        BeanDefInfo bi = result.input;
+        ClassName typeMutable = ClassName.get(bi.pkg, bi.immutableClassName + "Mutable");
 
         final TypeSpec.Builder classBuilder = buildClass(typeMutable);
         addSerialVersionUUID(classBuilder);
 
         //Members
-        ic.beanDefFieldInfos.forEach(i -> {
+        bi.beanDefFieldInfos.forEach(i -> {
             final FieldSpec f = i.buildField(Modifier.PRIVATE);
             classBuilder.addField(f);
         });
 
         //Getters
-        ic.beanDefFieldInfos.forEach(i -> {
+        bi.beanDefFieldInfos.forEach(i -> {
             final MethodSpec getter = i.buildGetter();
             classBuilder.addMethod(getter);
         });
 
         //Setters
-        ic.beanDefFieldInfos.forEach(i -> {
+        bi.beanDefFieldInfos.forEach(i -> {
             final MethodSpec setter = i.buildSetter();
             classBuilder.addMethod(setter);
         });
 
-        addToImmutable(ic, classBuilder);
-        addToMutable(ic, getTypeBuilder(ImmutableGenerator.class, generatorBuilderMap), typeMutable);
+        addToImmutable(bi, classBuilder);
 
-        return classBuilder;
+        result.output = classBuilder;
+    }
+
+    @Override
+    public void modify(CodeSorcererProcessor.Result<AbstractSpell<BBBMutable, BeanDefInfo, TypeSpec.Builder>, BeanDefInfo, TypeSpec.Builder> result, Collection<CodeSorcererProcessor.Result> results) throws Exception {
+        BeanDefInfo bi = result.input;
+        ClassName typeMutable = ClassName.get(bi.pkg, bi.immutableClassName + "Mutable");
+
+        addToMutable(bi, getResult(ImmutableSpell.class, result.te, results).output, typeMutable);
     }
 
     private void addToMutable(BeanDefInfo ic, TypeSpec.Builder classBuilder, ClassName typeMutable) {

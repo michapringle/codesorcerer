@@ -1,10 +1,10 @@
-package com.beautifulbeanbuilder.generators.beandef.generators;
+package com.beautifulbeanbuilder.generators.def.spells;
 
 import com.beautifulbeanbuilder.BBBJson;
-import com.beautifulbeanbuilder.BBBMutable;
-import com.beautifulbeanbuilder.generators.beandef.BeanDefInfo;
-import com.beautifulbeanbuilder.processor.AbstractGenerator;
-import com.beautifulbeanbuilder.processor.AbstractJavaBeanGenerator;
+import com.beautifulbeanbuilder.generators.def.BeanDefInfo;
+import com.beautifulbeanbuilder.abstracts.AbstractSpell;
+import com.beautifulbeanbuilder.abstracts.AbstractJavaBeanSpell;
+import com.beautifulbeanbuilder.processor.CodeSorcererProcessor;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -15,25 +15,23 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-import com.google.common.collect.ImmutableList;
 import com.squareup.javapoet.*;
 
-import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Modifier;
 import java.io.IOException;
-import java.lang.annotation.Annotation;
-import java.util.List;
-import java.util.Map;
+import java.util.Collection;
 
-public class JacksonGenerator extends AbstractJavaBeanGenerator<BBBJson>
+public class JacksonSpell extends AbstractJavaBeanSpell<BBBJson>
 {
-
     @Override
-    public List<Class<? extends Annotation>> requires() {
-        return ImmutableList.of(BBBMutable.class);
+    public int getRunOrder() {
+        return 300;
     }
 
-    public TypeSpec.Builder build(BeanDefInfo ic, Map<AbstractGenerator, Object> generatorBuilderMap, ProcessingEnvironment processingEnvironment) throws IOException {
+    @Override
+    public void build(CodeSorcererProcessor.Result<AbstractSpell<BBBJson, BeanDefInfo, TypeSpec.Builder>, BeanDefInfo, TypeSpec.Builder> result) throws Exception {
+        BeanDefInfo ic = result.input;
+
         ClassName typeJackson = ClassName.get(ic.pkg, ic.immutableClassName + "Jackson");
 
         //TODO: dont depend on mutable
@@ -43,11 +41,15 @@ public class JacksonGenerator extends AbstractJavaBeanGenerator<BBBJson>
         classBuilder.addType(buildSerializer(ic).build());
         classBuilder.addType(buildDeserializer(ic, typeMutable).build());
 
-        addJsonSerializationAnnotations(ic, getTypeBuilder(ImmutableGenerator.class, generatorBuilderMap), typeJackson);
-
-        return classBuilder;
+        result.output = classBuilder;
     }
 
+    @Override
+    public void modify(CodeSorcererProcessor.Result<AbstractSpell<BBBJson, BeanDefInfo, TypeSpec.Builder>, BeanDefInfo, TypeSpec.Builder> result, Collection<CodeSorcererProcessor.Result> results) throws Exception {
+        BeanDefInfo ic = result.input;
+        ClassName typeJackson = ClassName.get(ic.pkg, ic.immutableClassName + "Jackson");
+        addJsonSerializationAnnotations(ic, getResult(ImmutableSpell.class, result.te, results).output, typeJackson);
+    }
 
     private void addJsonSerializationAnnotations(BeanDefInfo ic, TypeSpec.Builder classBuilder, ClassName typeJackson) {
         classBuilder.addAnnotation(AnnotationSpec.builder(JsonDeserialize.class)
@@ -107,12 +109,12 @@ public class JacksonGenerator extends AbstractJavaBeanGenerator<BBBJson>
         MethodSpec.Builder m = MethodSpec.methodBuilder("serialize");
         m.addModifiers(Modifier.PUBLIC);
         m.addParameter(ic.typeImmutable, "o");
-        m.addParameter(ClassName.get(JsonGenerator.class), "gen");
+        m.addParameter(ClassName.get(JsonGenerator.class), "spell");
         m.addParameter(ClassName.get(SerializerProvider.class), "sp");
         m.addException(ClassName.get(IOException.class));
         m.addException(ClassName.get(JsonGenerationException.class));
 
-        m.addStatement("gen.writeObject(o.toMutable())");
+        m.addStatement("spell.writeObject(o.toMutable())");
 
         classBuilder.addMethod(m.build());
         return classBuilder;

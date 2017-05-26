@@ -14,15 +14,15 @@ public class MutableSuccessTest {
     public void toFromMutable() throws Exception {
         compiles("",
                 "          @BBBMutable                                                 ",
-                "          public interface BeanDef {                                                                                                        ",
+                "          public interface BeanMut1Def {                                                                                                        ",
                 "            String getThing();                                                                                                     ",
                 "          }                                                                                                                             ",
                 "                                                                                                                                           ",
                 "          class Usage {                                                                                                                 ",
                 "             void test() {                                                                                                                 ",
-                "                BeanMutable x = new BeanMutable();                                                                                     ",
+                "                BeanMut1Mutable x = new BeanMut1Mutable();                                                                                     ",
                 "                x.setThing(\"x\");                                                                                                                        ",
-                "                BeanMutable y = x.toImmutable().toMutable();                                                                                     ",
+                "                BeanMut1Mutable y = x.toImmutable().toMutable();                                                                                     ",
                 "             }                                                                                                                        ",
                 "          }                                                                                                                        ",
                 "                                                                                                                   "

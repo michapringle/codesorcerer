@@ -1,9 +1,10 @@
 package com.beautifulbeanbuilder.generators.restcontroller;
 
-import com.beautifulbeanbuilder.generators.beandef.BeanDefInfoBuilder;
+import com.beautifulbeanbuilder.generators.def.BeanDefInputBuilder;
 import org.springframework.messaging.simp.annotation.SubscribeMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementFilter;
@@ -16,10 +17,10 @@ public class RestControllerInfo {
     private final String currentTypeName;
     private final String currentTypePackage;
 
-    public RestControllerInfo(TypeElement typeElement, String currentTypeName, String currentTypePackage) {
-        this.typeElement = typeElement;
-        this.currentTypeName = currentTypeName;
-        this.currentTypePackage = currentTypePackage;
+    public RestControllerInfo(TypeElement te, ProcessingEnvironment processingEnv) {
+        this.typeElement = te;
+        currentTypeName = te.getSimpleName().toString();
+        currentTypePackage = processingEnv.getElementUtils().getPackageOf(te).toString();
     }
 
     public List<ExecutableElement> getAllMethodsStomp() {
@@ -38,7 +39,7 @@ public class RestControllerInfo {
     }
 
     private List<ExecutableElement> getAllMethods() {
-        return BeanDefInfoBuilder.getHierarchy(typeElement, x -> ElementFilter.methodsIn(x.getEnclosedElements()));
+        return BeanDefInputBuilder.getHierarchy(typeElement, x -> ElementFilter.methodsIn(x.getEnclosedElements()));
     }
 
     public String getCurrentTypeName() {

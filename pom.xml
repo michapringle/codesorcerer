@@ -3,15 +3,17 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.bbb</groupId>
-    <artifactId>bbb-parent</artifactId>
+    <groupId>com.codesorcerer</groupId>
+    <artifactId>codesorcerer-parent</artifactId>
     <version>2.0.8</version>
     <packaging>pom</packaging>
 
     <modules>
-        <module>bbb</module>
-        <module>bbb-processor</module>
-        <module>bbb-test</module>
+        <module>codesorcerer</module>
+        <module>targets</module>
+        <module>spells</module>
+        <module>processor</module>
+        <module>integration-tests</module>
     </modules>
 
 

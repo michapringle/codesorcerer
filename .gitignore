@@ -6,7 +6,7 @@ bbb-processor/typescript/
 .cache
 *.iml
 *.class
-target
+target/
 
 
 # Mobile Tools for Java (J2ME)

@@ -1,6 +1,6 @@
 package com.codesorcerer.generators.def.spells;
 
-import com.codesorcerer.BBBImmutable;
+import com.codesorcerer.targets.BBBImmutable;
 import com.codesorcerer.abstracts.AbstractJavaBeanSpell;
 import com.codesorcerer.abstracts.AbstractSpell;
 import com.codesorcerer.abstracts.Result;

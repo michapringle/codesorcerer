@@ -3,7 +3,7 @@ package com.test.takeshi;
 
 import java.util.Locale;
 
-import com.codesorcerer.BeautifulBean;
+import com.codesorcerer.targets.BeautifulBean;
 
 @BeautifulBean
 public interface IncreasedAuthChallengeQuestionDef

@@ -1,6 +1,7 @@
 package com.codesorcerer;
 
 
+import com.codesorcerer.targets.*;
 import com.google.testing.compile.JavaFileObjects;
 import org.junit.Test;
 import org.junit.runner.RunWith;

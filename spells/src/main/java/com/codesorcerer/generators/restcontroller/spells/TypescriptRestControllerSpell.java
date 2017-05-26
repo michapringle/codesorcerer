@@ -1,8 +1,8 @@
 package com.codesorcerer.generators.restcontroller.spells;
 
 import com.codesorcerer.Collector;
-import com.codesorcerer.TypescriptController;
-import com.codesorcerer.TypescriptMapping;
+import com.codesorcerer.targets.TypescriptController;
+import com.codesorcerer.targets.TypescriptMapping;
 import com.codesorcerer.abstracts.AbstractSpell;
 import com.codesorcerer.abstracts.Result;
 import com.codesorcerer.generators.def.spells.TypescriptSpell;

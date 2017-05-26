@@ -1,4 +1,4 @@
-package com.codesorcerer;
+package com.codesorcerer.targets;
 
 @BBBImmutable
 @BBBJson

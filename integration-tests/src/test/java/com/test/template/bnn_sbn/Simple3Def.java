@@ -1,6 +1,6 @@
 package com.test.template.bnn_sbn;
 
-import com.codesorcerer.BeautifulBean;
+import com.codesorcerer.targets.BeautifulBean;
 
 @BeautifulBean
 public interface Simple3Def

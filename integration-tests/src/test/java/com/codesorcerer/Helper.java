@@ -2,6 +2,7 @@ package com.codesorcerer;
 
 
 import com.codesorcerer.processor.CodeSorcererProcessor;
+import com.codesorcerer.targets.*;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
 import com.google.testing.compile.JavaFileObjects;

@@ -1,4 +1,4 @@
-package com.codesorcerer;
+package com.codesorcerer.targets;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;

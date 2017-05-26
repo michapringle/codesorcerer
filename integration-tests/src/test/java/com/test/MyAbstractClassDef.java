@@ -2,7 +2,7 @@ package com.test;
 
 import javax.annotation.Nonnull;
 
-import com.codesorcerer.BeautifulBean;
+import com.codesorcerer.targets.BeautifulBean;
 
 @BeautifulBean
 public abstract class MyAbstractClassDef

@@ -1,8 +1,8 @@
 package com.codesorcerer.generators.def.spells;
 
-import com.codesorcerer.BBBTypescript;
+import com.codesorcerer.targets.BBBTypescript;
 import com.codesorcerer.Collector;
-import com.codesorcerer.TypescriptMapping;
+import com.codesorcerer.targets.TypescriptMapping;
 import com.codesorcerer.abstracts.AbstractSpell;
 import com.codesorcerer.abstracts.Result;
 import com.codesorcerer.generators.def.BeanDefInfo;

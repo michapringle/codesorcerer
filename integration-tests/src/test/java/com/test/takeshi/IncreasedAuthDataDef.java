@@ -3,7 +3,7 @@ package com.test.takeshi;
 
 import java.util.List;
 
-import com.codesorcerer.BeautifulBean;
+import com.codesorcerer.targets.BeautifulBean;
 
 @BeautifulBean
 public interface IncreasedAuthDataDef

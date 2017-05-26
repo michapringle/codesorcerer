@@ -1,6 +1,6 @@
 package com.test;
 
-import com.codesorcerer.BeautifulBean;
+import com.codesorcerer.targets.BeautifulBean;
 
 import javax.annotation.Nonnull;
 import java.io.Serializable;

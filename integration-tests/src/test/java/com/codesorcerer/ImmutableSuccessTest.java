@@ -42,12 +42,12 @@ public class ImmutableSuccessTest {
     @Test
     public void subBean() throws Exception {
         compiles("",
-                "          @com.codesorcerer.BeautifulBean                                                 ",
+                "          @com.codesorcerer.targets.BeautifulBean                                                 ",
                 "          public interface Bean8Def {                                                  ",
                 "            Sub8Def getSub();                                                  ",
                 "          }                                                                          ",
                 "                                                                                    ",
-                "           @com.codesorcerer.BeautifulBean                                                 ",
+                "           @com.codesorcerer.targets.BeautifulBean                                                 ",
                 "           interface Sub8Def {                                                  ",
                 "             String getThing1();                                                  ",
                 "           }                                                                          ",

@@ -1,6 +1,6 @@
 package com.codesorcerer.generators.def.spells;
 
-import com.codesorcerer.BBBGuava;
+import com.codesorcerer.targets.BBBGuava;
 import com.codesorcerer.abstracts.AbstractJavaBeanSpell;
 import com.codesorcerer.abstracts.AbstractSpell;
 import com.codesorcerer.abstracts.Result;

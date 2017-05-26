@@ -2,7 +2,7 @@ package com.test.template;
 
 import javax.annotation.Nonnull;
 
-import com.codesorcerer.BeautifulBean;
+import com.codesorcerer.targets.BeautifulBean;
 
 /**
  * Test for primitives, and wrapped primitive type names. Includes String and Object, as those are so commonly used.

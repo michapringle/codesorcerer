@@ -1,7 +1,7 @@
 package com.codesorcerer.generators.def.spells;
 
-import com.codesorcerer.Buildable;
-import com.codesorcerer.Doneable;
+import com.codesorcerer.targets.Buildable;
+import com.codesorcerer.targets.Doneable;
 import com.google.common.base.*;
 import com.google.common.collect.Ordering;
 import com.squareup.javapoet.ClassName;

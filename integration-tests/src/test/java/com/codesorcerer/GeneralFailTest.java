@@ -24,7 +24,7 @@ public class GeneralFailTest {
                         "                                                                        ",
                         "package test;                                                  ",
                         "                                                                                    ",
-                        "import com.codesorcerer.BBBImmutable;                                                    ",
+                        "import com.codesorcerer.targets.BBBImmutable;                                                    ",
                         "@BBBImmutable                                                  ",
                         "public interface Bob {                                                  ",
                         "}                                                                  ");
@@ -37,7 +37,7 @@ public class GeneralFailTest {
     public void nothingToGenerate() throws Exception {
         compiles(
                 "                                                                        ",
-                "@com.codesorcerer.BeautifulBean                                                    ",
+                "@com.codesorcerer.targets.BeautifulBean                                                    ",
                 "public interface Bob3Def {                                                  ",
                 "}                                                                  ");
     }

@@ -1,6 +1,6 @@
 package com.test.template.bn_sbnn;
 
-import com.codesorcerer.BeautifulBean;
+import com.codesorcerer.targets.BeautifulBean;
 
 import javax.annotation.Nonnull;
 

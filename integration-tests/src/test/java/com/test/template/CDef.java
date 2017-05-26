@@ -1,6 +1,6 @@
 package com.test.template;
 
-import com.codesorcerer.BeautifulBean;
+import com.codesorcerer.targets.BeautifulBean;
 import com.test.template.interfaces.C01B1B2;
 import com.test.template.interfaces.C02B1B3;
 import com.test.template.interfaces.C03B1B4;

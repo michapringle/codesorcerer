@@ -1,7 +1,7 @@
 package com.codesorcerer.typescript;
 
 import com.codesorcerer.Collector;
-import com.codesorcerer.TypescriptMapping;
+import com.codesorcerer.targets.TypescriptMapping;
 import com.codesorcerer.generators.def.BeanDefInputBuilder;
 import com.google.auto.common.MoreTypes;
 import com.google.common.collect.Iterables;

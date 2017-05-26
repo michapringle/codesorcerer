@@ -1,6 +1,6 @@
 package com.test.bean.sub;
 
-import com.codesorcerer.BeautifulBean;
+import com.codesorcerer.targets.BeautifulBean;
 
 @BeautifulBean
 public interface FooDef

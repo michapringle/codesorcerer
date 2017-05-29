@@ -5,7 +5,6 @@ import com.codesorcerer.targets.TypescriptController;
 import com.codesorcerer.targets.TypescriptMapping;
 import com.codesorcerer.abstracts.AbstractSpell;
 import com.codesorcerer.abstracts.Result;
-import com.codesorcerer.generators.def.spells.TypescriptSpell;
 import com.codesorcerer.generators.restcontroller.RestControllerInfo;
 import com.codesorcerer.typescript.TSUtils;
 import com.google.auto.common.MoreTypes;

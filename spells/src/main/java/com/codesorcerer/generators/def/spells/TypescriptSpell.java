@@ -9,22 +9,16 @@ import com.codesorcerer.targets.BBBTypescript;
 import com.codesorcerer.targets.TypescriptMapping;
 import com.codesorcerer.typescript.PackageJson;
 import com.codesorcerer.typescript.TSUtils;
-import com.google.common.base.Splitter;
 import com.google.common.collect.Sets;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.type.TypeMirror;
 import java.io.File;
-import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static com.codesorcerer.typescript.TSUtils.getDirToWriteInto;
 
 public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, TypescriptSpell.Out> {
 

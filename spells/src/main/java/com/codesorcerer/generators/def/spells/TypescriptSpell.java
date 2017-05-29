@@ -1,14 +1,15 @@
 package com.codesorcerer.generators.def.spells;
 
-import com.codesorcerer.targets.BBBTypescript;
 import com.codesorcerer.Collector;
-import com.codesorcerer.targets.TypescriptMapping;
 import com.codesorcerer.abstracts.AbstractSpell;
 import com.codesorcerer.abstracts.Result;
 import com.codesorcerer.generators.def.BeanDefInfo;
 import com.codesorcerer.generators.def.BeanDefInfo.BeanDefFieldInfo;
+import com.codesorcerer.targets.BBBTypescript;
+import com.codesorcerer.targets.TypescriptMapping;
 import com.codesorcerer.typescript.PackageJson;
 import com.codesorcerer.typescript.TSUtils;
+import com.google.common.base.Splitter;
 import com.google.common.collect.Sets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -16,10 +17,14 @@ import org.apache.commons.lang3.StringUtils;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.type.TypeMirror;
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static com.codesorcerer.typescript.TSUtils.getDirToWriteInto;
 
 public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, TypescriptSpell.Out> {
 
@@ -30,7 +35,6 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
     }
 
 
-    public static final File DIR = new File("typescript");
 
     @Override
     public int getRunOrder() {
@@ -45,19 +49,7 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
         PackageJson packageJson = new PackageJson();
         packageJson.version = "0.0.0.0.0-SNAPSHOT";
         packageJson.version = "1.0.0";
-
-
-        //Calc lowest common package name
-        String pkg = null;
-        final Set<String> packages = Collector.get("packages");
-        for (String p : packages) {
-            if (pkg == null) {
-                pkg = p;
-            } else {
-                pkg = StringUtils.removeEnd(StringUtils.getCommonPrefix(pkg, p), ".");
-            }
-        }
-        packageJson.name = pkg;
+        packageJson.name = TSUtils.getMostCommonPackage();
 
 
         //Add devDependencies
@@ -71,12 +63,11 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
         packageJson.peerDependencies.put("@c1/stomp-client", "^0.0.1");
         packageJson.peerDependencies.put("qwest", "^4.4.6");
 
-        File dir = new File(DIR, pkg);
+        File dir = new File(TSUtils.DIR, packageJson.name);
         FileUtils.forceMkdirParent(dir);
 
         FileUtils.write(new File(dir, "package.json"), packageJson.toJson(), Charset.defaultCharset());
     }
-
 
 
     @Override
@@ -87,12 +78,10 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
     @Override
     public void write(Result<AbstractSpell<BBBTypescript, BeanDefInfo, Out>, BeanDefInfo, Out> result) throws Exception {
         BeanDefInfo ic = result.input;
-
-        File dir = new File(DIR, ic.pkg);
-        FileUtils.forceMkdirParent(dir);
-
+        File dir = TSUtils.getDirToWriteInto(ic.pkg);
         FileUtils.write(new File(dir, ic.immutableClassName + ".ts"), result.output.ts, Charset.defaultCharset());
     }
+
 
     @Override
     public void build(Result<AbstractSpell<BBBTypescript, BeanDefInfo, Out>, BeanDefInfo, Out> result) throws Exception {

@@ -4,10 +4,12 @@ import com.codesorcerer.Collector;
 import com.codesorcerer.targets.TypescriptMapping;
 import com.codesorcerer.generators.def.BeanDefInputBuilder;
 import com.google.auto.common.MoreTypes;
+import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.processing.JavacFiler;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -15,7 +17,10 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.*;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
+import java.io.File;
+import java.io.IOException;
 import java.lang.annotation.Annotation;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -24,6 +29,32 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 public final class TSUtils {
 
 
+    public static String getMostCommonPackage() {
+        String pkg = null;
+        final Set<String> packages = Collector.get("packages");
+        for (String p : packages) {
+            if (pkg == null) {
+                pkg = p;
+            } else {
+                pkg = StringUtils.removeEnd(StringUtils.getCommonPrefix(pkg, p), ".");
+            }
+        }
+        return pkg;
+    }
+
+    public static final File DIR = new File("typescript");
+
+    public static File getDirToWriteInto(String pkg) throws IOException {
+        String mostCommonPackage = TSUtils.getMostCommonPackage();
+        File dir = new File(DIR, mostCommonPackage);
+
+        List<String> pkgs = Splitter.on(".").splitToList(StringUtils.removeStart(pkg, mostCommonPackage));
+        for(String p : pkgs) {
+            dir = new File(dir, p);
+            FileUtils.forceMkdirParent(dir);
+        }
+        return dir;
+    }
 
     public static String getFQName(TypeMirror returnTypeMirror) {
         //test.ParentDef.SubDef ==> test.Sub

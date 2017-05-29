@@ -49,10 +49,7 @@ public class TypescriptRestControllerSpell extends AbstractSpell<TypescriptContr
     @Override
     public void write(Result<AbstractSpell<TypescriptController, RestControllerInfo, String>, RestControllerInfo, String> result) throws Exception {
         RestControllerInfo ic = result.input;
-
-        File dir = new File(TypescriptSpell.DIR, ic.getCurrentTypePackage());
-        FileUtils.forceMkdirParent(dir);
-
+        File dir = TSUtils.getDirToWriteInto(ic.getCurrentTypePackage());
         FileUtils.write(new File(dir, ic.typeElement.getSimpleName() + ".ts"), result.output, Charset.defaultCharset());
     }
 

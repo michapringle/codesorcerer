@@ -64,7 +64,7 @@ public class TypescriptRestControllerSpell extends AbstractSpell<TypescriptContr
         sb.append("import * as qwest from 'qwest';\n");
         sb.append("import {StompClient} from '@c1/stomp-client';\n");
         sb.append("import {Subject} from 'rxjs';\n");
-        sb.append("import {plainToClass, classToPlain} from 'class-transformer';\n");
+        sb.append("import {plainToClass, serialize} from 'class-transformer';\n");
 
 
         //import {Account} from "test";
@@ -145,13 +145,10 @@ public class TypescriptRestControllerSpell extends AbstractSpell<TypescriptContr
 
             sb.append("public " + e.getSimpleName() + "( body : " + body + ") : " + fullReturnType + " {\n");
             sb.append("   let o = new Subject<" + innerReturnType + ">();\n");
-            sb.append("   let b = classToPlain(body);\n\n");
-            sb.append("   console.log(body);\n");
-            sb.append("   console.log(b);\n\n");
             sb.append("   qwest.post( '" + url + "', \n");
-            sb.append("               b, \n");
-            sb.append("               { datatype: 'json',\n");
-            sb.append("                 responseType: 'json',\n");
+            sb.append("               serialize(body), \n");
+            sb.append("               { dataType: 'text',\n");
+            sb.append("                 responseType: 'text',\n");
             sb.append("                 headers: {'Accept': 'application/json', 'Content-Type': 'application/json', 'Generator': 'Code Sorcerer', 'API-SemVer': '1.0.0'}\n");
             sb.append("               })\n");
             String tt = (unboxOnce(e.getReturnType(), mappings).startsWith("Array<")) ? "Array<string>" : "string";

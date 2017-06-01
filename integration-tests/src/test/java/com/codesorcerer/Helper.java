@@ -3,6 +3,7 @@ package com.codesorcerer;
 
 import com.codesorcerer.processor.CodeSorcererProcessor;
 import com.codesorcerer.targets.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
 import com.google.testing.compile.JavaFileObjects;
@@ -27,6 +28,7 @@ public class Helper {
         List<String> start = Arrays.asList(
                 "          package test;                                                  ",
                 "                                                            ",
+                "          import " + ObjectMapper.class.getName() + ";                                                  ",
                 "          import " + BBBMutable.class.getName() + ";                                                  ",
                 "          import " + BBBJson.class.getName() + ";                                                  ",
                 "          import " + BBBGuava.class.getName() + ";                                                  ",

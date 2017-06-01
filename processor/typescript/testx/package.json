@@ -1,1 +1,0 @@
-{"name":"testx","version":"1.0.0","dependencies":{},"devDependencies":{},"peerDependencies":{"qwest":"^4.4.6","class-transformer":"^0.1.6","@c1/stomp-client":"^0.0.1"}}

@@ -153,7 +153,7 @@ public class CodeSorcererProcessor extends javax.annotation.processing.AbstractP
         for (Map.Entry<AbstractSpell, TypeElement> e : runOrder.entries()) {
             try {
                 Result result = getResult(e.getValue(), e.getKey());
-//                System.out.println("--> Casting " + phase + " " + result.spell.getClass().getSimpleName() + " on " + result.te);
+                System.out.println("--> Casting " + phase + " " + result.spell.getClass().getSimpleName() +"(" + result.spell.getRunOrder() + ") on " + result.te);
                 fillSpell(result.spell);
                 f.accept(result);
             } catch (Exception ex) {
@@ -221,7 +221,7 @@ public class CodeSorcererProcessor extends javax.annotation.processing.AbstractP
 
         return ElementFilter.typesIn(elementThatNeedProcessing)
                 .stream()
-                .filter(te -> te.getKind() == ElementKind.CLASS || te.getKind() == ElementKind.INTERFACE)
+                .filter(te -> te.getKind() == ElementKind.CLASS || te.getKind() == ElementKind.INTERFACE || te.getKind() == ElementKind.PACKAGE)
                 .collect(Collectors.toSet());
     }
 

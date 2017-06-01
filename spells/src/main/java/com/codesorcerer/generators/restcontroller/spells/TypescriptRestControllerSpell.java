@@ -49,7 +49,7 @@ public class TypescriptRestControllerSpell extends AbstractSpell<TypescriptContr
     public void write(Result<AbstractSpell<TypescriptController, RestControllerInfo, String>, RestControllerInfo, String> result) throws Exception {
         RestControllerInfo ic = result.input;
         File dir = TSUtils.getDirToWriteInto(ic.getCurrentTypePackage());
-        FileUtils.write(new File(dir, ic.typeElement.getSimpleName() + ".ts"), result.output, Charset.defaultCharset());
+        FileUtils.write(new File(dir, ic.typeElement.getSimpleName() + "Service.ts"), result.output, Charset.defaultCharset());
     }
 
     @Override
@@ -63,8 +63,8 @@ public class TypescriptRestControllerSpell extends AbstractSpell<TypescriptContr
         sb.append("import {Injectable} from 'injection-js';\n");
         sb.append("import * as qwest from 'qwest';\n");
         sb.append("import {StompClient} from '@c1/stomp-client';\n");
-        sb.append("import {Observable, BehaviorSubject} from 'rxjs';\n");
-        sb.append("import {plainToClass} from 'class-transformer';\n");
+        sb.append("import {Subject} from 'rxjs';\n");
+        sb.append("import {plainToClass, classToPlain} from 'class-transformer';\n");
 
 
         //import {Account} from "test";
@@ -94,9 +94,9 @@ public class TypescriptRestControllerSpell extends AbstractSpell<TypescriptContr
             //Parameters
             String tsParameterList = e.getParameters()
                     .stream()
-                    .map(v -> {
-                        DestinationVariable dv = v.getAnnotation(DestinationVariable.class);
-                        String tsType = TSUtils.convertToTypescriptType(v.asType(), mappings, processingEnvironment);
+                    .map(p -> {
+                        String tsType = TSUtils.convertToTypescriptType(p.asType(), mappings, processingEnvironment);
+                        DestinationVariable dv = p.getAnnotation(DestinationVariable.class);
                         return dv.value() + " : " + tsType;
                     })
                     .collect(Collectors.joining(","));
@@ -105,9 +105,14 @@ public class TypescriptRestControllerSpell extends AbstractSpell<TypescriptContr
             String fullReturnType = TSUtils.convertToTypescriptType(e.getReturnType(), mappings, processingEnvironment);
             String innerReturnType = getInnerType(e.getReturnType(), mappings);
 
+            if(innerReturnType.startsWith("Array<")) {
+
+            }
+
             sb.append("public " + e.getSimpleName() + "(" + tsParameterList + "): " + fullReturnType + " {\n");
             sb.append("    return this.stompClient.topic('" + topic + "')\n");
-            sb.append("       .map(x => plainToClass(" + innerReturnType + ", x));\n");
+            String tt = (unboxOnce(e.getReturnType(), mappings).startsWith("Array<")) ? "Array<string>" : "string";
+            sb.append("       .map((x: " + tt + ") => plainToClass(" + innerReturnType + ", x));\n");
             sb.append("}\n");
         }
         sb.append("\n");
@@ -131,7 +136,6 @@ public class TypescriptRestControllerSpell extends AbstractSpell<TypescriptContr
             }
 
             final VariableElement requestBodyParameter = e.getParameters().get(0);
-            referenced.add(requestBodyParameter.asType());
 
             String body = TSUtils.convertToTypescriptType(requestBodyParameter.asType(), mappings, processingEnvironment);
             String url = rm.value()[0];
@@ -140,30 +144,45 @@ public class TypescriptRestControllerSpell extends AbstractSpell<TypescriptContr
             String innerReturnType = getInnerType(e.getReturnType(), mappings);
 
             sb.append("public " + e.getSimpleName() + "( body : " + body + ") : " + fullReturnType + " {\n");
-            sb.append("   let o = new BehaviorSubject<" + innerReturnType + ">();\n");
-            sb.append("   qwest.post( '" + url + "', body )\n");
-            sb.append("       .then((xhr, response) => {\n");
-            sb.append("            let x = plainToClass(" + innerReturnType + ", response);\n");
+            sb.append("   let o = new Subject<" + innerReturnType + ">();\n");
+            sb.append("   let b = classToPlain(body);\n\n");
+            sb.append("   console.log(body);\n");
+            sb.append("   console.log(b);\n\n");
+            sb.append("   qwest.post( '" + url + "', \n");
+            sb.append("               b, \n");
+            sb.append("               { datatype: 'json',\n");
+            sb.append("                 responseType: 'json',\n");
+            sb.append("                 headers: {'Accept': 'application/json', 'Content-Type': 'application/json', 'Generator': 'Code Sorcerer', 'API-SemVer': '1.0.0'}\n");
+            sb.append("               })\n");
+            String tt = (unboxOnce(e.getReturnType(), mappings).startsWith("Array<")) ? "Array<string>" : "string";
+            sb.append("       .then((xhr, response:" + tt + ") => {\n");
+            if( innerReturnType.equals("string") || innerReturnType.equals("number") ) {
+                sb.append("            let x = response;\n");
+            }
+            else {
+                sb.append("            let x : " + innerReturnType + " = plainToClass(" + innerReturnType + ", response);\n");
+            }
             sb.append("            o.next(x);\n");
             sb.append("        })\n");
             sb.append("       .catch((e, xhr, response)  => {\n");
             sb.append("            o.error(e);\n");
             sb.append("        });\n");
-            sb.append("   return o.asObservable();\n");
+            sb.append("   return o;\n");
             sb.append("}\n");
         }
 
         sb.append("}\n");
 
-        String imports = TSUtils.convertToImportStatements(referenced, mappings, processingEnvironment);
-        String x = sb.toString().replace("*IMPORTS*", imports);
 
         for(TypeMirror tm : referenced) {
             Collector.COLLECTOR.putAll("mappings", TSUtils.getAllMappings(MoreTypes.asTypeElement(tm)));
         }
-
         Collector.COLLECTOR.put("packages", ic.getCurrentTypePackage());
 
+        System.out.printf("Referenced: " + referenced);
+        String imports = TSUtils.convertToImportStatements(ic.getCurrentTypePackage(), referenced, mappings, processingEnvironment);
+        System.out.printf("Imports: " + imports);
+        String x = sb.toString().replace("*IMPORTS*", imports);
         result.output = x;
     }
 
@@ -187,6 +206,25 @@ public class TypescriptRestControllerSpell extends AbstractSpell<TypescriptContr
         }
 
         return TSUtils.convertToTypescriptType(e, mappings, processingEnvironment);
+    }
+
+    private String unboxOnce(TypeMirror e, Set<TypescriptMapping> mappings) {
+        TypeMirror inner = e;
+        if (e instanceof Type.ClassType) {
+            Type.ClassType ct = (Type.ClassType) e;
+            String name = ct.asElement().toString();
+
+            if(name.equals(io.reactivex.Observable.class.getName()) ) {
+                inner = ct.getTypeArguments().get(0);
+            }
+            if(name.equals(io.reactivex.Single.class.getName()) ) {
+                inner = ct.getTypeArguments().get(0);
+            }
+            if(name.equals(List.class.getName()) ) {
+                inner = ct.getTypeArguments().get(0);
+            }
+        }
+        return TSUtils.convertToTypescriptType(inner, mappings, processingEnvironment);
     }
 
 

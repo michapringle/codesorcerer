@@ -1,11 +1,10 @@
 import {Type, Expose} from 'class-transformer';
 
-import {BeanChild} from 'test.BeanChild';
 
 export class BeanChildBuilder implements BeanChildNullable {
   _name: string;
 
-private constructor() {}
+public constructor() {}
 
 public name(name : string) : BeanChildNullable {
   this._name = name;
@@ -30,10 +29,10 @@ static newBeanChild(name : string) : BeanChild {
   return new BeanChild(name);
 }
 
-public constructor( name : string) {
+public constructor( name? : string) {
   this._name = name;
 }
-public constructor() {}
+
 public get name() : string { return this._name; }
 public withName(name : string) : BeanChild {
   return new BeanChild(name);

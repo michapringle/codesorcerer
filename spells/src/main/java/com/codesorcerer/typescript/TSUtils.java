@@ -1,8 +1,8 @@
 package com.codesorcerer.typescript;
 
 import com.codesorcerer.Collector;
-import com.codesorcerer.targets.TypescriptMapping;
 import com.codesorcerer.generators.def.BeanDefInputBuilder;
+import com.codesorcerer.targets.TypescriptMapping;
 import com.google.auto.common.MoreTypes;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
@@ -11,7 +11,6 @@ import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.processing.JavacFiler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.web.bind.annotation.RequestMapping;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.*;
@@ -24,32 +23,63 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.apache.commons.lang3.StringUtils.isBlank;
+import static com.google.common.collect.Sets.newHashSet;
+import static java.util.stream.Collectors.joining;
+import static org.apache.commons.lang3.StringUtils.*;
 
 public final class TSUtils {
 
 
-    public static String getMostCommonPackage() {
-        String pkg = null;
-        final Set<String> packages = Collector.get("packages");
-        for (String p : packages) {
-            if (pkg == null) {
-                pkg = p;
-            } else {
-                pkg = StringUtils.removeEnd(StringUtils.getCommonPrefix(pkg, p), ".");
-            }
+//    public static String getMostCommonPackage() {
+//        String pkg = null;
+//        final Set<String> packages = Collector.get("packages");
+//        for (String p : packages) {
+//            if (pkg == null) {
+//                pkg = p;
+//            } else {
+//                pkg = StringUtils.removeEnd(StringUtils.getCommonPrefix(pkg, p), ".");
+//            }
+//        }
+//        return pkg;
+//    }
+
+    public static void registerPackage(String pkg) {
+        //Store in collector...
+        if (Collector.get("packageJson") == null) {
+            Collector.COLLECTOR.put("packageJson", newHashSet());
         }
-        return pkg;
+        Set<String> packages = Collector.get("packageJson");
+        packages.add(pkg);
+
     }
 
     public static final File DIR = new File("typescript");
 
     public static File getDirToWriteInto(String pkg) throws IOException {
-        String mostCommonPackage = TSUtils.getMostCommonPackage();
-        File dir = new File(DIR, mostCommonPackage);
+        Set<String> packages = Collector.get("packageJson");
 
-        List<String> pkgs = Splitter.on(".").splitToList(StringUtils.removeStart(pkg, mostCommonPackage));
-        for(String p : pkgs) {
+        String mostCommonPackage = pkg;
+        while (true) {
+            if (!mostCommonPackage.contains(".")) {
+                mostCommonPackage = null;
+                break;
+            }
+            if (packages == null || packages.contains(mostCommonPackage)) {
+                break;
+            } else {
+                mostCommonPackage = StringUtils.substringBeforeLast(mostCommonPackage, ".");
+            }
+        }
+
+        File dir;
+        if (mostCommonPackage == null) {
+            dir = DIR;
+        } else {
+            dir = new File(DIR, mostCommonPackage);
+        }
+
+        List<String> pkgs = Splitter.on(".").splitToList(removeStart(pkg, mostCommonPackage));
+        for (String p : pkgs) {
             dir = new File(dir, p);
             FileUtils.forceMkdirParent(dir);
         }
@@ -129,14 +159,14 @@ public final class TSUtils {
     }
 
 
-    public static String convertToImportStatements(Set<TypeMirror> referencedTypes, Set<TypescriptMapping> mappings, ProcessingEnvironment processingEnv) {
+    public static String convertToImportStatements(String includingElementsPackage, Set<TypeMirror> referencedTypes, Set<TypescriptMapping> mappings, ProcessingEnvironment processingEnv) {
         return referencedTypes.stream()
                 .flatMap(t -> findMappingForClass(t, mappings, processingEnv).stream())
                 .filter(m -> m != null)
-                .map(TSUtils::convertToImportStatement)
+                .map(m -> TSUtils.convertToImportStatement(includingElementsPackage, m))
                 .distinct()
                 .sorted()
-                .collect(Collectors.joining("\n", "", "\n\n"));
+                .collect(joining("\n", "", "\n\n"));
     }
 
     private static Set<TypescriptMapping> findMappingForClass(TypeMirror t, Set<TypescriptMapping> mappings, ProcessingEnvironment processingEnv) {
@@ -182,39 +212,53 @@ public final class TSUtils {
 
     private static TypescriptMapping find(Set<TypescriptMapping> mappings, String typeName, ProcessingEnvironment processingEnvironment) {
 
-        final Iterable<TypescriptMapping> allMappings = Iterables.concat(mappings, Collector.get("mappings"));
-        for(TypescriptMapping tm : allMappings) {
-            if(getClassName(tm).equals(typeName)) {
+        System.out.println("I'm looking for " + typeName + " in mappings:");
+        mappings.forEach(m -> System.out.print("  " + m.typescriptClassName() + " " + m.typescriptImportLocation()));
+
+        //final Iterable<TypescriptMapping> allMappings = Iterables.concat(mappings, Collector.get("mappings"));
+        final Iterable<TypescriptMapping> allMappings = Iterables.concat(mappings);
+
+        for (TypescriptMapping tm : allMappings) {
+            if (getClassName(tm).equals(typeName)) {
+              //  System.out.println("found it " + typeName + "! " + tm.typescriptImportLocation());
+                System.out.println("Got it " + tm.typescriptClassName() + " " + tm.typescriptImportLocation());
                 return tm;
             }
         }
 
         String name2;
-        if (typeName.contains(".")) {
+//        if (typeName.contains(".")) {
             name2 = typeName;
-        } else {
-            JavacFiler f = (JavacFiler) processingEnvironment.getFiler();
-            name2 = f.getGeneratedSourceNames().stream()
-                    .filter(n -> n.equals(typeName) || n.endsWith("." + typeName))
-                    .findFirst()
-                    .orElse(null);
-                    //.orElseThrow(() -> new RuntimeException("ErrorType - No Typescript mapping to " + typeName + " in " + mappings));
-        }
-
-        //Look into results...
-        if( name2 == null) {
-
-        }
-
-
+//        } else {
+//            JavacFiler f = (JavacFiler) processingEnvironment.getFiler();
+//            f.getGeneratedSourceNames().forEach(x -> System.out.println("   =gen=" + x));
+//
+//            name2 = f.getGeneratedSourceNames().stream()
+//                    .filter(n -> n.equals(typeName) || n.endsWith("." + typeName))
+//                    .findFirst()
+//                    .orElse(typeName);
+//
+//            if (name2.equals(typeName)) {
+//               // System.out.println("not found in filer " + name2);
+//            }
+//            //.orElseThrow(() -> new RuntimeException("ErrorType - No Typescript mapping to " + typeName + " in " + mappings));
+//        }
+//
+//
         String typeName2;
         if (typeName.contains(".")) {
             typeName2 = StringUtils.substringAfterLast(typeName, ".");
-        } else {
+       } else {
             typeName2 = typeName;
         }
 
-        return new TypescriptMapping() {
+//        //Look into results...
+//        if (name2 == null || name2.isEmpty()) {
+//            System.out.println("null " + typeName2 + " " + typeName);
+//            //throw new RuntimeException("ErrorType - No Typescript mapping to " + typeName + " in " + allMappings);
+//        }
+
+        TypescriptMapping x = new TypescriptMapping() {
             @Override
             public Class<? extends Annotation> annotationType() {
                 return TypescriptMapping.class;
@@ -250,19 +294,66 @@ public final class TSUtils {
                 return null;
             }
         };
+
+        System.out.println("MADE it " + x.typescriptClassName() + " " + x.typescriptImportLocation() + "!!!!!");
+        return x;
     }
 
-    private static String convertToImportStatement(TypescriptMapping mapping) {
+
+
+    private static String convertToImportStatement(String includingElementsPackage, TypescriptMapping mapping) {
 
         //If there is not location, then we dont need to import it
-        // eg: boolean
+        //This is like string, number or boolean, Map, Set, Array
         if (isBlank(mapping.typescriptImportLocation())) {
             return "";
         }
-        final String simpleName = mapping.typescriptClassName();
+
         final String loc = mapping.typescriptImportLocation();
-        final String className = getClassName(mapping);
-        return "import {" + simpleName + "} from '" + loc + "';";
+        final String commonPrefix = getCommonPackagePrefix(includingElementsPackage, loc);
+
+        final String simpleName = mapping.typescriptClassName();
+        if (commonPrefix.isEmpty()) {
+            if(loc.equals(mapping.typescriptClassName())) {
+                //Strange case of Requests
+                System.out.println("loc: " + loc + " inc: " + includingElementsPackage + " CP: " + commonPrefix + "... " + loc);
+                return "import {" + simpleName + "} from './" + loc + "';  //Same package???";
+            }
+            System.out.println("loc: " + loc + " inc: " + includingElementsPackage + " CP: " + commonPrefix + "... " + loc);
+            return "import {" + simpleName + "} from '" + loc + "';  //No common prefix - use loc from Annotation";
+        }
+
+        String locEnd = removeStart(loc, commonPrefix+".").replace('.', '/');
+        String incEnd = removeStart(includingElementsPackage, commonPrefix).replace('.', '/');
+
+        String loc2 = repeat("../", countMatches(incEnd, "/")) + locEnd;
+        System.out.println("loc: " + loc + " inc: " + includingElementsPackage + " CP: " + commonPrefix + " locE: " + locEnd + " incEnd: " + incEnd + "... " + loc2);
+
+        //Must be a relative path...
+        if(!loc2.startsWith(".")) {
+            loc2 = "./"  + loc2;
+        }
+
+        return "import {" + simpleName + "} from '" + loc2 + "';  //relative import";
+    }
+
+    private static String getCommonPackagePrefix(String class1, String class2) {
+        List<String> locToks = Splitter.on(".").splitToList(class2);
+        List<String> includingToks = Splitter.on(".").splitToList(class1);
+
+        int count = 0;
+        for (int i = 0; i < Math.min(locToks.size(), includingToks.size()); i++) {
+            if (locToks.get(i).equals(includingToks.get(i))) {
+                count++;
+            }
+            else {
+                break;
+            }
+        }
+
+        return locToks.stream()
+                .limit(count)
+                .collect(joining("."));
     }
 
 
@@ -279,7 +370,7 @@ public final class TSUtils {
                 sb.append("<");
                 sb.append(ct.getTypeArguments().stream()
                         .map(tt -> convertToTypescriptType(tt, mappings, processingEnv))
-                        .collect(Collectors.joining(",")));
+                        .collect(joining(",")));
                 sb.append(">");
             }
             return sb.toString();
@@ -298,8 +389,13 @@ public final class TSUtils {
         Set<TypeMirror> refs = Sets.newHashSet();
 
         refs.add(e.getReturnType());
-        RequestMapping rm = e.getAnnotation(RequestMapping.class);
-        e.getParameters().stream().forEach(p -> refs.add(p.asType()));
+
+        e.getParameters().stream().forEach(p -> {
+            refs.add(p.asType());
+        });
+
+      //  System.out.println("Adding references... " + refs);
+
         return refs;
     }
 

@@ -1,12 +1,11 @@
 import {Type, Expose} from 'class-transformer';
 
-import {BeanChild} from 'test.BeanChild';
 
 export class BeanNonBuilder implements BeanNonRequiresLastName, BeanNonRequiresSin, BeanNonNullable {
   _lastName: string;
   _sin: string;
 
-private constructor() {}
+public constructor() {}
 
 public lastName(lastName : string) : BeanNonRequiresSin {
   this._lastName = lastName;
@@ -43,11 +42,11 @@ static newBeanNon(lastName : string, sin : string) : BeanNon {
   return new BeanNon(lastName, sin);
 }
 
-public constructor( lastName : string, sin : string) {
+public constructor( lastName? : string, sin? : string) {
   this._lastName = lastName;
   this._sin = sin;
 }
-public constructor() {}
+
 public get lastName() : string { return this._lastName; }
 public get sin() : string { return this._sin; }
 public withLastName(lastName : string) : BeanNon {

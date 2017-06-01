@@ -1,13 +1,12 @@
 import {Type, Expose} from 'class-transformer';
 
-import {BeanChild} from 'test.BeanChild';
 
 export class BeanCollBuilder implements BeanCollNullable {
   _names: Array<string>;
   _ages: Set<number>;
   _nameToAge: Map<string,number>;
 
-private constructor() {}
+public constructor() {}
 
 public names(names : Array<string>) : BeanCollNullable {
   this._names = names;
@@ -35,7 +34,7 @@ build() : BeanColl {
 }
 
 export class BeanColl {
-@Type(() => Array<string>)  @Expose({ name: 'names' }) private _names: Array<string>;
+  @Expose({ name: 'names' }) private _names: Array<string>;
 @Type(() => Set<number>)  @Expose({ name: 'ages' }) private _ages: Set<number>;
 @Type(() => Map<string,number>)  @Expose({ name: 'nameToAge' }) private _nameToAge: Map<string,number>;
 
@@ -46,12 +45,12 @@ static newBeanColl(names : Array<string>, ages : Set<number>, nameToAge : Map<st
   return new BeanColl(names, ages, nameToAge);
 }
 
-public constructor( names : Array<string>, ages : Set<number>, nameToAge : Map<string,number>) {
+public constructor( names? : Array<string>, ages? : Set<number>, nameToAge? : Map<string,number>) {
   this._names = names;
   this._ages = ages;
   this._nameToAge = nameToAge;
 }
-public constructor() {}
+
 public get names() : Array<string> { return this._names; }
 public get ages() : Set<number> { return this._ages; }
 public get nameToAge() : Map<string,number> { return this._nameToAge; }

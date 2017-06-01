@@ -7,7 +7,7 @@ export class AccountBuilder implements AccountNullable {
   _amount2: number;
   _bDec: number;
 
-private constructor() {}
+public constructor() {}
 
 public name(name : string) : AccountNullable {
   this._name = name;
@@ -50,13 +50,13 @@ static buildAccount() : AccountNullable {
   return new AccountBuilder();
 }
 
-public constructor( name : string, amount : number, amount2 : number, bDec : number) {
+public constructor( name? : string, amount? : number, amount2? : number, bDec? : number) {
   this._name = name;
   this._amount = amount;
   this._amount2 = amount2;
   this._bDec = bDec;
 }
-public constructor() {}
+
 public get name() : string { return this._name; }
 public get amount() : number { return this._amount; }
 public get amount2() : number { return this._amount2; }

@@ -2,7 +2,7 @@ import {Injectable} from 'injection-js';
 import * as qwest from 'qwest';
 import {StompClient} from '@c1/stomp-client';
 import {Subject} from 'rxjs';
-import {plainToClass} from 'class-transformer';
+import {plainToClass, classToPlain} from 'class-transformer';
 
 import {Account} from './Account';  //Same package???
 import {Observable} from './rxjs';  //No common prefix - use loc from Annotation
@@ -18,15 +18,25 @@ export class AccountsRestControllerService {
 
 public accounts(): Observable<Array<Account>> {
     return this.stompClient.topic('/queue/accounts')
-       .map(x => plainToClass(Account, x));
+       .map((x: Array<string>) => plainToClass(Account, x));
 }
 
 //-----------------Rest Methods
 
 public addAccount( body : Account) : Single<boolean> {
    let o = new Subject<boolean>();
-   qwest.post( '/api/accounts/', body )
-       .then((xhr, response) => {
+   let b = classToPlain(body);
+
+   console.log(body);
+   console.log(b);
+
+   qwest.post( '/api/accounts/', 
+               b, 
+               { datatype: 'json',
+                 responseType: 'json',
+                 headers: {'Accept': 'application/json', 'Content-Type': 'application/json', 'Generator': 'Code Sorcerer', 'API-SemVer': '1.0.0'}
+               })
+       .then((xhr, response:string) => {
             let x : boolean = plainToClass(boolean, response);
             o.next(x);
         })

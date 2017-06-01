@@ -1,6 +1,5 @@
 import {Type, Expose} from 'class-transformer';
 
-import {BeanChild} from 'test.BeanChild';
 
 export class BeanBothBuilder implements BeanBothRequiresLastName, BeanBothRequiresSin, BeanBothNullable {
   _name: string;
@@ -8,7 +7,7 @@ export class BeanBothBuilder implements BeanBothRequiresLastName, BeanBothRequir
   _age: number;
   _sin: string;
 
-private constructor() {}
+public constructor() {}
 
 public lastName(lastName : string) : BeanBothRequiresSin {
   this._lastName = lastName;
@@ -56,13 +55,13 @@ static buildBeanBoth() : BeanBothRequiresLastName {
   return new BeanBothBuilder();
 }
 
-public constructor( name : string, lastName : string, age : number, sin : string) {
+public constructor( name? : string, lastName? : string, age? : number, sin? : string) {
   this._name = name;
   this._lastName = lastName;
   this._age = age;
   this._sin = sin;
 }
-public constructor() {}
+
 public get name() : string { return this._name; }
 public get lastName() : string { return this._lastName; }
 public get age() : number { return this._age; }

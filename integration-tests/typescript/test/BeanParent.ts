@@ -1,11 +1,10 @@
 import {Type, Expose} from 'class-transformer';
-
-import {BeanChild} from 'test.BeanChild';
+import {BeanChild} from './BeanChild';  //relative import
 
 export class BeanParentBuilder implements BeanParentNullable {
   _child: BeanChild;
 
-private constructor() {}
+public constructor() {}
 
 public child(child : BeanChild) : BeanParentNullable {
   this._child = child;
@@ -30,10 +29,10 @@ static newBeanParent(child : BeanChild) : BeanParent {
   return new BeanParent(child);
 }
 
-public constructor( child : BeanChild) {
+public constructor( child? : BeanChild) {
   this._child = child;
 }
-public constructor() {}
+
 public get child() : BeanChild { return this._child; }
 public withChild(child : BeanChild) : BeanParent {
   return new BeanParent(child);

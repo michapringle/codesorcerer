@@ -1,12 +1,11 @@
 import {Type, Expose} from 'class-transformer';
 
-import {BeanChild} from 'test.BeanChild';
 
 export class BeanSimple1Builder implements BeanSimple1Nullable {
   _name: string;
   _age: number;
 
-private constructor() {}
+public constructor() {}
 
 public name(name : string) : BeanSimple1Nullable {
   this._name = name;
@@ -38,11 +37,11 @@ static newBeanSimple1(name : string, age : number) : BeanSimple1 {
   return new BeanSimple1(name, age);
 }
 
-public constructor( name : string, age : number) {
+public constructor( name? : string, age? : number) {
   this._name = name;
   this._age = age;
 }
-public constructor() {}
+
 public get name() : string { return this._name; }
 public get age() : number { return this._age; }
 public withName(name : string) : BeanSimple1 {

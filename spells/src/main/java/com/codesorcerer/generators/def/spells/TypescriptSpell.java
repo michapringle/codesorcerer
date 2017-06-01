@@ -7,7 +7,6 @@ import com.codesorcerer.generators.def.BeanDefInfo;
 import com.codesorcerer.generators.def.BeanDefInfo.BeanDefFieldInfo;
 import com.codesorcerer.targets.BBBTypescript;
 import com.codesorcerer.targets.TypescriptMapping;
-import com.codesorcerer.typescript.PackageJson;
 import com.codesorcerer.typescript.TSUtils;
 import com.google.common.collect.Sets;
 import org.apache.commons.io.FileUtils;
@@ -28,6 +27,7 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
         Set<TypeMirror> mappings;
     }
 
+    private Set<TypeMirror> referenced = Sets.newHashSet();
 
 
     @Override
@@ -38,29 +38,6 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
 
     @Override
     public void processingOver(Collection<Result> results) throws Exception {
-        //write package.json
-
-        PackageJson packageJson = new PackageJson();
-        packageJson.version = "0.0.0.0.0-SNAPSHOT";
-        packageJson.version = "1.0.0";
-        packageJson.name = TSUtils.getMostCommonPackage();
-
-
-        //Add devDependencies
-        final Set<TypescriptMapping> mappings = Collector.get("mappings");
-        for (TypescriptMapping tm : mappings) {
-            if (!tm.typescriptPackageName().isEmpty()) {
-                packageJson.peerDependencies.put(tm.typescriptPackageName(), tm.typescriptPackageVersion());
-            }
-        }
-        packageJson.peerDependencies.put("class-transformer", "^0.1.6");
-        packageJson.peerDependencies.put("@c1/stomp-client", "^0.0.1");
-        packageJson.peerDependencies.put("qwest", "^4.4.6");
-
-        File dir = new File(TSUtils.DIR, packageJson.name);
-        FileUtils.forceMkdirParent(dir);
-
-        FileUtils.write(new File(dir, "package.json"), packageJson.toJson(), Charset.defaultCharset());
     }
 
 
@@ -73,6 +50,7 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
     public void write(Result<AbstractSpell<BBBTypescript, BeanDefInfo, Out>, BeanDefInfo, Out> result) throws Exception {
         BeanDefInfo ic = result.input;
         File dir = TSUtils.getDirToWriteInto(ic.pkg);
+        System.out.println("res.out " + result.output);
         FileUtils.write(new File(dir, ic.immutableClassName + ".ts"), result.output.ts, Charset.defaultCharset());
     }
 
@@ -92,7 +70,7 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
 
         //Register
         ic.beanDefFieldInfos.forEach(i -> addReferences(i.getter));
-        String imports = TSUtils.convertToImportStatements(referenced, mappings, processingEnvironment);
+        String imports = TSUtils.convertToImportStatements(ic.pkg, referenced, mappings, processingEnvironment);
         String x = sb.toString().replace("*IMPORTS*", imports);
 
         Out out = new Out();
@@ -100,8 +78,11 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
         out.ic = ic;
         out.mappings = referenced;
 
+        //TODO:
+        referenced.clear();
+
         Collector.COLLECTOR.putAll("mappings", TSUtils.getAllMappings(ic.typeElement));
-        Collector.COLLECTOR.put("packages", ic.pkg);
+//        Collector.COLLECTOR.put("packages", ic.pkg);
 
         result.output = out;
     }
@@ -279,13 +260,13 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
     }
 
     private void buildPrivateConstructor(StringBuilder sb) {
-        sb.append("private constructor() {}\n");
+        sb.append("public constructor() {}\n");
         sb.append("\n");
     }
 
     private void buildPrivateConstructor2(BeanDefInfo ic, StringBuilder sb, Set<TypescriptMapping> mappings) {
         String allParams = ic.beanDefFieldInfos.stream()
-                .map(i -> i.nameMangled + " : " + TSUtils.convertToTypescriptType(i.getter.getReturnType(), mappings, processingEnvironment))
+                .map(i -> i.nameMangled + "? : " + TSUtils.convertToTypescriptType(i.getter.getReturnType(), mappings, processingEnvironment))
                 .collect(Collectors.joining(", "));
 
 
@@ -296,7 +277,7 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
         sb.append("}");
         sb.append("\n");
 
-        sb.append("public constructor() {}");
+//        sb.append("public constructor() {}");
         sb.append("\n");
     }
 
@@ -312,8 +293,12 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
             String typ = TSUtils.convertToTypescriptType(i.getter.getReturnType(), mappings, processingEnvironment);
 
             String ann = "";
-            if (!typ.equals("string") && !typ.equals("number") && !typ.equals("boolean")) {
-                ann = "@Type(() => " + typ + ")";
+
+            //TODO... what other types?
+            if (!typ.equals("Array<string>") && !typ.equals("Array<number>") && !typ.equals("Array<boolean>")) {
+                if (!typ.equals("string") && !typ.equals("number") && !typ.equals("boolean")) {
+                    ann = "@Type(() => " + typ + ")";
+                }
             }
 
             sb.append(ann + "  @Expose({ name: '" + i.nameMangled + "' })" + " private _" + i.nameMangled + ": " + typ + ";\n");
@@ -321,8 +306,6 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
         sb.append("\n");
     }
 
-
-    private Set<TypeMirror> referenced = Sets.newHashSet();
 
     private void addReferences(ExecutableElement e) {
         referenced.addAll(TSUtils.getReferences(e));

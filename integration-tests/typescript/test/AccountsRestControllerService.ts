@@ -2,7 +2,7 @@ import {Injectable} from 'injection-js';
 import * as qwest from 'qwest';
 import {StompClient} from '@c1/stomp-client';
 import {Subject} from 'rxjs';
-import {plainToClass, classToPlain} from 'class-transformer';
+import {plainToClass, serialize} from 'class-transformer';
 
 import {Account} from './Account';  //Same package???
 import {Observable} from './rxjs';  //No common prefix - use loc from Annotation
@@ -25,15 +25,10 @@ public accounts(): Observable<Array<Account>> {
 
 public addAccount( body : Account) : Single<boolean> {
    let o = new Subject<boolean>();
-   let b = classToPlain(body);
-
-   console.log(body);
-   console.log(b);
-
    qwest.post( '/api/accounts/', 
-               b, 
-               { datatype: 'json',
-                 responseType: 'json',
+               serialize(body), 
+               { dataType: 'text',
+                 responseType: 'text',
                  headers: {'Accept': 'application/json', 'Content-Type': 'application/json', 'Generator': 'Code Sorcerer', 'API-SemVer': '1.0.0'}
                })
        .then((xhr, response:string) => {

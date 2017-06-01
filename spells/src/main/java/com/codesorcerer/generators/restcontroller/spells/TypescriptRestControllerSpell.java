@@ -176,9 +176,9 @@ public class TypescriptRestControllerSpell extends AbstractSpell<TypescriptContr
         }
         Collector.COLLECTOR.put("packages", ic.getCurrentTypePackage());
 
-        System.out.printf("Referenced: " + referenced);
+        //System.out.printf("Referenced: " + referenced);
         String imports = TSUtils.convertToImportStatements(ic.getCurrentTypePackage(), referenced, mappings, processingEnvironment);
-        System.out.printf("Imports: " + imports);
+        //System.out.printf("Imports: " + imports);
         String x = sb.toString().replace("*IMPORTS*", imports);
         result.output = x;
     }

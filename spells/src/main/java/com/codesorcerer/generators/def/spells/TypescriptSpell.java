@@ -50,7 +50,7 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
     public void write(Result<AbstractSpell<BBBTypescript, BeanDefInfo, Out>, BeanDefInfo, Out> result) throws Exception {
         BeanDefInfo ic = result.input;
         File dir = TSUtils.getDirToWriteInto(ic.pkg);
-        System.out.println("res.out " + result.output);
+        //System.out.println("res.out " + result.output);
         FileUtils.write(new File(dir, ic.immutableClassName + ".ts"), result.output.ts, Charset.defaultCharset());
     }
 

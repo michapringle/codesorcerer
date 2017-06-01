@@ -212,8 +212,8 @@ public final class TSUtils {
 
     private static TypescriptMapping find(Set<TypescriptMapping> mappings, String typeName, ProcessingEnvironment processingEnvironment) {
 
-        System.out.println("I'm looking for " + typeName + " in mappings:");
-        mappings.forEach(m -> System.out.print("  " + m.typescriptClassName() + " " + m.typescriptImportLocation()));
+        //System.out.println("I'm looking for " + typeName + " in mappings:");
+        //mappings.forEach(m -> System.out.print("  " + m.typescriptClassName() + " " + m.typescriptImportLocation()));
 
         //final Iterable<TypescriptMapping> allMappings = Iterables.concat(mappings, Collector.get("mappings"));
         final Iterable<TypescriptMapping> allMappings = Iterables.concat(mappings);
@@ -221,7 +221,7 @@ public final class TSUtils {
         for (TypescriptMapping tm : allMappings) {
             if (getClassName(tm).equals(typeName)) {
               //  System.out.println("found it " + typeName + "! " + tm.typescriptImportLocation());
-                System.out.println("Got it " + tm.typescriptClassName() + " " + tm.typescriptImportLocation());
+          //      System.out.println("Got it " + tm.typescriptClassName() + " " + tm.typescriptImportLocation());
                 return tm;
             }
         }
@@ -295,7 +295,7 @@ public final class TSUtils {
             }
         };
 
-        System.out.println("MADE it " + x.typescriptClassName() + " " + x.typescriptImportLocation() + "!!!!!");
+      //  System.out.println("MADE it " + x.typescriptClassName() + " " + x.typescriptImportLocation() + "!!!!!");
         return x;
     }
 
@@ -316,10 +316,10 @@ public final class TSUtils {
         if (commonPrefix.isEmpty()) {
             if(loc.equals(mapping.typescriptClassName())) {
                 //Strange case of Requests
-                System.out.println("loc: " + loc + " inc: " + includingElementsPackage + " CP: " + commonPrefix + "... " + loc);
+                //System.out.println("loc: " + loc + " inc: " + includingElementsPackage + " CP: " + commonPrefix + "... " + loc);
                 return "import {" + simpleName + "} from './" + loc + "';  //Same package???";
             }
-            System.out.println("loc: " + loc + " inc: " + includingElementsPackage + " CP: " + commonPrefix + "... " + loc);
+           // System.out.println("loc: " + loc + " inc: " + includingElementsPackage + " CP: " + commonPrefix + "... " + loc);
             return "import {" + simpleName + "} from '" + loc + "';  //No common prefix - use loc from Annotation";
         }
 
@@ -327,7 +327,7 @@ public final class TSUtils {
         String incEnd = removeStart(includingElementsPackage, commonPrefix).replace('.', '/');
 
         String loc2 = repeat("../", countMatches(incEnd, "/")) + locEnd;
-        System.out.println("loc: " + loc + " inc: " + includingElementsPackage + " CP: " + commonPrefix + " locE: " + locEnd + " incEnd: " + incEnd + "... " + loc2);
+      //  System.out.println("loc: " + loc + " inc: " + includingElementsPackage + " CP: " + commonPrefix + " locE: " + locEnd + " incEnd: " + incEnd + "... " + loc2);
 
         //Must be a relative path...
         if(!loc2.startsWith(".")) {

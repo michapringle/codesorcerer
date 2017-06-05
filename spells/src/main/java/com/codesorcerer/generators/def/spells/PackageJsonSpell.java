@@ -45,8 +45,8 @@ public class PackageJsonSpell extends AbstractSpell<TypescriptRoot, PackageJsonI
         TSUtils.registerPackage(result.input.pkg);
 
         PackageJson packageJson = new PackageJson();
-        packageJson.version = "0.0.0.0.0-SNAPSHOT";
-        packageJson.version = "1.0.0";
+        //packageJson.version = "0.0.0.0.0-SNAPSHOT";
+        packageJson.version = result.input.version;
         packageJson.name = result.input.pkg;
 
 

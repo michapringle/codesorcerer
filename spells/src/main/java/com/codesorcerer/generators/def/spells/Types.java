@@ -26,6 +26,10 @@ public final class Types {
     public static final ClassName guava_predicate = ClassName.get(Predicate.class);
     public static final ClassName guava_function = ClassName.get(Function.class);
 
+
+    public static final ClassName java_function = ClassName.get(java.util.function.Function.class);
+    public static final ClassName java_consumer = ClassName.get(java.util.function.Consumer.class);
+
     //TypeParameters
     public static final TypeVariableName jpP = TypeVariableName.get("P");
     public static final TypeVariableName jpT = TypeVariableName.get("T");

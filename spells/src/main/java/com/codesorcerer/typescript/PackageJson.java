@@ -10,6 +10,9 @@ import java.util.Map;
 public class PackageJson {
     public String name;
     public String version;
+    public String description = "NA";
+    public String repository = "NA";
+    public String license = "NA";
     public Map<String, String> dependencies = Maps.newHashMap();
     public Map<String, String> devDependencies = Maps.newHashMap();
     public Map<String, String> peerDependencies = Maps.newHashMap();

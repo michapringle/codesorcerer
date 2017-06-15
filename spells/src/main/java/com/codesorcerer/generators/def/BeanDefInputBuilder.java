@@ -37,7 +37,7 @@ public class BeanDefInputBuilder extends AbstractInputBuilder<BeanDefInfo> {
     public BeanDefInfo buildInput(TypeElement te) {
         checkBBBUsage(te);
         printBeanStatus(te);
-        return init(processingEnvironment, te);
+        return init(te);
     }
 
 
@@ -53,11 +53,11 @@ public class BeanDefInputBuilder extends AbstractInputBuilder<BeanDefInfo> {
             "const", "float", "native", "super", "while");
 
 
-    private BeanDefInfo init(ProcessingEnvironment processingEnv, TypeElement te) {
+    private BeanDefInfo init(TypeElement te) {
 
         final BeanDefInfo ic = new BeanDefInfo();
         String currentTypeName = te.getSimpleName().toString();
-        String currentTypePackage = processingEnv.getElementUtils().getPackageOf(te).toString();
+        String currentTypePackage = processingEnvironment.getElementUtils().getPackageOf(te).toString();
 
         String pkg = removeEnd(currentTypePackage, ".def");
         String bbbWithNoDef = removeEnd(currentTypeName, "Def");
@@ -67,25 +67,25 @@ public class BeanDefInputBuilder extends AbstractInputBuilder<BeanDefInfo> {
         ic.typeImmutable = ClassName.get(pkg, bbbWithNoDef);
         ic.pkg = pkg;
         ic.immutableClassName = bbbWithNoDef;
-        ic.beanDefFieldInfos = parseGetters(processingEnv, te);
+        ic.beanDefFieldInfos = parseGetters(te);
         ic.nonNullBeanDefFieldInfos = ic.beanDefFieldInfos.stream().filter(i -> i.isNonNull).collect(toList());
         ic.nullableBeanDefFieldInfos = ic.beanDefFieldInfos.stream().filter(i -> !i.isNonNull).collect(toList());
         ic.typeCallbackImpl = ParameterizedTypeName.get(Types.jpCallback, ic.typeImmutable);
         return ic;
     }
 
-    private List<BeanDefFieldInfo> parseGetters(ProcessingEnvironment processingEnv, TypeElement te) {
+    private List<BeanDefFieldInfo> parseGetters(TypeElement te) {
         final Set<String> removeDups = Sets.newHashSet();
         return getAllMethods(te)
                 .stream()
                 .filter(this::isGetter)
                 .filter(ee -> removeDups.add(ee.getSimpleName().toString()))
-                .map(e -> buildInfo(processingEnv, e))
+                .map(e -> buildInfo(e))
                 .collect(toList());
     }
 
 
-    private BeanDefFieldInfo buildInfo(ProcessingEnvironment processingEnv, ExecutableElement getter) {
+    private BeanDefFieldInfo buildInfo(ExecutableElement getter) {
         BeanDefFieldInfo beanDefFieldInfo = new BeanDefFieldInfo();
         beanDefFieldInfo.getter = getter;
         TypeMirror returnTypeMirror = getter.getReturnType();
@@ -97,7 +97,7 @@ public class BeanDefInputBuilder extends AbstractInputBuilder<BeanDefInfo> {
         beanDefFieldInfo.nameMangled = beanDefFieldInfo.name + (KEYWORDS.contains(beanDefFieldInfo.name.toLowerCase()) ? "_" : "");
 
 
-        beanDefFieldInfo.isComparable = isComparable(processingEnv, returnTypeMirror);
+        beanDefFieldInfo.isComparable = isComparable(returnTypeMirror);
 //        beanDefFieldInfo.isBB = isBBB(returnTypeMirror);
         beanDefFieldInfo.isNonNull = isNonNull(getter, isPrimitive(returnTypeMirror));
         beanDefFieldInfo.nReturnType = calcReturnTypes(returnTypeMirror);
@@ -117,9 +117,9 @@ public class BeanDefInputBuilder extends AbstractInputBuilder<BeanDefInfo> {
         return returnTypeMirror instanceof PrimitiveType;
     }
 
-    private boolean isComparable(ProcessingEnvironment processingEnv, TypeMirror returnTypeMirror) {
-        TypeMirror comparable = processingEnv.getTypeUtils().erasure(processingEnv.getElementUtils().getTypeElement(Comparable.class.getName()).asType());
-        return isPrimitive(returnTypeMirror) || processingEnv.getTypeUtils().isAssignable(returnTypeMirror, comparable);
+    private boolean isComparable(TypeMirror returnTypeMirror) {
+        TypeMirror comparable = processingEnvironment.getTypeUtils().erasure(processingEnvironment.getElementUtils().getTypeElement(Comparable.class.getName()).asType());
+        return isPrimitive(returnTypeMirror) || processingEnvironment.getTypeUtils().isAssignable(returnTypeMirror, comparable);
     }
 
     private boolean isNonNull(ExecutableElement getter, boolean isPrimitive) {

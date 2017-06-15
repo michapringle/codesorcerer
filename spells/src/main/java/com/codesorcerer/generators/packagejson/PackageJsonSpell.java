@@ -1,4 +1,4 @@
-package com.codesorcerer.generators.def.spells;
+package com.codesorcerer.generators.packagejson;
 
 import com.codesorcerer.Collector;
 import com.codesorcerer.abstracts.AbstractSpell;

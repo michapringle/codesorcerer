@@ -1,14 +1,11 @@
 package com.codesorcerer.generators.def.spells;
 
-import com.codesorcerer.Collector;
 import com.codesorcerer.targets.BBBImmutable;
-import com.codesorcerer.abstracts.AbstractJavaBeanSpell;
 import com.codesorcerer.abstracts.AbstractSpell;
 import com.codesorcerer.abstracts.Result;
 import com.codesorcerer.generators.def.BeanDefInfo;
 import com.codesorcerer.generators.def.BeanDefInfo.BeanDefFieldInfo;
 import com.codesorcerer.generators.def.BeanDefInputBuilder;
-import com.codesorcerer.typescript.TSUtils;
 import com.google.auto.common.MoreTypes;
 import com.google.common.collect.Lists;
 import com.squareup.javapoet.*;

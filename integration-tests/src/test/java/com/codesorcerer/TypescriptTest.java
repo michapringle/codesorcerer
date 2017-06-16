@@ -11,6 +11,34 @@ import static com.codesorcerer.Helper.compiles;
 public class TypescriptTest {
 
     @Test
+    public void genericParent() throws Exception {
+        compiles("",
+                "          public interface Parent<X> {                                                  ",
+                "            X getThing();                                                  ",
+                "          }                                                                          ",
+                "                                                                                    ",
+                "           @BBBTypescript                                                 ",
+                "           @BasicTypescriptMapping                                                       ",
+                "           @BBBJson                                                        ",
+                "           @BBBImmutable                                                        ",
+                "           interface RealDef extends Parent<String> {                                                  ",
+                "           }                                                                          ",
+                "                                                                                    ",
+                "           class Usage {                                                  ",
+                "             void test() {                                                  ",
+                "               Real x = Real.buildReal()                                                  ",
+                "                 .thing(\"hi\")                                                  ",
+                "                 .build();                                                  ",
+                "                                                                                       ",
+                "               String s = x.getThing();                                                  ",
+                "             }                                                                                                  ",
+                "           }                                                                          ",
+                "          "
+        );
+    }
+
+
+    @Test
     public void simple() throws Exception {
         compiles("",
                 "          @BBBTypescript                                                 ",

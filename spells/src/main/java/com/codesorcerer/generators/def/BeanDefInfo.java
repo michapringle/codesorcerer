@@ -9,6 +9,7 @@ import javax.annotation.Nonnull;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeMirror;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -68,6 +69,8 @@ public class BeanDefInfo {
     public static class BeanDefFieldInfo {
 
         public ExecutableElement getter;
+        public TypeMirror returnTypeMirror;
+
         public String prefix;       // 'get' or 'is'
         public String nameUpper;    // 'Thing'
         public String nameAllUpper; // 'THING'

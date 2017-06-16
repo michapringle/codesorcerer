@@ -10,6 +10,31 @@ import static com.codesorcerer.Helper.compiles;
 @RunWith(JUnit4.class)
 public class ImmutableSuccessTest {
 
+
+    @Test
+    public void genericParent() throws Exception {
+        compiles("",
+                "          public interface Parent<X> {                                                  ",
+                "            X getThing();                                                  ",
+                "          }                                                                          ",
+                "                                                                                    ",
+                "           @com.codesorcerer.targets.BeautifulBean                                                 ",
+                "           interface RealDef extends Parent<String> {                                                  ",
+                "           }                                                                          ",
+                "                                                                                    ",
+                "           class Usage {                                                  ",
+                "             void test() {                                                  ",
+                "               Real x = Real.buildReal()                                                  ",
+                "                 .thing(\"hi\")                                                  ",
+                "                 .build();                                                  ",
+                "                                                                                       ",
+                "               String s = x.getThing();                                                  ",
+                "             }                                                                                                  ",
+                "           }                                                                          ",
+                "          "
+        );
+    }
+
     @Test
     public void listOfSubBeans() throws Exception {
         compiles("",

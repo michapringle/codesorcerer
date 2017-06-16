@@ -16,17 +16,16 @@ import com.sun.tools.javac.code.Type;
 
 import javax.annotation.Nonnull;
 import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Modifier;
-import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.*;
 import javax.lang.model.type.*;
 import javax.lang.model.util.ElementFilter;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 
+import static com.google.auto.common.MoreTypes.asDeclared;
 import static com.google.auto.common.MoreTypes.asTypeElement;
+import static com.google.common.collect.Iterables.get;
 import static com.google.common.collect.Iterables.toArray;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.*;
@@ -80,15 +79,39 @@ public class BeanDefInputBuilder extends AbstractInputBuilder<BeanDefInfo> {
                 .stream()
                 .filter(this::isGetter)
                 .filter(ee -> removeDups.add(ee.getSimpleName().toString()))
-                .map(e -> buildInfo(e))
+                .map(e -> buildInfo(te, e))
                 .collect(toList());
     }
 
+    public static TypeMirror getReifiedType(TypeMirror tm, TypeMirror enclosingElement, javax.lang.model.util.Types typeUtils) {
+        if( tm instanceof Type.TypeVar) {
+            //try {
+                return getReifiedType(typeUtils.asElement(tm), enclosingElement, typeUtils);
+            //} catch (Exception e) {
+            //    return tm;
+           // }
+        }
+        return tm;
+    }
 
-    private BeanDefFieldInfo buildInfo(ExecutableElement getter) {
+    public static TypeMirror getReifiedType(Element elem, TypeMirror enclosingElement, javax.lang.model.util.Types typeUtils) {
+        try {
+            return typeUtils.asMemberOf(asDeclared(enclosingElement), elem);
+        } catch (Exception e) {
+            //TODO: instead of catchign exception, detect the case correctly!
+            return elem.asType();
+        }
+    }
+
+
+
+    private BeanDefFieldInfo buildInfo(TypeElement te, ExecutableElement getter) {
+
+
         BeanDefFieldInfo beanDefFieldInfo = new BeanDefFieldInfo();
         beanDefFieldInfo.getter = getter;
-        TypeMirror returnTypeMirror = getter.getReturnType();
+        //beanDefFieldInfo.returnTypeMirror = getter.getReturnType();
+        beanDefFieldInfo.returnTypeMirror = getReifiedType(getter.getReturnType(), te.asType(), typeUtils);
 
         beanDefFieldInfo.prefix = getPrefix(getter);
         beanDefFieldInfo.nameUpper = removePrefix(getter);
@@ -97,10 +120,9 @@ public class BeanDefInputBuilder extends AbstractInputBuilder<BeanDefInfo> {
         beanDefFieldInfo.nameMangled = beanDefFieldInfo.name + (KEYWORDS.contains(beanDefFieldInfo.name.toLowerCase()) ? "_" : "");
 
 
-        beanDefFieldInfo.isComparable = isComparable(returnTypeMirror);
-//        beanDefFieldInfo.isBB = isBBB(returnTypeMirror);
-        beanDefFieldInfo.isNonNull = isNonNull(getter, isPrimitive(returnTypeMirror));
-        beanDefFieldInfo.nReturnType = calcReturnTypes(returnTypeMirror);
+        beanDefFieldInfo.isComparable = isComparable(beanDefFieldInfo.returnTypeMirror);
+        beanDefFieldInfo.isNonNull = isNonNull(getter, isPrimitive(beanDefFieldInfo.returnTypeMirror));
+        beanDefFieldInfo.nReturnType = calcReturnTypes(beanDefFieldInfo.returnTypeMirror);
 
         beanDefFieldInfo.returnType = beanDefFieldInfo.nReturnType.toString();
 

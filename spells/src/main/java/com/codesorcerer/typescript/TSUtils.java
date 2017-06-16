@@ -16,6 +16,7 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.*;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Types;
 import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -385,13 +386,13 @@ public final class TSUtils {
     }
 
 
-    public static Set<TypeMirror> getReferences(ExecutableElement e) {
+    public static Set<TypeMirror> getReferences(ExecutableElement e, TypeMirror enclosing, Types typeUtils) {
         Set<TypeMirror> refs = Sets.newHashSet();
 
-        refs.add(e.getReturnType());
+        refs.add(BeanDefInputBuilder.getReifiedType(e.getReturnType(), enclosing, typeUtils));
 
         e.getParameters().stream().forEach(p -> {
-            refs.add(p.asType());
+            refs.add(BeanDefInputBuilder.getReifiedType(p, enclosing, typeUtils));
         });
 
       //  System.out.println("Adding references... " + refs);

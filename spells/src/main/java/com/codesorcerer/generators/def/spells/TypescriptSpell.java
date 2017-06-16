@@ -69,7 +69,7 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
         buildClass(ic, sb, mappings);
 
         //Register
-        ic.beanDefFieldInfos.forEach(i -> addReferences(i.getter));
+        ic.beanDefFieldInfos.forEach(i -> addReferences(i.getter, result.te.asType()));
         String imports = TSUtils.convertToImportStatements(ic.pkg, referenced, mappings, processingEnvironment);
         String x = sb.toString().replace("*IMPORTS*", imports);
 
@@ -139,7 +139,7 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
     private void buildGetters(BeanDefInfo ic, StringBuilder sb, Set<TypescriptMapping> mappings) {
         for (int x = 0; x < ic.beanDefFieldInfos.size(); x++) {
             BeanDefFieldInfo i = ic.beanDefFieldInfos.get(x);
-            sb.append("public get " + i.nameMangled + "() : " + TSUtils.convertToTypescriptType(i.getter.getReturnType(), mappings, processingEnvironment) + " { return this._" + i.nameMangled + "; }\n");
+            sb.append("public get " + i.nameMangled + "() : " + TSUtils.convertToTypescriptType(i.returnTypeMirror, mappings, processingEnvironment) + " { return this._" + i.nameMangled + "; }\n");
         }
     }
 
@@ -186,7 +186,7 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
                     .collect(Collectors.joining(", "));
 
             String returnType = ic.immutableClassName + "Nullable";
-            sb.append("public with" + i.nameUpper + "(" + i.nameMangled + " : " + TSUtils.convertToTypescriptType(i.getter.getReturnType(), mappings, processingEnvironment) + ") : " + ic.immutableClassName + " {\n");
+            sb.append("public with" + i.nameUpper + "(" + i.nameMangled + " : " + TSUtils.convertToTypescriptType(i.returnTypeMirror, mappings, processingEnvironment) + ") : " + ic.immutableClassName + " {\n");
             sb.append("  return new " + ic.immutableClassName + "(" + allParams + ");\n");
             sb.append("}\n");
             sb.append("\n");
@@ -194,7 +194,7 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
     }
 
     private void setter(StringBuilder sb, BeanDefFieldInfo i, String returnType, Set<TypescriptMapping> mappings) {
-        sb.append("public " + i.nameMangled + "(" + i.nameMangled + " : " + TSUtils.convertToTypescriptType(i.getter.getReturnType(), mappings, processingEnvironment) + ") : " + returnType + " {\n");
+        sb.append("public " + i.nameMangled + "(" + i.nameMangled + " : " + TSUtils.convertToTypescriptType(i.returnTypeMirror, mappings, processingEnvironment) + ") : " + returnType + " {\n");
         sb.append("  this._" + i.nameMangled + " = " + i.nameMangled + ";\n");
         sb.append("  return this;\n");
         sb.append("}\n");
@@ -214,7 +214,7 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
 
         if (ic.beanDefFieldInfos.size() <= 3) {
             String allParams1 = ic.beanDefFieldInfos.stream()
-                    .map(i -> i.nameMangled + " : " + TSUtils.convertToTypescriptType(i.getter.getReturnType(), mappings, processingEnvironment))
+                    .map(i -> i.nameMangled + " : " + TSUtils.convertToTypescriptType(i.returnTypeMirror, mappings, processingEnvironment))
                     .collect(Collectors.joining(", "));
 
             String allParams2 = ic.beanDefFieldInfos.stream()
@@ -233,7 +233,7 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
         sb.append("export interface " + ic.immutableClassName + "Nullable {\n");
         for (int x = 0; x < ic.nullableBeanDefFieldInfos.size(); x++) {
             BeanDefFieldInfo i = ic.nullableBeanDefFieldInfos.get(x);
-            sb.append("  " + i.nameMangled + "(" + i.nameMangled + " : " + TSUtils.convertToTypescriptType(i.getter.getReturnType(), mappings, processingEnvironment) + ") : " + ic.immutableClassName + "Nullable;\n");
+            sb.append("  " + i.nameMangled + "(" + i.nameMangled + " : " + TSUtils.convertToTypescriptType(i.returnTypeMirror, mappings, processingEnvironment) + ") : " + ic.immutableClassName + "Nullable;\n");
         }
         sb.append("  build() : " + ic.immutableClassName + ";\n");
 
@@ -247,14 +247,14 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
                 BeanDefFieldInfo i = ic.nonNullBeanDefFieldInfos.get(x);
                 BeanDefFieldInfo ii = ic.nonNullBeanDefFieldInfos.get(x + 1);
                 sb.append("export interface " + ic.immutableClassName + "Requires" + i.nameUpper + " {\n");
-                sb.append("  " + i.nameMangled + "(" + i.nameMangled + " : " + TSUtils.convertToTypescriptType(i.getter.getReturnType(), mappings, processingEnvironment) + ") : " + ic.immutableClassName + "Requires" + ii.nameUpper + ";\n");
+                sb.append("  " + i.nameMangled + "(" + i.nameMangled + " : " + TSUtils.convertToTypescriptType(i.returnTypeMirror, mappings, processingEnvironment) + ") : " + ic.immutableClassName + "Requires" + ii.nameUpper + ";\n");
                 sb.append("}\n");
             }
             sb.append("\n");
 
             BeanDefFieldInfo i = ic.nonNullBeanDefFieldInfos.get(ic.nonNullBeanDefFieldInfos.size() - 1);
             sb.append("export interface " + ic.immutableClassName + "Requires" + i.nameUpper + " {\n");
-            sb.append("  " + i.nameMangled + "(" + i.nameMangled + " : " + TSUtils.convertToTypescriptType(i.getter.getReturnType(), mappings, processingEnvironment) + ") : " + ic.immutableClassName + "Nullable;\n");
+            sb.append("  " + i.nameMangled + "(" + i.nameMangled + " : " + TSUtils.convertToTypescriptType(i.returnTypeMirror, mappings, processingEnvironment) + ") : " + ic.immutableClassName + "Nullable;\n");
             sb.append("}\n");
         }
     }
@@ -266,7 +266,7 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
 
     private void buildPrivateConstructor2(BeanDefInfo ic, StringBuilder sb, Set<TypescriptMapping> mappings) {
         String allParams = ic.beanDefFieldInfos.stream()
-                .map(i -> i.nameMangled + "? : " + TSUtils.convertToTypescriptType(i.getter.getReturnType(), mappings, processingEnvironment))
+                .map(i -> i.nameMangled + "? : " + TSUtils.convertToTypescriptType(i.returnTypeMirror, mappings, processingEnvironment))
                 .collect(Collectors.joining(", "));
 
 
@@ -283,14 +283,14 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
 
     private void buildFields(BeanDefInfo ic, StringBuilder sb, Set<TypescriptMapping> mappings) {
         for (BeanDefFieldInfo i : ic.beanDefFieldInfos) {
-            sb.append("  _" + i.nameMangled + ": " + TSUtils.convertToTypescriptType(i.getter.getReturnType(), mappings, processingEnvironment) + ";\n");
+            sb.append("  _" + i.nameMangled + ": " + TSUtils.convertToTypescriptType(i.returnTypeMirror, mappings, processingEnvironment) + ";\n");
         }
         sb.append("\n");
     }
 
     private void buildFields2(BeanDefInfo ic, StringBuilder sb, Set<TypescriptMapping> mappings) {
         for (BeanDefFieldInfo i : ic.beanDefFieldInfos) {
-            String typ = TSUtils.convertToTypescriptType(i.getter.getReturnType(), mappings, processingEnvironment);
+            String typ = TSUtils.convertToTypescriptType(i.returnTypeMirror, mappings, processingEnvironment);
 
             String ann = "";
 
@@ -307,8 +307,8 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
     }
 
 
-    private void addReferences(ExecutableElement e) {
-        referenced.addAll(TSUtils.getReferences(e));
+    private void addReferences(ExecutableElement e, TypeMirror enclosing) {
+        referenced.addAll(TSUtils.getReferences(e, enclosing, typeUtils));
     }
 
 }

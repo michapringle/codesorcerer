@@ -80,7 +80,7 @@ public class TypescriptRestControllerSpell extends AbstractSpell<TypescriptContr
 
         sb.append("//-----------------Stomp Methods\n");
         for (ExecutableElement e : ic.getAllMethodsStomp()) {
-            addReferences(e);
+            addReferences(e, ic.typeElement.asType());
 
             SubscribeMapping rm = e.getAnnotation(SubscribeMapping.class);
 
@@ -120,7 +120,7 @@ public class TypescriptRestControllerSpell extends AbstractSpell<TypescriptContr
 
         sb.append("//-----------------Rest Methods\n");
         for (ExecutableElement e : ic.getAllMethodsRest()) {
-            addReferences(e);
+            addReferences(e, ic.typeElement.asType());
 
             sb.append("\n");
 
@@ -227,8 +227,8 @@ public class TypescriptRestControllerSpell extends AbstractSpell<TypescriptContr
 
     private Set<TypeMirror> referenced = Sets.newHashSet();
 
-    private void addReferences(ExecutableElement e) {
-        referenced.addAll(TSUtils.getReferences(e));
+    private void addReferences(ExecutableElement e, TypeMirror enclosing) {
+        referenced.addAll(TSUtils.getReferences(e, enclosing, typeUtils));
     }
 
 }

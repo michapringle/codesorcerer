@@ -116,6 +116,13 @@ public class CodeSorcererProcessor extends javax.annotation.processing.AbstractP
 
         //Run the generators for this type
         runFunction(notYetProcessed, (result) -> System.out.println("  Casting " + result.spell.getClass().getSimpleName() + " on " + result.te.getQualifiedName() ), "Debug");
+
+//        runFunction(notYetProcessed, (result) -> {
+//            result.spell.build(result);
+//            result.spell.modify(result, results.values());
+//            result.spell.write(result);
+//        }, "All");
+
         runFunction(notYetProcessed, (result) -> result.spell.build(result), "Build");
         runFunction(notYetProcessed, (result) -> result.spell.modify(result, results.values()), "Modify");
         runFunction(notYetProcessed, (result) -> result.spell.write(result), "Write");

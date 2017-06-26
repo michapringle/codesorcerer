@@ -52,9 +52,17 @@ public class TypescriptRestControllerSpell extends AbstractSpell<TypescriptContr
         FileUtils.write(new File(dir, ic.typeElement.getSimpleName() + "Service.ts"), result.output, Charset.defaultCharset());
     }
 
+    private void addReferences(ExecutableElement e, TypeMirror enclosing, Set<TypeMirror> referenced) {
+        referenced.addAll(TSUtils.getReferences(e, enclosing, typeUtils));
+    }
+
     @Override
     public void build(Result<AbstractSpell<TypescriptController, RestControllerInfo, String>, RestControllerInfo, String> result) throws Exception {
         RestControllerInfo ic = result.input;
+
+        Set<TypeMirror> referenced = Sets.newHashSet();
+
+
 
         Set<TypescriptMapping> mappings = TSUtils.getAllMappings(ic.typeElement);
         String serviceName = ic.typeElement.getSimpleName().toString();
@@ -80,7 +88,7 @@ public class TypescriptRestControllerSpell extends AbstractSpell<TypescriptContr
 
         sb.append("//-----------------Stomp Methods\n");
         for (ExecutableElement e : ic.getAllMethodsStomp()) {
-            addReferences(e, ic.typeElement.asType());
+            addReferences(e, ic.typeElement.asType(), referenced);
 
             SubscribeMapping rm = e.getAnnotation(SubscribeMapping.class);
 
@@ -105,13 +113,13 @@ public class TypescriptRestControllerSpell extends AbstractSpell<TypescriptContr
             String fullReturnType = TSUtils.convertToTypescriptType(e.getReturnType(), mappings, processingEnvironment);
             String innerReturnType = getInnerType(e.getReturnType(), mappings);
 
-            if(innerReturnType.startsWith("Array<")) {
-
-            }
+//            if(innerReturnType.startsWith("Array<")) {
+//
+//            }
 
             sb.append("public " + e.getSimpleName() + "(" + tsParameterList + "): " + fullReturnType + " {\n");
             sb.append("    return this.stompClient.topic('" + topic + "')\n");
-            String tt = (unboxOnce(e.getReturnType(), mappings).startsWith("Array<")) ? "Array<string>" : "string";
+            String tt = (unboxOnce(e.getReturnType(), mappings).endsWith("[]")) ? "Object[]" : "Object";
             sb.append("       .map((x: " + tt + ") => plainToClass(" + innerReturnType + ", x));\n");
             sb.append("}\n");
         }
@@ -120,7 +128,7 @@ public class TypescriptRestControllerSpell extends AbstractSpell<TypescriptContr
 
         sb.append("//-----------------Rest Methods\n");
         for (ExecutableElement e : ic.getAllMethodsRest()) {
-            addReferences(e, ic.typeElement.asType());
+            addReferences(e, ic.typeElement.asType(), referenced);
 
             sb.append("\n");
 
@@ -171,10 +179,10 @@ public class TypescriptRestControllerSpell extends AbstractSpell<TypescriptContr
         sb.append("}\n");
 
 
-        for(TypeMirror tm : referenced) {
-            Collector.COLLECTOR.putAll("mappings", TSUtils.getAllMappings(MoreTypes.asTypeElement(tm)));
-        }
-        Collector.COLLECTOR.put("packages", ic.getCurrentTypePackage());
+        //for(TypeMirror tm : referenced) {
+            //Collector.COLLECTOR.putAll("mappings", TSUtils.getAllMappings(MoreTypes.asTypeElement(tm)));
+        //}
+        //Collector.COLLECTOR.put("packages", ic.getCurrentTypePackage());
 
         //System.out.printf("Referenced: " + referenced);
         String imports = TSUtils.convertToImportStatements(ic.getCurrentTypePackage(), referenced, mappings, processingEnvironment);
@@ -225,10 +233,5 @@ public class TypescriptRestControllerSpell extends AbstractSpell<TypescriptContr
     }
 
 
-    private Set<TypeMirror> referenced = Sets.newHashSet();
-
-    private void addReferences(ExecutableElement e, TypeMirror enclosing) {
-        referenced.addAll(TSUtils.getReferences(e, enclosing, typeUtils));
-    }
 
 }

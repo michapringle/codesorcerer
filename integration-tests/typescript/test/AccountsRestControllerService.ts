@@ -18,7 +18,7 @@ export class AccountsRestControllerService {
 
 public accounts(): Observable<Array<Account>> {
     return this.stompClient.topic('/queue/accounts')
-       .map((x: Array<string>) => plainToClass(Account, x));
+       .map((x: Object[]) => plainToClass(Account, x));
 }
 
 //-----------------Rest Methods

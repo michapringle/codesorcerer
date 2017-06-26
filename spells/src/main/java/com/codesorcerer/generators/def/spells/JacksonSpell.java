@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.squareup.javapoet.*;
 
@@ -105,17 +106,34 @@ public class JacksonSpell extends AbstractJavaBeanSpell<BBBJson>
         classBuilder.addMethod(constructor.build());
 
         //Serialize
-        MethodSpec.Builder m = MethodSpec.methodBuilder("serialize");
-        m.addModifiers(Modifier.PUBLIC);
-        m.addParameter(ic.typeImmutable, "o");
-        m.addParameter(ClassName.get(JsonGenerator.class), "spell");
-        m.addParameter(ClassName.get(SerializerProvider.class), "sp");
-        m.addException(ClassName.get(IOException.class));
-        m.addException(ClassName.get(JsonGenerationException.class));
+        {
+            MethodSpec.Builder m = MethodSpec.methodBuilder("serialize");
+            m.addModifiers(Modifier.PUBLIC);
+            m.addParameter(ic.typeImmutable, "o");
+            m.addParameter(ClassName.get(JsonGenerator.class), "spell");
+            m.addParameter(ClassName.get(SerializerProvider.class), "sp");
+            m.addException(ClassName.get(IOException.class));
+            m.addException(ClassName.get(JsonGenerationException.class));
+            m.addStatement("spell.writeObject(o.toMutable())");
+            classBuilder.addMethod(m.build());
+        }
 
-        m.addStatement("spell.writeObject(o.toMutable())");
+        {
+            //Serialize with type
+            MethodSpec.Builder m = MethodSpec.methodBuilder("serializeWithType");
+            m.addModifiers(Modifier.PUBLIC);
+            m.addParameter(ic.typeImmutable, "o");
+            m.addParameter(ClassName.get(JsonGenerator.class), "spell");
+            m.addParameter(ClassName.get(SerializerProvider.class), "sp");
+            m.addParameter(ClassName.get(TypeSerializer.class), "ts");
+            m.addException(ClassName.get(IOException.class));
+            m.addException(ClassName.get(JsonGenerationException.class));
+            m.addStatement("ts.writeTypePrefixForScalar(this, spell, $T.class)", ic.typeImmutable);
+            m.addStatement("serialize(o, spell, sp)");
+            m.addStatement("ts.writeTypeSuffixForScalar(this, spell)");
+            classBuilder.addMethod(m.build());
+        }
 
-        classBuilder.addMethod(m.build());
         return classBuilder;
     }
 

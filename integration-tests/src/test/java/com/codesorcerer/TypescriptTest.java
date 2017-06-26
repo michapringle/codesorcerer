@@ -70,6 +70,20 @@ public class TypescriptTest {
     }
 
     @Test
+    public void listComesOutAsArray() throws Exception {
+        compiles("",
+                "          @BBBTypescript                                                 ",
+                "          @BasicTypescriptMapping                                                       ",
+                "          @BBBJson                                                        ",
+                "          @BBBImmutable                                                        ",
+                "          public interface BeanArrayDef {                                                  ",
+                "            List<String> getNames();                                                  ",
+                "          }                                                                          ",
+                "                                                                                  "
+        );
+    }
+
+    @Test
     public void nonnull() throws Exception {
         compiles("",
                 "          @BBBTypescript                                                 ",

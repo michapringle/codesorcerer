@@ -8,7 +8,6 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.processing.JavacFiler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -22,7 +21,6 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static com.google.common.collect.Sets.newHashSet;
 import static java.util.stream.Collectors.joining;
@@ -221,15 +219,15 @@ public final class TSUtils {
 
         for (TypescriptMapping tm : allMappings) {
             if (getClassName(tm).equals(typeName)) {
-              //  System.out.println("found it " + typeName + "! " + tm.typescriptImportLocation());
-          //      System.out.println("Got it " + tm.typescriptClassName() + " " + tm.typescriptImportLocation());
+                //  System.out.println("found it " + typeName + "! " + tm.typescriptImportLocation());
+                //      System.out.println("Got it " + tm.typescriptClassName() + " " + tm.typescriptImportLocation());
                 return tm;
             }
         }
 
         String name2;
 //        if (typeName.contains(".")) {
-            name2 = typeName;
+        name2 = typeName;
 //        } else {
 //            JavacFiler f = (JavacFiler) processingEnvironment.getFiler();
 //            f.getGeneratedSourceNames().forEach(x -> System.out.println("   =gen=" + x));
@@ -249,7 +247,7 @@ public final class TSUtils {
         String typeName2;
         if (typeName.contains(".")) {
             typeName2 = StringUtils.substringAfterLast(typeName, ".");
-       } else {
+        } else {
             typeName2 = typeName;
         }
 
@@ -296,10 +294,9 @@ public final class TSUtils {
             }
         };
 
-      //  System.out.println("MADE it " + x.typescriptClassName() + " " + x.typescriptImportLocation() + "!!!!!");
+        //  System.out.println("MADE it " + x.typescriptClassName() + " " + x.typescriptImportLocation() + "!!!!!");
         return x;
     }
-
 
 
     private static String convertToImportStatement(String includingElementsPackage, TypescriptMapping mapping) {
@@ -315,24 +312,24 @@ public final class TSUtils {
 
         final String simpleName = mapping.typescriptClassName();
         if (commonPrefix.isEmpty()) {
-            if(loc.equals(mapping.typescriptClassName())) {
+            if (loc.equals(mapping.typescriptClassName())) {
                 //Strange case of Requests
                 //System.out.println("loc: " + loc + " inc: " + includingElementsPackage + " CP: " + commonPrefix + "... " + loc);
                 return "import {" + simpleName + "} from './" + loc + "';  //Same package???";
             }
-           // System.out.println("loc: " + loc + " inc: " + includingElementsPackage + " CP: " + commonPrefix + "... " + loc);
+            // System.out.println("loc: " + loc + " inc: " + includingElementsPackage + " CP: " + commonPrefix + "... " + loc);
             return "import {" + simpleName + "} from '" + loc + "';  //No common prefix - use loc from Annotation";
         }
 
-        String locEnd = removeStart(loc, commonPrefix+".").replace('.', '/');
+        String locEnd = removeStart(loc, commonPrefix + ".").replace('.', '/');
         String incEnd = removeStart(includingElementsPackage, commonPrefix).replace('.', '/');
 
         String loc2 = repeat("../", countMatches(incEnd, "/")) + locEnd;
-      //  System.out.println("loc: " + loc + " inc: " + includingElementsPackage + " CP: " + commonPrefix + " locE: " + locEnd + " incEnd: " + incEnd + "... " + loc2);
+        //  System.out.println("loc: " + loc + " inc: " + includingElementsPackage + " CP: " + commonPrefix + " locE: " + locEnd + " incEnd: " + incEnd + "... " + loc2);
 
         //Must be a relative path...
-        if(!loc2.startsWith(".")) {
-            loc2 = "./"  + loc2;
+        if (!loc2.startsWith(".")) {
+            loc2 = "./" + loc2;
         }
 
         return "import {" + simpleName + "} from '" + loc2 + "';  //relative import";
@@ -346,8 +343,7 @@ public final class TSUtils {
         for (int i = 0; i < Math.min(locToks.size(), includingToks.size()); i++) {
             if (locToks.get(i).equals(includingToks.get(i))) {
                 count++;
-            }
-            else {
+            } else {
                 break;
             }
         }
@@ -364,15 +360,24 @@ public final class TSUtils {
         } else if (tm instanceof Type.ClassType) {
             Type.ClassType ct = (Type.ClassType) tm;
 
+
             StringBuilder sb = new StringBuilder();
-            TypescriptMapping mapping = findMappingForNonParameritizedClass(tm, mappings, processingEnv);
-            sb.append(mapping.typescriptClassName());
-            if (!ct.getTypeArguments().isEmpty()) {
-                sb.append("<");
+
+            if (ct.toString().startsWith("java.util.List")) {
                 sb.append(ct.getTypeArguments().stream()
                         .map(tt -> convertToTypescriptType(tt, mappings, processingEnv))
                         .collect(joining(",")));
-                sb.append(">");
+                sb.append("[]");
+            } else {
+                TypescriptMapping mapping = findMappingForNonParameritizedClass(tm, mappings, processingEnv);
+                sb.append(mapping.typescriptClassName());
+                if (!ct.getTypeArguments().isEmpty()) {
+                    sb.append("<");
+                    sb.append(ct.getTypeArguments().stream()
+                            .map(tt -> convertToTypescriptType(tt, mappings, processingEnv))
+                            .collect(joining(",")));
+                    sb.append(">");
+                }
             }
             return sb.toString();
         } else if (tm instanceof Type.JCVoidType) {
@@ -395,7 +400,7 @@ public final class TSUtils {
             refs.add(BeanDefInputBuilder.getReifiedType(p, enclosing, typeUtils));
         });
 
-      //  System.out.println("Adding references... " + refs);
+        //  System.out.println("Adding references... " + refs);
 
         return refs;
     }

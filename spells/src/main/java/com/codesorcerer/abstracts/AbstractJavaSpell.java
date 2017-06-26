@@ -35,8 +35,8 @@ public abstract class AbstractJavaSpell<T extends Annotation, Input> extends Abs
         String pkg = processingEnvironment.getElementUtils().getPackageOf(result.te).toString();
         JavaFile javaFile = JavaFile.builder(pkg, build).build();
         javaFile.writeTo(filer);
-        System.out.println("Conjured " + pkg + "." + build.name);
-        System.out.println(javaFile.toString());
+        //System.out.println("Conjured " + pkg + "." + build.name);
+        //System.out.println(javaFile.toString());
     }
 
     protected static <T extends Annotation, Input, Output, G extends AbstractSpell<T, Input, Output>>

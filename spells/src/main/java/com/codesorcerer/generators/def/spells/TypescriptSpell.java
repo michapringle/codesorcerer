@@ -10,6 +10,7 @@ import com.codesorcerer.targets.TypescriptMapping;
 import com.codesorcerer.typescript.TSUtils;
 import com.google.common.collect.Sets;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.type.TypeMirror;
@@ -26,9 +27,6 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
         String ts;
         Set<TypeMirror> mappings;
     }
-
-    private Set<TypeMirror> referenced = Sets.newHashSet();
-
 
     @Override
     public int getRunOrder() {
@@ -58,6 +56,8 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
     @Override
     public void build(Result<AbstractSpell<BBBTypescript, BeanDefInfo, Out>, BeanDefInfo, Out> result) throws Exception {
 
+        Set<TypeMirror> referenced = Sets.newHashSet();
+
         BeanDefInfo ic = result.input;
         Set<TypescriptMapping> mappings = TSUtils.getAllMappings(ic.typeElement);
 
@@ -69,7 +69,7 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
         buildClass(ic, sb, mappings);
 
         //Register
-        ic.beanDefFieldInfos.forEach(i -> addReferences(i.getter, result.te.asType()));
+        ic.beanDefFieldInfos.forEach(i -> addReferences(i.getter, result.te.asType(), referenced));
         String imports = TSUtils.convertToImportStatements(ic.pkg, referenced, mappings, processingEnvironment);
         String x = sb.toString().replace("*IMPORTS*", imports);
 
@@ -79,9 +79,9 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
         out.mappings = referenced;
 
         //TODO:
-        referenced.clear();
+        //referenced.clear();
 
-        Collector.COLLECTOR.putAll("mappings", TSUtils.getAllMappings(ic.typeElement));
+        //Collector.COLLECTOR.putAll("mappings", TSUtils.getAllMappings(ic.typeElement));
 //        Collector.COLLECTOR.put("packages", ic.pkg);
 
         result.output = out;
@@ -295,9 +295,13 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
             String ann = "";
 
             //TODO... what other types?
-            if (!typ.equals("Array<string>") && !typ.equals("Array<number>") && !typ.equals("Array<boolean>")) {
+            if (!typ.equals("string[]") && !typ.equals("number[]") && !typ.equals("boolean[]")) {
                 if (!typ.equals("string") && !typ.equals("number") && !typ.equals("boolean")) {
-                    ann = "@Type(() => " + typ + ")";
+                    String nonArrayTpe = typ;
+                    if(typ.endsWith("[]")) {
+                        nonArrayTpe = StringUtils.removeEnd(typ, "[]");
+                    }
+                    ann = "@Type(() => " + nonArrayTpe + ")";
                 }
             }
 
@@ -307,7 +311,7 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
     }
 
 
-    private void addReferences(ExecutableElement e, TypeMirror enclosing) {
+    private void addReferences(ExecutableElement e, TypeMirror enclosing, Set<TypeMirror> referenced) {
         referenced.addAll(TSUtils.getReferences(e, enclosing, typeUtils));
     }
 

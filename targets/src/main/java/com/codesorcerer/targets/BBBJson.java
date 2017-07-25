@@ -1,5 +1,6 @@
 package com.codesorcerer.targets;
 
-@BBBMutable
+
+@BBBImmutable
 public @interface BBBJson {
 }

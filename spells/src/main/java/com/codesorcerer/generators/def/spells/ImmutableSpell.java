@@ -168,6 +168,14 @@ public class ImmutableSpell extends AbstractJavaBeanSpell<BBBImmutable>
         m.addStatement("return (" + tn.name + ")this");
         a.addMethod(m.build());
 
+        MethodSpec.Builder mWith = MethodSpec.methodBuilder("with" + i.nameUpper);
+        mWith.addModifiers(Modifier.PUBLIC);
+        mWith.returns(tn);
+        mWith.addParameter(i.nReturnType, i.nameMangled);
+        mWith.addStatement("return " + i.nameMangled + "(" + i.nameMangled + ")");
+        a.addMethod(mWith.build());
+
+
         if (isBBB(i)) {
             MethodSpec.Builder m2 = MethodSpec.methodBuilder("new" + i.nameUpper);
             m2.addModifiers(Modifier.PUBLIC);
@@ -186,7 +194,10 @@ public class ImmutableSpell extends AbstractJavaBeanSpell<BBBImmutable>
             l.add(Types.jpBeanBuildable);
 
             TypeSpec.Builder if1 = TypeSpec.classBuilder(Types.jpBeanBuilder);
-            if1.addModifiers(Modifier.PRIVATE, Modifier.STATIC);
+
+            //Made public for Jackson
+            if1.addModifiers(Modifier.PUBLIC, Modifier.STATIC);
+
             if1.superclass(ParameterizedTypeName.get(Types.jpAbstract, toArray(l, TypeName.class)));
             if1.addSuperinterface(Types.jpBeanBuildable);
             if1.addSuperinterface(Types.jpBeanRequires0);

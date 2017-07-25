@@ -1,5 +1,6 @@
 spells/typescript/
 /typescript/
+integration-tests/typescript/
 .idea
 .DS_Store
 .cache

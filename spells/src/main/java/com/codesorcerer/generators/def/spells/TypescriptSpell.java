@@ -1,6 +1,5 @@
 package com.codesorcerer.generators.def.spells;
 
-import com.codesorcerer.Collector;
 import com.codesorcerer.abstracts.AbstractSpell;
 import com.codesorcerer.abstracts.Result;
 import com.codesorcerer.generators.def.BeanDefInfo;
@@ -12,7 +11,11 @@ import com.google.common.collect.Sets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import java.io.File;
 import java.nio.charset.Charset;
@@ -291,25 +294,48 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
     private void buildFields2(BeanDefInfo ic, StringBuilder sb, Set<TypescriptMapping> mappings) {
         for (BeanDefFieldInfo i : ic.beanDefFieldInfos) {
             String typ = TSUtils.convertToTypescriptType(i.returnTypeMirror, mappings, processingEnvironment);
+            String nonArrayTpe = typ.endsWith("[]") ? StringUtils.removeEnd(typ, "[]") : typ;
 
             String ann = "";
 
+            //Check whether this is enum
+            boolean isEnum = isEnum( i.returnTypeMirror );
+
             //TODO... what other types?
-            if (!typ.equals("string[]") && !typ.equals("number[]") && !typ.equals("boolean[]")) {
+            if (!typ.equals("string[]") && !typ.equals("number[]") && !typ.equals("boolean[]") && !isEnum ) {
                 if (!typ.equals("string") && !typ.equals("number") && !typ.equals("boolean")) {
-                    String nonArrayTpe = typ;
-                    if(typ.endsWith("[]")) {
-                        nonArrayTpe = StringUtils.removeEnd(typ, "[]");
-                    }
-                    ann = "@Type(() => " + nonArrayTpe + ")";
+                    ann = "  @Type(() => " + nonArrayTpe + ")";
                 }
             }
 
             sb.append(ann + "  @Expose({ name: '" + i.nameMangled + "' })" + " private _" + i.nameMangled + ": " + typ + ";\n");
+
+            if ( isEnum )
+            {
+                sb.append( ann ).append( "  " ).append( nonArrayTpe ).append( " : typeof " )
+                        .append( nonArrayTpe ).append( "=" ).append( nonArrayTpe ).append( ";\n" );
+            }
         }
         sb.append("\n");
     }
 
+    private boolean isEnum( TypeMirror tm )
+    {
+        if ( tm.getKind() == TypeKind.DECLARED )
+        {
+            final Element element = ( (DeclaredType) tm ).asElement();
+            final ElementKind kind = element.getKind();
+            if ( kind == ElementKind.ENUM )
+            {
+                return true;
+            }
+            else if ( kind.isInterface() && ( (DeclaredType) tm ).getTypeArguments().size() == 1 )
+            {
+                return isEnum( ( (DeclaredType) tm ).getTypeArguments().get( 0 ) );
+            }
+        }
+        return false;
+    }
 
     private void addReferences(ExecutableElement e, TypeMirror enclosing, Set<TypeMirror> referenced) {
         referenced.addAll(TSUtils.getReferences(e, enclosing, typeUtils));

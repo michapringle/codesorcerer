@@ -31,7 +31,7 @@ public class ImmutableSpell extends AbstractJavaBeanSpell<BBBImmutable>
         return 100;
     }
 
-    private boolean isBBB(BeanDefFieldInfo i) {
+    public static boolean isBBB(BeanDefFieldInfo i) {
         final TypeMirror returnTypeMirror = i.returnTypeMirror;
 
         return !BeanDefInputBuilder.isPrimitive(returnTypeMirror) &&

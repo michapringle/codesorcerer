@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.test.bean.sub.ChildA;
-import com.test.bean.sub.ParentXDef;
+import com.test.bean.sub.ParentX;
 import com.test.takeshi.IncreasedAuthChallengeQuestion;
 import com.test.takeshi.IncreasedAuthData;
 import com.test.template.Complex;
@@ -57,14 +57,14 @@ public class TestJson {
         }
 
         {
-            ParentXDef p = ChildA.buildChildA()
+            ParentX p = ChildA.buildChildA()
                     .thing("thing")
                     .thingA("thingA")
                     .build();
 
             final String serialized2 = mapper.writeValueAsString(p);
             System.out.println(serialized2);
-            final ParentXDef p2 = mapper.readValue(serialized2, ParentXDef.class);
+            final ParentX p2 = mapper.readValue(serialized2, ParentX.class);
 
 
         }

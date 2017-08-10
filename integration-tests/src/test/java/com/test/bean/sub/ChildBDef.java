@@ -1,8 +1,12 @@
 package com.test.bean.sub;
 
-import com.codesorcerer.targets.BeautifulBean;
+import com.codesorcerer.targets.BBBJson;
+import com.codesorcerer.targets.BBBTypescript;
+import com.codesorcerer.targets.BasicTypescriptMapping;
 
-@BeautifulBean
-public interface ChildBDef extends ParentXDef {
+@BBBTypescript
+@BasicTypescriptMapping
+@BBBJson
+public interface ChildBDef extends ParentX {
     String getThingB();
 }

@@ -11,12 +11,15 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.Map;
@@ -218,10 +221,7 @@ public class CodeSorcererProcessor extends javax.annotation.processing.AbstractP
 
     private Set<TypeElement> elementsThatNeedProcessing(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         final Set<TypeElement> elementThatNeedProcessing = Sets.newHashSet();
-        annotations
-                .stream()
-                .filter(a -> a.getKind() == ElementKind.ANNOTATION_TYPE)
-                .forEach(a -> {
+        annotations.forEach(a -> {
             Set e = roundEnv.getElementsAnnotatedWith(a);
             elementThatNeedProcessing.addAll(e);
         });

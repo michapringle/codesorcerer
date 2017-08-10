@@ -20,6 +20,9 @@ import static java.util.stream.Collectors.toList;
 public class BeanDefInfo {
     public TypeElement typeElement;
 
+    public BeanDefInfo superClass;
+    public List<BeanDefInfo> superInterfaces;
+
     public String pkg;
     public String immutableClassName;
     public boolean isInterfaceDef;

@@ -5,6 +5,7 @@ import com.codesorcerer.generators.def.BeanDefInputBuilder;
 import com.codesorcerer.targets.TypescriptMapping;
 import com.google.auto.common.MoreTypes;
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.sun.tools.javac.code.Type;
@@ -171,7 +172,8 @@ public final class TSUtils {
     private static Set<TypescriptMapping> findMappingForClass(TypeMirror t, Set<TypescriptMapping> mappings, ProcessingEnvironment processingEnv) {
         Set<TypescriptMapping> used = Sets.newHashSet();
 
-        used.add(findMappingForNonParameritizedClass(t, mappings, processingEnv));
+        used.add(findMappingForNonParameritizedClass(t, mappings, processingEnv, true));
+        used.add(findMappingForNonParameritizedClass(t, mappings, processingEnv, false));
 
         //Loop through parameters and recurse
         if (t instanceof Type.ClassType) {
@@ -184,7 +186,7 @@ public final class TSUtils {
         return used;
     }
 
-    private static TypescriptMapping findMappingForNonParameritizedClass(TypeMirror t, Set<TypescriptMapping> mappings, ProcessingEnvironment processingEnv) {
+    private static TypescriptMapping findMappingForNonParameritizedClass(TypeMirror t, Set<TypescriptMapping> mappings, ProcessingEnvironment processingEnv, boolean stripDef) {
 
         //Recurseive step
         if (t instanceof Type.ErrorType) {
@@ -199,10 +201,12 @@ public final class TSUtils {
             //final String typeName = BeanDefInputBuilder.getBBBFQName(t);
             return find(mappings, typeName, processingEnv);
         } else if (t instanceof Type.ClassType) {
-            //Type.ClassType ct = (Type.ClassType) t;
-            //final String typeName = ct.asElement().getQualifiedName().toString();
-            final String typeName = BeanDefInputBuilder.getBBBFQName(t);
+            final String typeName = stripDef
+                    ? BeanDefInputBuilder.getBBBFQName(t)
+                    : TSUtils.getFQName(t);
             return find(mappings, typeName, processingEnv);
+        } else if (t instanceof Type.TypeVar) {
+            return null;
         } else {
             throw new RuntimeException("Unknown compiler type " + t.getClass());
         }
@@ -219,15 +223,14 @@ public final class TSUtils {
 
         for (TypescriptMapping tm : allMappings) {
             if (getClassName(tm).equals(typeName)) {
-                //  System.out.println("found it " + typeName + "! " + tm.typescriptImportLocation());
+//                System.out.println("found it " + typeName + "! " + tm.typescriptImportLocation());
                 //      System.out.println("Got it " + tm.typescriptClassName() + " " + tm.typescriptImportLocation());
                 return tm;
             }
         }
 
-        String name2;
-//        if (typeName.contains(".")) {
-        name2 = typeName;
+        final String name2 = StringUtils.removeEnd(typeName, "Def");
+
 //        } else {
 //            JavacFiler f = (JavacFiler) processingEnvironment.getFiler();
 //            f.getGeneratedSourceNames().forEach(x -> System.out.println("   =gen=" + x));
@@ -369,7 +372,7 @@ public final class TSUtils {
                         .collect(joining(",")));
                 sb.append("[]");
             } else {
-                TypescriptMapping mapping = findMappingForNonParameritizedClass(tm, mappings, processingEnv);
+                TypescriptMapping mapping = findMappingForNonParameritizedClass(tm, mappings, processingEnv, false);
                 sb.append(mapping.typescriptClassName());
                 if (!ct.getTypeArguments().isEmpty()) {
                     sb.append("<");
@@ -383,13 +386,18 @@ public final class TSUtils {
         } else if (tm instanceof Type.JCVoidType) {
             return "void";
         } else if (tm instanceof Type.JCPrimitiveType) {
-            TypescriptMapping mapping = findMappingForNonParameritizedClass(tm, mappings, processingEnv);
+            TypescriptMapping mapping = findMappingForNonParameritizedClass(tm, mappings, processingEnv, false);
             return mapping.typescriptClassName();
         } else {
             throw new RuntimeException("Unknown type " + tm);
         }
     }
 
+    public static Set<TypeMirror> getReference(TypeElement e, TypeMirror enclosing, Types typeUtils) {
+        TypeMirror reifiedType = BeanDefInputBuilder.getReifiedType(e, enclosing, typeUtils);
+        System.out.println(e + " " + enclosing + " --> " + reifiedType);
+        return ImmutableSet.of(reifiedType);
+    }
 
     public static Set<TypeMirror> getReferences(ExecutableElement e, TypeMirror enclosing, Types typeUtils) {
         Set<TypeMirror> refs = Sets.newHashSet();

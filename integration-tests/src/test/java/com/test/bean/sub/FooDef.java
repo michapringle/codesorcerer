@@ -5,5 +5,5 @@ import com.codesorcerer.targets.BeautifulBean;
 @BeautifulBean
 public interface FooDef
 {
-	public String getStringX();
+	String getStringX();
 }

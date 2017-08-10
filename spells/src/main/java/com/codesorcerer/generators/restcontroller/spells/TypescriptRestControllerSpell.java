@@ -1,11 +1,13 @@
 package com.codesorcerer.generators.restcontroller.spells;
 
+import com.codesorcerer.Collector;
+import com.codesorcerer.targets.TypescriptController;
+import com.codesorcerer.targets.TypescriptMapping;
 import com.codesorcerer.abstracts.AbstractSpell;
 import com.codesorcerer.abstracts.Result;
 import com.codesorcerer.generators.restcontroller.RestControllerInfo;
-import com.codesorcerer.targets.TypescriptController;
-import com.codesorcerer.targets.TypescriptMapping;
 import com.codesorcerer.typescript.TSUtils;
+import com.google.auto.common.MoreTypes;
 import com.google.common.collect.Sets;
 import com.sun.tools.javac.code.Type;
 import org.apache.commons.io.FileUtils;
@@ -116,11 +118,7 @@ public class TypescriptRestControllerSpell extends AbstractSpell<TypescriptContr
 //            }
 
             sb.append("public " + e.getSimpleName() + "(" + tsParameterList + "): " + fullReturnType + " {\n");
-            sb.append("    return this.stompClient.topic('" + topic + "')\n");
-            String tt = (unboxOnce(e.getReturnType(), mappings).endsWith("[]")) ? "Object[]" : "Object";
-            if( ! (innerReturnType.equals("string") || innerReturnType.equals("number") ) ){
-                sb.append( "       .map((x: " + tt + ") => plainToClass(" + innerReturnType + ", x));\n" );
-            }
+            sb.append("    return this.leanusecaseClient.topic('" + topic + "');\n");
             sb.append("}\n");
         }
         sb.append("\n");
@@ -139,49 +137,20 @@ public class TypescriptRestControllerSpell extends AbstractSpell<TypescriptContr
             }
 
             final List<? extends VariableElement> parameters = e.getParameters();
-            if (parameters.size() > 1) {
-                throw new RuntimeException("Can only handle at most a single body parameter");
+            if (parameters.size() != 1) {
+                throw new RuntimeException("Can only handle a single body parameter");
             }
 
-            String body = "";
-            String postData = "null";
-            if( parameters.size() == 1 )
-            {
-                final VariableElement requestBodyParameter = e.getParameters().get(0);
-                body = " body: " + TSUtils.convertToTypescriptType(requestBodyParameter.asType(), mappings, processingEnvironment);
-                postData = "serialize(body)";
-            }
+            final VariableElement requestBodyParameter = e.getParameters().get(0);
 
+            String body = TSUtils.convertToTypescriptType(requestBodyParameter.asType(), mappings, processingEnvironment);
             String url = rm.value()[0];
+
             String fullReturnType = TSUtils.convertToTypescriptType(e.getReturnType(), mappings, processingEnvironment);
-            String innerReturnType = getInnerType(e.getReturnType(), mappings);
-            String unboxOnceReturnType = unboxOnce(e.getReturnType(), mappings);
+            //String innerReturnType = getInnerType(e.getReturnType(), mappings);
 
-            sb.append("public " + e.getSimpleName() + "(" + body + " ) : " + fullReturnType + " {\n");
-            sb.append("   let o = new Subject<" + unboxOnceReturnType + ">();\n");
-            sb.append("   qwest.post( '" + url + "', \n");
-            sb.append("               " + postData + ", \n");
-            sb.append("               { dataType: 'text',\n");
-            sb.append("                 responseType: 'text',\n");
-            sb.append("                 headers: {'Accept': 'application/json', 'Content-Type': 'application/json', 'Generator': 'Code Sorcerer', 'API-SemVer': '1.0.0'}\n");
-            sb.append("               })\n");
-
-            if( innerReturnType.equals("string") || innerReturnType.equals("number") ) {
-                String tt = innerReturnType + ( unboxOnceReturnType.endsWith( "[]" ) ? "[]" : "" );
-                sb.append("       .then((xhr, response:" + tt + ") => {\n");
-                sb.append("            let x = response;\n");
-            }
-            else {
-                String tt = unboxOnceReturnType.endsWith("[]") ? "Object[]" : "Object";
-                sb.append("       .then((xhr, response:" + tt + ") => {\n");
-                sb.append("            let x : " + unboxOnceReturnType + " = plainToClass(" + innerReturnType + ", response);\n");
-            }
-            sb.append("            o.next(x);\n");
-            sb.append("        })\n");
-            sb.append("       .catch((e, xhr, response)  => {\n");
-            sb.append("            o.error(e);\n");
-            sb.append("        });\n");
-            sb.append("   return o;\n");
+            sb.append("public " + e.getSimpleName() + "( body : " + body + ") : " + fullReturnType + " {\n");
+            sb.append("   return this.leanusecaseClient.post(body, '" + url + "');\n");
             sb.append("}\n");
         }
 
@@ -233,7 +202,6 @@ public class TypescriptRestControllerSpell extends AbstractSpell<TypescriptContr
             }
             if(name.equals(io.reactivex.Single.class.getName()) ) {
                 inner = ct.getTypeArguments().get(0);
-                System.out.println("Single Inner: " + inner );
             }
             if(name.equals(List.class.getName()) ) {
                 inner = ct.getTypeArguments().get(0);

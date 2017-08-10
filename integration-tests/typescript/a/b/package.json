@@ -1,1 +1,0 @@
-{"name":"@c1/a.b","version":"1.0.0","description":"NA","repository":"NA","license":"NA","dependencies":{},"devDependencies":{},"peerDependencies":{"qwest":"^4.4.6","class-transformer":"^0.1.6","@c1/stomp-client":"^0.0.2"}}

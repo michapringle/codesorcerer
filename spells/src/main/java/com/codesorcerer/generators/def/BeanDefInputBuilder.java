@@ -1,9 +1,9 @@
 package com.codesorcerer.generators.def;
 
 import com.codesorcerer.abstracts.AbstractInputBuilder;
-import com.codesorcerer.generators.def.BeanDefInfo.BeanDefFieldInfo;
 import com.codesorcerer.generators.def.spells.Types;
 import com.codesorcerer.typescript.TSUtils;
+import com.codesorcerer.generators.def.BeanDefInfo.BeanDefFieldInfo;
 import com.google.auto.common.MoreElements;
 import com.google.auto.common.MoreTypes;
 import com.google.common.collect.ImmutableSet;
@@ -15,16 +15,17 @@ import com.squareup.javapoet.TypeName;
 import com.sun.tools.javac.code.Type;
 
 import javax.annotation.Nonnull;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.*;
 import javax.lang.model.type.*;
 import javax.lang.model.util.ElementFilter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 
 import static com.google.auto.common.MoreTypes.asDeclared;
 import static com.google.auto.common.MoreTypes.asTypeElement;
+import static com.google.common.collect.Iterables.get;
 import static com.google.common.collect.Iterables.toArray;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.*;
@@ -73,30 +74,13 @@ public class BeanDefInputBuilder extends AbstractInputBuilder<BeanDefInfo> {
     }
 
     private List<BeanDefFieldInfo> parseGetters(TypeElement te) {
-
-        final ArrayList<BeanDefFieldInfo> result = Lists.newArrayList();
-
-        //Order of list is from parent to child, but if something is overridden, then take that
-        for (ExecutableElement g : getAllMethods(te)) {
-            if (isGetter(g)) {
-                String name = g.getSimpleName().toString();
-                boolean found = false;
-
-                for(int i=0;i<result.size();i++) {
-                    String fname = result.get(i).getter.getSimpleName().toString();
-                    if(name.equals(fname)) {
-                        result.set(i, buildInfo(te, g));
-                        found = true;
-                    }
-                }
-
-                if (!found) {
-                    result.add(buildInfo(te, g));
-                }
-            }
-        }
-
-        return result;
+        final Set<String> removeDups = Sets.newHashSet();
+        return getAllMethods(te)
+                .stream()
+                .filter(this::isGetter)
+                .filter(ee -> removeDups.add(ee.getSimpleName().toString()))
+                .map(e -> buildInfo(te, e))
+                .collect(toList());
     }
 
     public static TypeMirror getReifiedType(TypeMirror tm, TypeMirror enclosingElement, javax.lang.model.util.Types typeUtils) {
@@ -114,6 +98,7 @@ public class BeanDefInputBuilder extends AbstractInputBuilder<BeanDefInfo> {
             return elem.asType();
         }
     }
+
 
 
     private BeanDefFieldInfo buildInfo(TypeElement te, ExecutableElement getter) {
@@ -156,8 +141,7 @@ public class BeanDefInputBuilder extends AbstractInputBuilder<BeanDefInfo> {
     }
 
     private boolean isNonNull(ExecutableElement getter, boolean isPrimitive) {
-        return getter.getAnnotation(Nonnull.class) != null;
-        //return !isPrimitive && getter.getAnnotation(Nonnull.class) != null;
+        return !isPrimitive && getter.getAnnotation(Nonnull.class) != null;
     }
 
     private TypeName calcReturnTypes(TypeMirror returnTypeMirror) {
@@ -230,7 +214,6 @@ public class BeanDefInputBuilder extends AbstractInputBuilder<BeanDefInfo> {
     }
 
     private static <T> void getHierarchy(TypeElement te, List<T> list, Function<TypeElement, List<T>> f) {
-
         //Recursivly go up the interface hierarchy
         for (TypeMirror i : te.getInterfaces()) {
             getHierarchy(asTypeElement(i), list, f);

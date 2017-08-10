@@ -1,5 +1,6 @@
 package com.test.bean.sub;
 
+import com.codesorcerer.targets.BBBTypescript;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 @JsonTypeInfo(
@@ -7,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
         include = JsonTypeInfo.As.PROPERTY,
         property = "@clazz"
 )
-public interface ParentXDef {
-    String getThing();
+@BBBTypescript
+public interface ParentXY {
+    String getXY();
 }

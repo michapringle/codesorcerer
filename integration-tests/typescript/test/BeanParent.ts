@@ -20,7 +20,7 @@ build() : BeanParent {
 }
 
 export class BeanParent {
-@Type(() => BeanChild)  @Expose({ name: 'child' }) private _child: BeanChild;
+  @Type(() => BeanChild)  @Expose({ name: 'child' }) private _child: BeanChild;
 
 static buildBeanParent() : BeanParentNullable {
   return new BeanParentBuilder();

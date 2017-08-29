@@ -218,7 +218,10 @@ public class CodeSorcererProcessor extends javax.annotation.processing.AbstractP
 
     private Set<TypeElement> elementsThatNeedProcessing(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         final Set<TypeElement> elementThatNeedProcessing = Sets.newHashSet();
-        annotations.forEach(a -> {
+        annotations
+                .stream()
+                .filter(a -> a.getKind() == ElementKind.ANNOTATION_TYPE)
+                .forEach(a -> {
             Set e = roundEnv.getElementsAnnotatedWith(a);
             elementThatNeedProcessing.addAll(e);
         });

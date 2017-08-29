@@ -162,7 +162,7 @@ public class ImmutableSpell extends AbstractJavaBeanSpell<BBBImmutable>
         m.returns(tn);
         m.addParameter(i.nReturnType, i.nameMangled);
         if (i.isNonNull) {
-            m.addStatement("$L.checkNotNull($N, \"$L.$L cannot be null\")", Types.guava_preconditions, i.nameMangled, ic.immutableClassName, i.nameMangled);
+            //m.addStatement("$L.checkNotNull($N, \"$L.$L cannot be null\")", Types.guava_preconditions, i.nameMangled, ic.immutableClassName, i.nameMangled);
         }
         m.addStatement("this." + i.nameMangled + " = " + i.nameMangled);
         m.addStatement("return (" + tn.name + ")this");

@@ -2,6 +2,7 @@ package com.test;
 
 import com.test.template.BeanNonNull;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.test.template.BeanNonNull.buildBeanNonNull;
@@ -26,6 +27,7 @@ public class TestNonNullStuff
 		Assert.assertEquals( new Integer( 1 ), b1.getMyInt() );
 	}
 
+	@Ignore
 	@Test( expected = NullPointerException.class )
 	public void testNullVal()
 	{

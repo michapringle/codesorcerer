@@ -99,6 +99,7 @@ public class ImmutableSuccessTest {
                 "          @BBBImmutable                                                 ",
                 "          public interface BeanMemberNonNullDef {                                                  ",
                 "             @Nonnull String getThing1();                                                  ",
+                "             @Nonnull int getThing3();                                                  ",
                 "             @Nonnull Boolean getThing2();                                                  ",
                 "             Long getThing8();                                          ",
                 "          }                                                                          ",
@@ -107,7 +108,39 @@ public class ImmutableSuccessTest {
                 "             void test() {                                                                                                                 ",
                 "                BeanMemberNonNull x = BeanMemberNonNull.buildBeanMemberNonNull()                                                                                     ",
                 "                .thing1(\"x\")                                                                                                                        ",
+                "                .thing3(3)                                                                                                                        ",
                 "                .thing2(true)                                                                                                                        ",
+                "                .thing8(6L)                                                                                                                        ",
+                "                .build();                                                                                                                        ",
+                "             }                                                                                                                        ",
+                "          }                                                                                                                        "
+
+        );
+    }
+
+    @Test
+    public void memberFieldsNonNullWithParentNullable() throws Exception {
+        compiles("",
+                "                                                            ",
+                "          public interface Test {                                                  ",
+                "             String getThing1();                                                  ",
+                "             @Nonnull boolean getThing2();                                                  ",
+                "          }                                                                          ",
+                "                                                                                    ",
+                "          @BBBImmutable                                                 ",
+                "          public interface BeanMemberNonNullDef extends Test {                                                  ",
+                "             @Nonnull String getThing1();                                                  ",
+                "             @Nonnull int getThing3();                                                  ",
+                "             Long getThing8();                                          ",
+                "          }                                                                          ",
+                "                                                                                    ",
+                "          class Usage {                                                                                                                 ",
+                "             void test() {                                                                                                                 ",
+                "                BeanMemberNonNull x = BeanMemberNonNull.buildBeanMemberNonNull()                                                                                     ",
+                "                .thing1(\"x\")                                                                                                                        ",
+                "                .thing2(true)                                                                                                                        ",
+                "                .thing3(3)                                                                                                                        ",
+                "                .thing8(8L)                                                                                                                        ",
                 "                .build();                                                                                                                        ",
                 "             }                                                                                                                        ",
                 "          }                                                                                                                        "

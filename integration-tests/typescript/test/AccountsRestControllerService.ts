@@ -23,7 +23,7 @@ public accounts(): Observable<Account[]> {
 
 //-----------------Rest Methods
 
-public addAccount( body : Account) : Single<boolean> {
+public addAccount( body: Account ) : Single<boolean> {
    let o = new Subject<boolean>();
    qwest.post( '/api/accounts/', 
                serialize(body), 
@@ -31,7 +31,7 @@ public addAccount( body : Account) : Single<boolean> {
                  responseType: 'text',
                  headers: {'Accept': 'application/json', 'Content-Type': 'application/json', 'Generator': 'Code Sorcerer', 'API-SemVer': '1.0.0'}
                })
-       .then((xhr, response:string) => {
+       .then((xhr, response:Object) => {
             let x : boolean = plainToClass(boolean, response);
             o.next(x);
         })

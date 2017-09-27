@@ -4,11 +4,13 @@ import com.codesorcerer.abstracts.AbstractInputBuilder;
 import com.codesorcerer.generators.def.spells.Types;
 import com.codesorcerer.typescript.TSUtils;
 import com.codesorcerer.generators.def.BeanDefInfo.BeanDefFieldInfo;
+
 import com.google.auto.common.MoreElements;
 import com.google.auto.common.MoreTypes;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
@@ -19,6 +21,8 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.*;
 import javax.lang.model.type.*;
 import javax.lang.model.util.ElementFilter;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
@@ -34,7 +38,7 @@ public class BeanDefInputBuilder extends AbstractInputBuilder<BeanDefInfo> {
 
     @Override
     public BeanDefInfo buildInput(TypeElement te) {
-        checkBBBUsage(te);
+        //checkBBBUsage(te);
         printBeanStatus(te);
         return init(te);
     }
@@ -73,15 +77,43 @@ public class BeanDefInputBuilder extends AbstractInputBuilder<BeanDefInfo> {
         return ic;
     }
 
+//    private List<BeanDefFieldInfo> parseGetters(TypeElement te) {
+//        final Set<String> removeDups = Sets.newHashSet();
+//        return getAllMethods(te)
+//                .stream()
+//                .filter(this::isGetter)
+//                .filter(ee -> removeDups.add(ee.getSimpleName().toString()))
+//                .map(e -> buildInfo(te, e))
+//                .collect(toList());
+//    }
+
     private List<BeanDefFieldInfo> parseGetters(TypeElement te) {
-        final Set<String> removeDups = Sets.newHashSet();
-        return getAllMethods(te)
-                .stream()
-                .filter(this::isGetter)
-                .filter(ee -> removeDups.add(ee.getSimpleName().toString()))
-                .map(e -> buildInfo(te, e))
-                .collect(toList());
+
+        final ArrayList<BeanDefFieldInfo> result = Lists.newArrayList();
+
+        //Order of list is from parent to child, but if something is overridden, then take that
+        for (ExecutableElement g : getAllMethods(te)) {
+            if (isGetter(g)) {
+                String name = g.getSimpleName().toString();
+                boolean found = false;
+
+                for (int i = 0; i < result.size(); i++) {
+                    String fname = result.get(i).getter.getSimpleName().toString();
+                    if (name.equals(fname)) {
+                        result.set(i, buildInfo(te, g));
+                        found = true;
+                    }
+                }
+
+                if (!found) {
+                    result.add(buildInfo(te, g));
+                }
+            }
+        }
+
+        return result;
     }
+
 
     public static TypeMirror getReifiedType(TypeMirror tm, TypeMirror enclosingElement, javax.lang.model.util.Types typeUtils) {
         if (tm instanceof Type.TypeVar) {
@@ -98,7 +130,6 @@ public class BeanDefInputBuilder extends AbstractInputBuilder<BeanDefInfo> {
             return elem.asType();
         }
     }
-
 
 
     private BeanDefFieldInfo buildInfo(TypeElement te, ExecutableElement getter) {
@@ -141,7 +172,7 @@ public class BeanDefInputBuilder extends AbstractInputBuilder<BeanDefInfo> {
     }
 
     private boolean isNonNull(ExecutableElement getter, boolean isPrimitive) {
-        return !isPrimitive && getter.getAnnotation(Nonnull.class) != null;
+        return getter.getAnnotation(Nonnull.class) != null;
     }
 
     private TypeName calcReturnTypes(TypeMirror returnTypeMirror) {

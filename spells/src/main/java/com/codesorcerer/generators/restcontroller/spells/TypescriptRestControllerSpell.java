@@ -69,10 +69,7 @@ public class TypescriptRestControllerSpell extends AbstractSpell<TypescriptContr
 
         final StringBuilder sb = new StringBuilder();
         sb.append("import {Injectable} from 'injection-js';\n");
-        sb.append("import * as qwest from 'qwest';\n");
-        sb.append("import {StompClient} from '@c1/stomp-client';\n");
-        sb.append("import {Subject} from 'rxjs';\n");
-        sb.append("import {plainToClass, serialize} from 'class-transformer';\n");
+        sb.append("import {LeanUsecaseClient} from '@c1/leanusecase-client';\n");
 
 
         //import {Account} from "test";
@@ -83,7 +80,7 @@ public class TypescriptRestControllerSpell extends AbstractSpell<TypescriptContr
         sb.append("export class " + serviceName + "Service {\n");
 
         sb.append("//-----------------Constructor\n");
-        sb.append("     constructor( private stompClient: StompClient ) {}\n");
+        sb.append("     constructor( private leanusecaseClient: LeanUsecaseClient ) {}\n");
         sb.append("\n");
 
         sb.append("//-----------------Stomp Methods\n");

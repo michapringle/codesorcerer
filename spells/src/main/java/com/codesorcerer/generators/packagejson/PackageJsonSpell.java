@@ -45,7 +45,6 @@ public class PackageJsonSpell extends AbstractSpell<TypescriptRoot, PackageJsonI
         TSUtils.registerPackage(result.input.pkg);
 
         PackageJson packageJson = new PackageJson();
-        //packageJson.version = "0.0.0.0.0-SNAPSHOT";
         packageJson.version = result.input.version;
         packageJson.name = "@c1/" + result.input.pkg;
 
@@ -57,11 +56,6 @@ public class PackageJsonSpell extends AbstractSpell<TypescriptRoot, PackageJsonI
                 packageJson.peerDependencies.put(tm.typescriptPackageName(), tm.typescriptPackageVersion());
             }
         }
-
-        //TODO: Remove these!
-        packageJson.peerDependencies.put("class-transformer", "^0.1.6");
-        packageJson.peerDependencies.put("@c1/stomp-client", "^0.0.2");
-        packageJson.peerDependencies.put("qwest", "^4.4.6");
 
         result.output = packageJson;
     }

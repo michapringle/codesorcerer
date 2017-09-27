@@ -8,7 +8,9 @@ import com.codesorcerer.generators.def.BeanDefInfo.BeanDefFieldInfo;
 import com.codesorcerer.targets.BBBTypescript;
 import com.codesorcerer.targets.TypescriptMapping;
 import com.codesorcerer.typescript.TSUtils;
+
 import com.google.common.collect.Sets;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -17,6 +19,7 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
+
 import java.io.File;
 import java.nio.charset.Charset;
 import java.util.Collection;
@@ -65,7 +68,7 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
         Set<TypescriptMapping> mappings = TSUtils.getAllMappings(ic.typeElement);
 
         StringBuilder sb = new StringBuilder();
-        sb.append("import {Type, Expose} from 'class-transformer';\n");
+        sb.append("import {Mappable} from '@c1/leanusecase-client';\n");
         sb.append("*IMPORTS*");
 
         buildBuilder(ic, sb, mappings);
@@ -91,12 +94,13 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
     }
 
     private void buildClass(BeanDefInfo ic, StringBuilder sb, Set<TypescriptMapping> mappings) {
-        sb.append("export class " + ic.immutableClassName + " {\n");
 
+        sb.append("export class " + ic.immutableClassName + " {\n");
 
         buildFields2(ic, sb, mappings);
         buildStaticStarter(ic, sb, mappings);
         buildPrivateConstructor2(ic, sb, mappings);
+        buildPrivateConstructorJson(ic, sb, mappings);
         buildGetters(ic, sb, mappings);
         buildWith(ic, sb, mappings);
         sb.append("}");
@@ -279,10 +283,29 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
         }
         sb.append("}");
         sb.append("\n");
-
-//        sb.append("public constructor() {}");
         sb.append("\n");
     }
+
+    private void buildPrivateConstructorJson(BeanDefInfo ic, StringBuilder sb, Set<TypescriptMapping> mappings) {
+        String allParams = ic.beanDefFieldInfos.stream()
+                .map(i -> {
+                    if (ImmutableSpell.isBBB(i)) {
+                        String typ = TSUtils.convertToTypescriptType(i.returnTypeMirror, mappings, processingEnvironment);
+                        return "new " + typ + "(json['" + i.nameMangled + "'])";
+                    } else {
+                        return "json['" + i.nameMangled + "']";
+                    }
+                })
+                .collect(Collectors.joining(", "));
+
+        sb.append("@Mappable('" + ic.pkg + "." + ic.immutableClassName + "')\n");
+        sb.append("public static json( json:Object) : " + ic.immutableClassName + " {\n");
+        sb.append("  return new " + ic.immutableClassName + "(" + allParams + ");\n");
+        sb.append("}\n");
+        sb.append("\n");
+        sb.append("\n");
+    }
+
 
     private void buildFields(BeanDefInfo ic, StringBuilder sb, Set<TypescriptMapping> mappings) {
         for (BeanDefFieldInfo i : ic.beanDefFieldInfos) {
@@ -295,20 +318,7 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
         for (BeanDefFieldInfo i : ic.beanDefFieldInfos) {
             String typ = TSUtils.convertToTypescriptType(i.returnTypeMirror, mappings, processingEnvironment);
 
-            String ann = "";
-
-            //TODO... what other types?
-            if (!typ.equals("string[]") && !typ.equals("number[]") && !typ.equals("boolean[]")) {
-                if (!typ.equals("string") && !typ.equals("number") && !typ.equals("boolean")) {
-                    String nonArrayTpe = typ;
-                    if(typ.endsWith("[]")) {
-                        nonArrayTpe = StringUtils.removeEnd(typ, "[]");
-                    }
-                    ann = "@Type(() => " + nonArrayTpe + ")";
-                }
-            }
-
-            sb.append(ann + "  @Expose({ name: '" + i.nameMangled + "' })" + " private _" + i.nameMangled + ": " + typ + ";\n");
+            sb.append("  private _" + i.nameMangled + ": " + typ + ";\n");
         }
         sb.append("\n");
     }

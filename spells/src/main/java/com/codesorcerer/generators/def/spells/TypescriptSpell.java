@@ -68,7 +68,7 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
         Set<TypescriptMapping> mappings = TSUtils.getAllMappings(ic.typeElement);
 
         StringBuilder sb = new StringBuilder();
-        sb.append("import {Mappable} from '@c1/leanusecase-client';\n");
+        sb.append("import {Mappable, deserialize} from '@c1/leanusecase-client';\n");
         sb.append("*IMPORTS*");
 
         buildBuilder(ic, sb, mappings);
@@ -289,9 +289,9 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
     private void buildPrivateConstructorJson(BeanDefInfo ic, StringBuilder sb, Set<TypescriptMapping> mappings) {
         String allParams = ic.beanDefFieldInfos.stream()
                 .map(i -> {
-                    if (ImmutableSpell.isBBB(i)) {
-                        String typ = TSUtils.convertToTypescriptType(i.returnTypeMirror, mappings, processingEnvironment);
-                        return "new " + typ + "(json['" + i.nameMangled + "'])";
+                    String typ = TSUtils.convertToTypescriptType(i.returnTypeMirror, mappings, processingEnvironment);
+                    if (ImmutableSpell.isBBB(i) || typ.endsWith("[]")) {
+                        return "deserialize(json['" + i.nameMangled + "'])";
                     } else {
                         return "json['" + i.nameMangled + "']";
                     }

@@ -5,6 +5,8 @@ import javax.annotation.Nonnull;
 import com.codesorcerer.targets.BeautifulBean;
 import com.test.template.bnn_sbnn.Simple2Def;
 
+import java.util.List;
+
 @BeautifulBean
 public interface ComplexDef
 {
@@ -24,6 +26,8 @@ public interface ComplexDef
 	public String getTitle6();
 
 	public SimpleDef getSimple1();
+
+	public List<? extends SimpleDef> getSimples1();
 
 	public Simple2Def getSimple21();
 

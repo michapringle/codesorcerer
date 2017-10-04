@@ -34,11 +34,11 @@ public class JacksonSpell extends AbstractJavaBeanSpell<BBBJson> {
                 .addMember("builder", ic.immutableClassName + ".BeanBuilder.class")
                 .build());
 
-//        classBuilder.addAnnotation(AnnotationSpec.builder(JsonTypeInfo.class)
-//                .addMember("use", "$T.Id.CLASS", JsonTypeInfo.class )
-//                .addMember("include", "$T.As.PROPERTY", JsonTypeInfo.class )
-//                .addMember("property", "\"@clazz\"" )
-//                .build());
+        classBuilder.addAnnotation(AnnotationSpec.builder(JsonTypeInfo.class)
+                .addMember("use", "$T.Id.CLASS", JsonTypeInfo.class)
+                .addMember("include", "$T.As.PROPERTY", JsonTypeInfo.class)
+                .addMember("property", "\"clazz\"")
+                .build());
     }
 
 }

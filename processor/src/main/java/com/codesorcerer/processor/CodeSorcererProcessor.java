@@ -160,7 +160,6 @@ public class CodeSorcererProcessor extends javax.annotation.processing.AbstractP
         for (Map.Entry<AbstractSpell, TypeElement> e : runOrder.entries()) {
             try {
                 Result result = getResult(e.getValue(), e.getKey());
-                //System.out.println("--> Casting " + phase + " " + result.spell.getClass().getSimpleName() +"(" + result.spell.getRunOrder() + ") on " + result.te);
                 fillSpell(result.spell);
                 f.accept(result);
             } catch (Exception ex) {
@@ -221,15 +220,19 @@ public class CodeSorcererProcessor extends javax.annotation.processing.AbstractP
 
     private Set<TypeElement> elementsThatNeedProcessing(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         final Set<TypeElement> elementThatNeedProcessing = Sets.newHashSet();
+
         annotations.forEach(a -> {
             Set e = roundEnv.getElementsAnnotatedWith(a);
             elementThatNeedProcessing.addAll(e);
         });
 
-        return ElementFilter.typesIn(elementThatNeedProcessing)
+
+        final Set<TypeElement> interstingElementsThatNeedProcessing = ElementFilter.typesIn(elementThatNeedProcessing)
                 .stream()
-                .filter(te -> te.getKind() == ElementKind.CLASS || te.getKind() == ElementKind.INTERFACE || te.getKind() == ElementKind.PACKAGE || te.getKind() == ElementKind.ENUM )
+                .filter(te -> te.getKind() == ElementKind.CLASS || te.getKind() == ElementKind.INTERFACE || te.getKind() == ElementKind.PACKAGE || te.getKind() == ElementKind.ENUM)
                 .collect(Collectors.toSet());
+
+        return interstingElementsThatNeedProcessing;
     }
 
 

@@ -108,11 +108,6 @@ public class TypescriptRestControllerSpell extends AbstractSpell<TypescriptContr
 
             sb.append("\n");
             String fullReturnType = TSUtils.convertToTypescriptType(e.getReturnType(), mappings, processingEnvironment);
-            String innerReturnType = getInnerType(e.getReturnType(), mappings);
-
-//            if(innerReturnType.startsWith("Array<")) {
-//
-//            }
 
             sb.append("public " + e.getSimpleName() + "(" + tsParameterList + "): " + fullReturnType + " {\n");
             sb.append("    return this.leanusecaseClient.topic('" + topic + "');\n");
@@ -134,21 +129,28 @@ public class TypescriptRestControllerSpell extends AbstractSpell<TypescriptContr
             }
 
             final List<? extends VariableElement> parameters = e.getParameters();
-            if (parameters.size() != 1) {
-                throw new RuntimeException("Can only handle a single body parameter");
+            if (parameters.size() > 1) {
+                throw new RuntimeException("Can only handle a single body parameter " + e.getSimpleName());
             }
 
-            final VariableElement requestBodyParameter = e.getParameters().get(0);
-
-            String body = TSUtils.convertToTypescriptType(requestBodyParameter.asType(), mappings, processingEnvironment);
+            String fullReturnType = TSUtils.convertToTypescriptType(e.getReturnType(), mappings, processingEnvironment);
             String url = rm.value()[0];
 
-            String fullReturnType = TSUtils.convertToTypescriptType(e.getReturnType(), mappings, processingEnvironment);
-            //String innerReturnType = getInnerType(e.getReturnType(), mappings);
+            if (parameters.size() == 1) {
+                final VariableElement requestBodyParameter = e.getParameters().get(0);
 
-            sb.append("public " + e.getSimpleName() + "( body : " + body + ") : " + fullReturnType + " {\n");
-            sb.append("   return this.leanusecaseClient.post(body, '" + url + "');\n");
-            sb.append("}\n");
+                String body = TSUtils.convertToTypescriptType(requestBodyParameter.asType(), mappings, processingEnvironment);
+
+
+                sb.append("public " + e.getSimpleName() + "( body : " + body + ") : " + fullReturnType + " {\n");
+                sb.append("   return this.leanusecaseClient.post('" + url + "', body);\n");
+                sb.append("}\n");
+            }
+            else {
+                sb.append("public " + e.getSimpleName() + "() : " + fullReturnType + " {\n");
+                sb.append("   return this.leanusecaseClient.post('" + url + "', null);\n");
+                sb.append("}\n");
+            }
         }
 
         sb.append("}\n");
@@ -166,46 +168,46 @@ public class TypescriptRestControllerSpell extends AbstractSpell<TypescriptContr
         result.output = x;
     }
 
-    private String getInnerType(TypeMirror e, Set<TypescriptMapping> mappings) {
-        if (e instanceof Type.ClassType) {
-            Type.ClassType ct = (Type.ClassType) e;
-            String name = ct.asElement().toString();
-            if(name.equals(io.reactivex.Observable.class.getName()) ) {
-                return getInnerType(ct.getTypeArguments().get(0), mappings);
-            }
-            if(name.equals(io.reactivex.Single.class.getName()) ) {
-                return getInnerType(ct.getTypeArguments().get(0), mappings);
-            }
-            if(name.equals(List.class.getName()) ) {
-                return getInnerType(ct.getTypeArguments().get(0), mappings);
-            }
-        }
-        if (e instanceof Type.ArrayType) {
-            Type.ArrayType ct = (Type.ArrayType) e;
-            return getInnerType(ct.elemtype, mappings);
-        }
+//    private String getInnerType(TypeMirror e, Set<TypescriptMapping> mappings) {
+//        if (e instanceof Type.ClassType) {
+//            Type.ClassType ct = (Type.ClassType) e;
+//            String name = ct.asElement().toString();
+//            if(name.equals(io.reactivex.Observable.class.getName()) ) {
+//                return getInnerType(ct.getTypeArguments().get(0), mappings);
+//            }
+//            if(name.equals(io.reactivex.Single.class.getName()) ) {
+//                return getInnerType(ct.getTypeArguments().get(0), mappings);
+//            }
+//            if(name.equals(List.class.getName()) ) {
+//                return getInnerType(ct.getTypeArguments().get(0), mappings);
+//            }
+//        }
+//        if (e instanceof Type.ArrayType) {
+//            Type.ArrayType ct = (Type.ArrayType) e;
+//            return getInnerType(ct.elemtype, mappings);
+//        }
+//
+//        return TSUtils.convertToTypescriptType(e, mappings, processingEnvironment);
+//    }
 
-        return TSUtils.convertToTypescriptType(e, mappings, processingEnvironment);
-    }
-
-    private String unboxOnce(TypeMirror e, Set<TypescriptMapping> mappings) {
-        TypeMirror inner = e;
-        if (e instanceof Type.ClassType) {
-            Type.ClassType ct = (Type.ClassType) e;
-            String name = ct.asElement().toString();
-
-            if(name.equals(io.reactivex.Observable.class.getName()) ) {
-                inner = ct.getTypeArguments().get(0);
-            }
-            if(name.equals(io.reactivex.Single.class.getName()) ) {
-                inner = ct.getTypeArguments().get(0);
-            }
-            if(name.equals(List.class.getName()) ) {
-                inner = ct.getTypeArguments().get(0);
-            }
-        }
-        return TSUtils.convertToTypescriptType(inner, mappings, processingEnvironment);
-    }
+//    private String unboxOnce(TypeMirror e, Set<TypescriptMapping> mappings) {
+//        TypeMirror inner = e;
+//        if (e instanceof Type.ClassType) {
+//            Type.ClassType ct = (Type.ClassType) e;
+//            String name = ct.asElement().toString();
+//
+//            if(name.equals(io.reactivex.Observable.class.getName()) ) {
+//                inner = ct.getTypeArguments().get(0);
+//            }
+//            if(name.equals(io.reactivex.Single.class.getName()) ) {
+//                inner = ct.getTypeArguments().get(0);
+//            }
+//            if(name.equals(List.class.getName()) ) {
+//                inner = ct.getTypeArguments().get(0);
+//            }
+//        }
+//        return TSUtils.convertToTypescriptType(inner, mappings, processingEnvironment);
+//    }
 
 
 

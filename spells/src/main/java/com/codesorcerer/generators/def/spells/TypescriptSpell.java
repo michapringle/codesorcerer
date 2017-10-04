@@ -101,7 +101,6 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
         buildStaticStarter(ic, sb, mappings);
         buildPrivateConstructor2(ic, sb, mappings);
         buildPrivateConstructorJson(ic, sb, mappings);
-        buildGetters(ic, sb, mappings);
         buildWith(ic, sb, mappings);
         sb.append("}");
     }
@@ -143,12 +142,12 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
         sb.append("\n");
     }
 
-    private void buildGetters(BeanDefInfo ic, StringBuilder sb, Set<TypescriptMapping> mappings) {
-        for (int x = 0; x < ic.beanDefFieldInfos.size(); x++) {
-            BeanDefFieldInfo i = ic.beanDefFieldInfos.get(x);
-            sb.append("public get " + i.nameMangled + "() : " + TSUtils.convertToTypescriptType(i.returnTypeMirror, mappings, processingEnvironment) + " { return this._" + i.nameMangled + "; }\n");
-        }
-    }
+//    private void buildGetters(BeanDefInfo ic, StringBuilder sb, Set<TypescriptMapping> mappings) {
+//        for (int x = 0; x < ic.beanDefFieldInfos.size(); x++) {
+//            BeanDefFieldInfo i = ic.beanDefFieldInfos.get(x);
+//            sb.append("public get " + i.nameMangled + "() : " + TSUtils.convertToTypescriptType(i.returnTypeMirror, mappings, processingEnvironment) + " { return this." + i.nameMangled + "; }\n");
+//        }
+//    }
 
 
     private void buildSetters(BeanDefInfo ic, StringBuilder sb, Set<TypescriptMapping> mappings) {
@@ -188,7 +187,7 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
                         if (p.name.equals(i.name)) {
                             return p.nameMangled;
                         }
-                        return "this._" + p.nameMangled;
+                        return "this." + p.nameMangled;
                     })
                     .collect(Collectors.joining(", "));
 
@@ -279,7 +278,7 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
 
         sb.append("public constructor( " + allParams + ") {\n");
         for (BeanDefFieldInfo i : ic.beanDefFieldInfos) {
-            sb.append("  this._" + i.nameMangled + " = " + i.nameMangled + ";\n");
+            sb.append("  this." + i.nameMangled + " = " + i.nameMangled + ";\n");
         }
         sb.append("}");
         sb.append("\n");
@@ -290,16 +289,12 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
         String allParams = ic.beanDefFieldInfos.stream()
                 .map(i -> {
                     String typ = TSUtils.convertToTypescriptType(i.returnTypeMirror, mappings, processingEnvironment);
-                    if (ImmutableSpell.isBBB(i) || typ.endsWith("[]")) {
-                        return "deserialize(json['" + i.nameMangled + "'])";
-                    } else {
-                        return "json['" + i.nameMangled + "']";
-                    }
+                    return "deserialize(obj." + i.nameMangled + ")";
                 })
                 .collect(Collectors.joining(", "));
 
         sb.append("@Mappable('" + ic.pkg + "." + ic.immutableClassName + "')\n");
-        sb.append("public static json( json:Object) : " + ic.immutableClassName + " {\n");
+        sb.append("public static fromJson( obj:any ) : " + ic.immutableClassName + " {\n");
         sb.append("  return new " + ic.immutableClassName + "(" + allParams + ");\n");
         sb.append("}\n");
         sb.append("\n");
@@ -318,9 +313,11 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
         for (BeanDefFieldInfo i : ic.beanDefFieldInfos) {
             String typ = TSUtils.convertToTypescriptType(i.returnTypeMirror, mappings, processingEnvironment);
 
-            sb.append("  private _" + i.nameMangled + ": " + typ + ";\n");
+            sb.append("  public readonly " + i.nameMangled + ": " + typ + ";\n");
         }
         sb.append("\n");
+
+        sb.append("private readonly clazz : string = '" + ic.pkg + "." + ic.immutableClassName + "';\n");
     }
 
 

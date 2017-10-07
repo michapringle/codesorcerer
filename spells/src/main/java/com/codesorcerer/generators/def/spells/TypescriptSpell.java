@@ -1,32 +1,29 @@
 package com.codesorcerer.generators.def.spells;
 
-import com.codesorcerer.Collector;
 import com.codesorcerer.abstracts.AbstractSpell;
 import com.codesorcerer.abstracts.Result;
 import com.codesorcerer.generators.def.BeanDefInfo;
 import com.codesorcerer.generators.def.BeanDefInfo.BeanDefFieldInfo;
+import com.codesorcerer.generators.def.BeanDefInputBuilder;
 import com.codesorcerer.targets.BBBTypescript;
 import com.codesorcerer.targets.TypescriptMapping;
 import com.codesorcerer.typescript.TSUtils;
-
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
-
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.TypeKind;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
-
 import java.io.File;
 import java.nio.charset.Charset;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, TypescriptSpell.Out> {
+public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, List<TypescriptSpell.Out>> {
 
     public static class Out {
         BeanDefInfo ic;
@@ -46,21 +43,23 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
 
 
     @Override
-    public void modify(Result<AbstractSpell<BBBTypescript, BeanDefInfo, Out>, BeanDefInfo, Out> result, Collection<Result> results) throws Exception {
+    public void modify(Result<AbstractSpell<BBBTypescript, BeanDefInfo, List<Out>>, BeanDefInfo, List<Out>> result, Collection<Result> results) throws Exception {
 
     }
 
     @Override
-    public void write(Result<AbstractSpell<BBBTypescript, BeanDefInfo, Out>, BeanDefInfo, Out> result) throws Exception {
+    public void write(Result<AbstractSpell<BBBTypescript, BeanDefInfo, List<Out>>, BeanDefInfo, List<Out>> result) throws Exception {
         BeanDefInfo ic = result.input;
         File dir = TSUtils.getDirToWriteInto(ic.pkg);
-        //System.out.println("res.out " + result.output);
-        FileUtils.write(new File(dir, ic.immutableClassName + ".ts"), result.output.ts, Charset.defaultCharset());
+        for (Out o : result.output) {
+            //System.out.println("res.out " + result.output);
+            FileUtils.write(new File(dir, ic.immutableClassName + ".ts"), o.ts, Charset.defaultCharset());
+        }
     }
 
 
     @Override
-    public void build(Result<AbstractSpell<BBBTypescript, BeanDefInfo, Out>, BeanDefInfo, Out> result) throws Exception {
+    public void build(Result<AbstractSpell<BBBTypescript, BeanDefInfo, List<Out>>, BeanDefInfo, List<Out>> result) throws Exception {
 
         Set<TypeMirror> referenced = Sets.newHashSet();
 
@@ -71,8 +70,24 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
         sb.append("import {Mappable, deserialize} from '@c1/leanusecase-client';\n");
         sb.append("*IMPORTS*");
 
-        buildBuilder(ic, sb, mappings);
-        buildClass(ic, sb, mappings);
+        if(BeanDefInputBuilder.isBBBCompliant(ic.typeElement)) {
+            buildBuilder(ic, sb, mappings);
+            buildClass(ic, sb, mappings);
+        }
+        buildInterface(ic, sb, mappings);
+
+        //Add references to super class/intefaces
+        if (ic.superClass != null) {
+            System.out.println("Super===" + ic.superClass.typeElement);
+            addReference(ic.superClass.typeElement, ic.typeElement.asType(), referenced);
+        }
+        if (!ic.superInterfaces.isEmpty()) {
+            for (BeanDefInfo x : ic.superInterfaces) {
+                System.out.println("SuperI===" + x.typeElement);
+                addReference(x.typeElement, ic.typeElement.asType(), referenced);
+            }
+        }
+
 
         //Register
         ic.beanDefFieldInfos.forEach(i -> addReferences(i.getter, result.te.asType(), referenced));
@@ -90,13 +105,38 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
         //Collector.COLLECTOR.putAll("mappings", TSUtils.getAllMappings(ic.typeElement));
 //        Collector.COLLECTOR.put("packages", ic.pkg);
 
-        result.output = out;
+        result.output = ImmutableList.of(out);
+    }
+
+    private void buildInterface(BeanDefInfo ic, StringBuilder sb, Set<TypescriptMapping> mappings) {
+
+        sb.append("export interface " + ic.typeDef.simpleName() + " ");
+
+        if (!ic.superInterfaces.isEmpty()) {
+            String intrfaces = ic.superInterfaces
+                    .stream()
+                    .map(b -> b.typeDef.simpleName())
+                    .collect(Collectors.joining(", "));
+
+            sb.append(" extends " + intrfaces);
+        }
+
+        sb.append(" {\n");
+
+        for (int x = 0; x < ic.beanDefFieldInfos.size(); x++) {
+            BeanDefFieldInfo i = ic.beanDefFieldInfos.get(x);
+            sb.append(i.nameMangled + " : " + TSUtils.convertToTypescriptType(i.returnTypeMirror, mappings, processingEnvironment) + ";\n");
+        }
+
+        sb.append("}");
     }
 
     private void buildClass(BeanDefInfo ic, StringBuilder sb, Set<TypescriptMapping> mappings) {
 
-        sb.append("export class " + ic.immutableClassName + " {\n");
+        sb.append("export class " + ic.immutableClassName + "  implements " + ic.immutableClassName + "Def");
 
+
+        sb.append(" {\n");
         buildFields2(ic, sb, mappings);
         buildStaticStarter(ic, sb, mappings);
         buildPrivateConstructor2(ic, sb, mappings);
@@ -323,6 +363,10 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, T
 
     private void addReferences(ExecutableElement e, TypeMirror enclosing, Set<TypeMirror> referenced) {
         referenced.addAll(TSUtils.getReferences(e, enclosing, typeUtils));
+    }
+
+    private void addReference(TypeElement e, TypeMirror enclosing, Set<TypeMirror> referenced) {
+        referenced.addAll(TSUtils.getReference(e, enclosing, typeUtils));
     }
 
 }

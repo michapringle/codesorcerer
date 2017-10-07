@@ -68,18 +68,18 @@ public class TestBeanFluency
 		ensureOnly( Complex.BeanRequires2.class, "title3" );
 
 		ensureOnly( Complex.BeanBuildable.class, "simple1", "simple2", "simple21", "thing", "title4", "title5", "title6", "newSimple1", "newSimple21", "newThing",
-				"newSimple2", "build" );
+				"newSimple2", "build", "simples1" );
 		
 		ensureOnly( Complex.SubBeanBuildable.class, "simple1", "simple2", "simple21", "thing", "title4", "title5", "title6", "newSimple1", "newSimple21", "newThing",
-				"newSimple2", "done" );
+				"newSimple2", "done", "simples1" );
 		
 		ensureOnly( Complex.BeanUpdateable.class, "simple1", "simple2", "simple21", "thing", "title1", "title2", "title3", "title4", "title5", "title6",
 				"newSimple1", "newThing", "newSimple2", "newSimple21",
-				"getSimple1", "getThing", "getSimple2", "getSimple21", "build" );
+				"getSimple1", "getThing", "getSimple2", "getSimple21", "build" , "simples1");
 		
 		ensureOnly( Complex.SubBeanUpdatable.class, "simple1", "simple2", "simple21", "thing", "title1", "title2", "title3", "title4", "title5", "title6",
 				"newSimple1", "newThing", "newSimple2", "newSimple21",
-				"getSimple1", "getThing", "getSimple2", "getSimple21", "done" );
+				"getSimple1", "getThing", "getSimple2", "getSimple21", "done" , "simples1");
 
 	}
 

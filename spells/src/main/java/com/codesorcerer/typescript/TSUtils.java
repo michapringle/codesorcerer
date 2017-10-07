@@ -16,6 +16,7 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.*;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.Types;
 import java.io.File;
 import java.io.IOException;
@@ -191,14 +192,12 @@ public final class TSUtils {
         //Recurseive step
         if (t instanceof Type.ErrorType) {
             final String typeName = t.toString();
-            //final String typeName = BeanDefInputBuilder.getBBBFQName(t);
             return find(mappings, typeName, processingEnv);
         } else if (t instanceof Type.JCVoidType) {
             return null;
         } else if (t instanceof Type.JCPrimitiveType) {
             Type.JCPrimitiveType ct = (Type.JCPrimitiveType) t;
             final String typeName = ct.asElement().getQualifiedName().toString();
-            //final String typeName = BeanDefInputBuilder.getBBBFQName(t);
             return find(mappings, typeName, processingEnv);
         } else if (t instanceof Type.ClassType) {
             final String typeName = stripDef
@@ -207,8 +206,11 @@ public final class TSUtils {
             return find(mappings, typeName, processingEnv);
         } else if (t instanceof Type.TypeVar) {
             return null;
+        } else if (t instanceof WildcardType) {
+            final WildcardType wt = (WildcardType) t;
+            return findMappingForNonParameritizedClass(wt.getExtendsBound(), mappings, processingEnv, stripDef);
         } else {
-            throw new RuntimeException("Unknown compiler type " + t.getClass());
+            throw new RuntimeException("Unknown compiler type " + t + " " + t.getClass().getName());
         }
     }
 
@@ -249,10 +251,11 @@ public final class TSUtils {
 //
         String typeName2;
         if (typeName.contains(".")) {
-            typeName2 = StringUtils.substringAfterLast(typeName, ".");
+            typeName2 = StringUtils.substringAfterLast(typeName, ".").replaceAll("\\? extends", "");
         } else {
-            typeName2 = typeName;
+            typeName2 = typeName.replaceAll("\\? extends", "");;
         }
+
 
 //        //Look into results...
 //        if (name2 == null || name2.isEmpty()) {
@@ -388,14 +391,19 @@ public final class TSUtils {
         } else if (tm instanceof Type.JCPrimitiveType) {
             TypescriptMapping mapping = findMappingForNonParameritizedClass(tm, mappings, processingEnv, false);
             return mapping.typescriptClassName();
+        } else if (tm instanceof WildcardType) {
+            WildcardType wt = (WildcardType) tm;
+            return convertToTypescriptType(wt.getExtendsBound(), mappings, processingEnv);
+            //return mapping.typescriptClassName();
+//            return convertToTypescriptType(wt.getExtendsBound(), mappings, processingEnv);
         } else {
-            throw new RuntimeException("Unknown type " + tm);
+            throw new RuntimeException("Unknown type " + tm + " " + tm.getClass().getName());
         }
     }
 
     public static Set<TypeMirror> getReference(TypeElement e, TypeMirror enclosing, Types typeUtils) {
         TypeMirror reifiedType = BeanDefInputBuilder.getReifiedType(e, enclosing, typeUtils);
-        System.out.println(e + " " + enclosing + " --> " + reifiedType);
+       // System.out.println(e + " " + enclosing + " --> " + reifiedType);
         return ImmutableSet.of(reifiedType);
     }
 

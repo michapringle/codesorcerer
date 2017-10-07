@@ -1,27 +1,25 @@
 package com.codesorcerer.generators.def;
 
 import com.codesorcerer.abstracts.AbstractInputBuilder;
-import com.codesorcerer.generators.def.spells.Types;
-import com.codesorcerer.typescript.TSUtils;
+import com.codesorcerer.abstracts.AbstractSpell;
 import com.codesorcerer.generators.def.BeanDefInfo.BeanDefFieldInfo;
-
+import com.codesorcerer.generators.def.spells.Types;
+import com.codesorcerer.targets.BBBTypescript;
+import com.codesorcerer.typescript.TSUtils;
 import com.google.auto.common.MoreElements;
 import com.google.auto.common.MoreTypes;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.sun.tools.javac.code.Type;
 
 import javax.annotation.Nonnull;
-import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.*;
 import javax.lang.model.type.*;
 import javax.lang.model.util.ElementFilter;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -29,7 +27,6 @@ import java.util.function.Function;
 
 import static com.google.auto.common.MoreTypes.asDeclared;
 import static com.google.auto.common.MoreTypes.asTypeElement;
-import static com.google.common.collect.Iterables.get;
 import static com.google.common.collect.Iterables.toArray;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.*;
@@ -56,11 +53,37 @@ public class BeanDefInputBuilder extends AbstractInputBuilder<BeanDefInfo> {
             "const", "float", "native", "super", "while");
 
 
+    public static boolean isBBBCompliant(TypeElement te) {
+        return endsWith(te.getSimpleName(), "Def") || te.getAnnotation(BBBTypescript.class) != null;
+    }
+
+    public static boolean isExportedToTypescript(TypeElement te) {
+        return AbstractSpell.hasAnnotation(te, BBBTypescript.class);
+    }
+
     private BeanDefInfo init(TypeElement te) {
 
         final BeanDefInfo ic = new BeanDefInfo();
         String currentTypeName = te.getSimpleName().toString();
         String currentTypePackage = processingEnvironment.getElementUtils().getPackageOf(te).toString();
+
+        ImmutableList.Builder<TypeElement> b = ImmutableList.<TypeElement>builder();
+        List<TypeElement> hier = b
+                .addAll(te.getInterfaces().stream().map(MoreTypes::asTypeElement).collect(toList()))
+                .build();
+
+        ic.superInterfaces = hier.stream()
+                .filter(x ->  isExportedToTypescript(x))
+                .map(this::buildInput)
+                .collect(toList());
+
+        if (MoreTypes.isType(te.getSuperclass())) {
+            TypeElement superTe = MoreTypes.asTypeElement(te.getSuperclass());
+            if (isExportedToTypescript(superTe)) {
+                ic.superClass = buildInput(superTe);
+            }
+        }
+
 
         String pkg = removeEnd(currentTypePackage, ".def");
         String bbbWithNoDef = removeEnd(currentTypeName, "Def");
@@ -272,11 +295,11 @@ public class BeanDefInputBuilder extends AbstractInputBuilder<BeanDefInfo> {
 //        System.out.println("* Making it beautiful - " + te.getQualifiedName());
     }
 
-    private void checkBBBUsage(TypeElement te) {
-        if (!endsWith(te.getSimpleName(), "Def")) {
-            throw new RuntimeException("Must end with Def");
-        }
-    }
+//    private void checkBBBUsage(TypeElement te) {
+//        if (!endsWith(te.getSimpleName(), "Def")) {
+//            throw new RuntimeException("Must end with Def");
+//        }
+//    }
 
 
 }

@@ -1,27 +1,33 @@
 package com.codesorcerer.processor;
 
+import com.codesorcerer.ConsoleColors;
 import com.codesorcerer.LambdaExceptionUtils;
 import com.codesorcerer.abstracts.AbstractInputBuilder;
 import com.codesorcerer.abstracts.AbstractSpell;
 import com.codesorcerer.abstracts.Result;
+
 import com.google.common.collect.*;
 import com.google.common.reflect.ClassPath;
+
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.AnnotationMirror;
-import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
-import java.lang.annotation.Annotation;
+
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Modifier;
+import java.nio.charset.Charset;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
@@ -38,8 +44,8 @@ public class CodeSorcererProcessor extends javax.annotation.processing.AbstractP
     public Filer filer;
     public Messager messager;
 
-
     private static boolean headerPrinted = false;
+    private static boolean loaded = false;
     private static Multimap<String, AbstractSpell> allGeneratorsByAnnotationClass = HashMultimap.create(); //AnnotationClassName to processor
     private static Map<Class, AbstractInputBuilder> allInputBuilders = Maps.newHashMap(); //InputClass to inputBuilder
     private static Set<TypeElement> processedTypes = Sets.newHashSet();
@@ -57,36 +63,28 @@ public class CodeSorcererProcessor extends javax.annotation.processing.AbstractP
         this.elementUtils = processingEnv.getElementUtils();
         this.typeUtils = processingEnv.getTypeUtils();
 
+        load();
+    }
+
+    private void load() {
+        try {
+            if (!loaded) {
+                loaded = true;
+                fillAllGenerators();
+                fillAllInputs();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    private void printHeaders() {
         try {
             if (!headerPrinted) {
                 headerPrinted = true;
-
                 printHeader();
-
-                ClassPath.from(getClass().getClassLoader()).getAllClasses().stream()
-                        .filter(c -> c.getSimpleName().endsWith("Spell"))
-                        .map(this::safeLoad)
-                        .filter(AbstractSpell.class::isAssignableFrom)
-                        .filter(c -> !Modifier.isAbstract(c.getModifiers()))
-                        .map(this::newGenerator)
-                        .forEach(g -> allGeneratorsByAnnotationClass.put(g.getAnnotationClass().getName(), g));
-                ClassPath.from(getClass().getClassLoader()).getAllClasses().stream()
-                        .filter(c -> c.getSimpleName().endsWith("InputBuilder"))
-                        .map(this::safeLoad)
-                        .filter(AbstractInputBuilder.class::isAssignableFrom)
-                        .filter(c -> !Modifier.isAbstract(c.getModifiers()))
-                        .map(this::newInputBuilder)
-                        .forEach(ib -> allInputBuilders.put(ib.getInputClass(), ib));
-
-                System.out.println("Inputs:");
-                for (Map.Entry<Class, AbstractInputBuilder> b : allInputBuilders.entrySet()) {
-                    System.out.println("  " + b.getValue().getClass().getSimpleName() + " builds " + b.getKey().getSimpleName());
-                }
-                System.out.println("Spells:");
-                for (Map.Entry<String, AbstractSpell> b : allGeneratorsByAnnotationClass.entries()) {
-                    System.out.println("  @" + StringUtils.substringAfterLast(b.getKey(), ".") + " casts " + b.getValue().getClass().getSimpleName());
-                }
-                System.out.println("Castings:");
+                //printInfo();
             }
 
         } catch (Exception e) {
@@ -94,9 +92,107 @@ public class CodeSorcererProcessor extends javax.annotation.processing.AbstractP
         }
     }
 
+    private void printInfo() {
+        System.out.println("Inputs:");
+        for (Map.Entry<Class, AbstractInputBuilder> b : allInputBuilders.entrySet()) {
+            System.out.println("  " + b.getValue().getClass().getSimpleName() + " builds " + b.getKey().getSimpleName());
+        }
+        System.out.println("Spells:");
+        for (Map.Entry<String, AbstractSpell> b : allGeneratorsByAnnotationClass.entries()) {
+            System.out.println("  @" + StringUtils.substringAfterLast(b.getKey(), ".") + " casts " + b.getValue().getClass().getSimpleName());
+        }
+    }
+
+    private void fillAllInputs() throws Exception {
+        File f = new File(FileUtils.getTempDirectory(), "code-sorcerer-allInputs.txt");
+        final boolean recentlyCreated = (System.currentTimeMillis() - f.lastModified()) < 30 * 1000;
+
+        if (f.exists() && recentlyCreated) {
+            try {
+                FileUtils.readLines(f, Charset.defaultCharset())
+                        .stream()
+                        .filter(l -> !l.isEmpty())
+                        .map(this::safeForName)
+                        .map(this::newInputBuilder)
+                        .forEach(ib -> allInputBuilders.put(ib.getInputClass(), ib));
+
+                FileUtils.touch(f);
+                return;
+            } catch (Exception e) {
+                //Loading from file had issues... reload
+            }
+        }
+
+        ClassPath.from(getClass().getClassLoader()).getAllClasses().stream()
+                .filter(c -> c.getSimpleName().endsWith("InputBuilder"))
+                .map(this::safeLoad)
+                .filter(AbstractInputBuilder.class::isAssignableFrom)
+                .filter(c -> !Modifier.isAbstract(c.getModifiers()))
+                .map(this::newInputBuilder)
+                .forEach(ib -> allInputBuilders.put(ib.getInputClass(), ib));
+
+        //Delete it...
+        FileUtils.deleteQuietly(f);
+
+        //Write to file..
+        allInputBuilders.values().forEach(ib -> appendClassNameToFile(f, ib));
+    }
+
+    private void appendClassNameToFile(File f, Object ib) {
+        try {
+            FileUtils.write(f, ib.getClass().getName() + "\n", Charset.defaultCharset(), true);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void fillAllGenerators() throws IOException {
+        File f = new File(FileUtils.getTempDirectory(), "code-sorcerer-allGens.txt");
+        final boolean recentlyCreated = (System.currentTimeMillis() - f.lastModified()) < 30 * 1000;
+
+        if (f.exists() && recentlyCreated) {
+            try {
+                FileUtils.readLines(f, Charset.defaultCharset())
+                        .stream()
+                        .filter(l -> !l.isEmpty())
+                        .map(this::safeForName)
+                        .map(this::newGenerator)
+                        .forEach(g -> allGeneratorsByAnnotationClass.put(g.getAnnotationClass().getName(), g));
+
+                FileUtils.touch(f);
+                return;
+            } catch (Exception e) {
+                //Problems loading from file... reload!
+            }
+        }
+
+        ClassPath.from(getClass().getClassLoader()).getAllClasses().stream()
+                .filter(c -> c.getSimpleName().endsWith("Spell"))
+                .map(this::safeLoad)
+                .filter(AbstractSpell.class::isAssignableFrom)
+                .filter(c -> !Modifier.isAbstract(c.getModifiers()))
+                .map(this::newGenerator)
+                .forEach(g -> allGeneratorsByAnnotationClass.put(g.getAnnotationClass().getName(), g));
+
+        //Delete it...
+        FileUtils.deleteQuietly(f);
+
+        //Write to file..
+        allGeneratorsByAnnotationClass.values().forEach(ib -> appendClassNameToFile(f, ib));
+
+    }
+
     private Class<?> safeLoad(ClassPath.ClassInfo c) {
         try {
             return c.load();
+        } catch (Throwable e) {
+            return String.class;
+        }
+    }
+
+    private Class<?> safeForName(String c) {
+        try {
+            return Class.forName(c);
         } catch (Throwable e) {
             return String.class;
         }
@@ -114,8 +210,12 @@ public class CodeSorcererProcessor extends javax.annotation.processing.AbstractP
             }
         }
 
+
         //Run the generators for this type
-        runFunction(notYetProcessed, (result) -> System.out.println("  Casting " + result.spell.getClass().getSimpleName() + " on " + result.te.getQualifiedName() ), "Debug");
+        runFunction(notYetProcessed, (result) -> {
+            printHeaders();
+            System.out.println(ConsoleColors.CYAN + " Casting " + result.spell.getClass().getSimpleName() + " on " + ConsoleColors.CYAN_BOLD + result.te.getQualifiedName() + ConsoleColors.RESET);
+        }, "Debug");
 
 //        runFunction(notYetProcessed, (result) -> {
 //            result.spell.build(result);
@@ -128,16 +228,16 @@ public class CodeSorcererProcessor extends javax.annotation.processing.AbstractP
         runFunction(notYetProcessed, (result) -> result.spell.write(result), "Write");
         runFunction(notYetProcessed, (result) -> result.spell.processingOver(results.values()), "Over");
 
-
-        //Print Summary
-        if(roundEnv.processingOver()) {
-            Long outputCount = results.values()
-                    .stream()
-                    .filter(r -> r.output != null)
-                    .collect(Collectors.counting());
-
-            System.out.println("Conjured " + outputCount + " code files!");
-        }
+//
+//        //Print Summary
+//        if (roundEnv.processingOver()) {
+//            Long outputCount = results.values()
+//                    .stream()
+//                    .filter(r -> r.output != null)
+//                    .collect(Collectors.counting());
+//
+//            System.out.println("Conjured " + outputCount + " code files!");
+//        }
 
         return false;
 
@@ -236,21 +336,22 @@ public class CodeSorcererProcessor extends javax.annotation.processing.AbstractP
     }
 
 
-
     private void printHeader() {
-        System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
-        System.out.println("                   ,%%%,                                                               ");
-        System.out.println("                 ,%%%` %==--                                                               ");
-        System.out.println("                ,%%`( '|              ,-.       .        ,-.                                ");
-        System.out.println("               ,%%@ /\\_/            /          |       (   `\\                             ");
-        System.out.println("     ,%.-\"\"\"-- % %%\"@@__            |    ,-. ,-| ,-.    `-.  ,-. ;-. ,-. ,-. ;-. ,-. ;-. ");
-        System.out.println("    %%/             |__`\\           \\    | | | | |-'   .   ) | | |   |   |-' |   |-' |     ");
-        System.out.println("   .%'\\     |   \\   /  //            `-' `-' `-' `-'    `-'  `-' '   `-' `-' '   `-' '     ");
-        System.out.println("   ,%' >   .'----\\ |  [/                                                               ");
-        System.out.println("      < <<`       ||                                                               ");
-        System.out.println("       `\\\\\\       ||                                                               ");
-        System.out.println("         )\\\\      )\\                                                               ");
-        System.out.println("^^^^^^^^^\"\"\"^^^^^^\"\"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+        System.out.println(ConsoleColors.CYAN);
+        System.out.println(("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"));
+        System.out.println(("                   ,%%%,                                                               ").replace("%", ConsoleColors.CYAN_BOLD + "%" + ConsoleColors.CYAN));
+        System.out.println(("                 ,%%%` %==--                                                               ").replace("%", ConsoleColors.CYAN_BOLD + "%" + ConsoleColors.CYAN));
+        System.out.println(("                ,%%`( '|        " + ConsoleColors.CYAN_BOLD + "     ,-.       .        ,-.                                ").replace("%", ConsoleColors.CYAN_BOLD + "%" + ConsoleColors.CYAN) + ConsoleColors.CYAN);
+        System.out.println(("               ,%%@ /\\_/       " + ConsoleColors.CYAN_BOLD + "     /          |       (   `                              ").replace("%", ConsoleColors.CYAN_BOLD + "%" + ConsoleColors.CYAN) + ConsoleColors.CYAN);
+        System.out.println(("     ,%.-\"\"\"-- % %%\"@@__    " + ConsoleColors.CYAN_BOLD + "        |    ,-. ,-| ,-.    `-.  ,-. ;-. ,-. ,-. ;-. ,-. ;-. ").replace("%", ConsoleColors.CYAN_BOLD + "%" + ConsoleColors.CYAN) + ConsoleColors.CYAN);
+        System.out.println(("    %%/             |__`\\      " + ConsoleColors.CYAN_BOLD + "     \\    | | | | |-'   .   ) | | |   |   |-' |   |-' |     ").replace("%", ConsoleColors.CYAN_BOLD + "%" + ConsoleColors.CYAN) + ConsoleColors.CYAN);
+        System.out.println(("   .%'\\     |   \\   /  //     " + ConsoleColors.CYAN_BOLD + "       `-' `-' `-' `-'    `-'  `-' '   `-' `-' '   `-' '     ").replace("%", ConsoleColors.CYAN_BOLD + "%" + ConsoleColors.CYAN) + ConsoleColors.CYAN);
+        System.out.println(("   ,%' >   .'----\\ |  [/       " + ConsoleColors.CYAN_BOLD + "                                                        ").replace("%", ConsoleColors.CYAN_BOLD + "%" + ConsoleColors.CYAN) + ConsoleColors.CYAN);
+        System.out.println(("      < <<`       ||                                                               "));
+        System.out.println(("       `\\\\\\       ||                                                               "));
+        System.out.println(("         )\\\\      )\\                                                               "));
+        System.out.println(("^^^^^^^^^\"\"\"^^^^^^\"\"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"));
+        System.out.print(ConsoleColors.RESET);
     }
 
 }

@@ -78,12 +78,10 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, L
 
         //Add references to super class/intefaces
         if (ic.superClass != null) {
-            System.out.println("Super===" + ic.superClass.typeElement);
             addReference(ic.superClass.typeElement, ic.typeElement.asType(), referenced);
         }
         if (!ic.superInterfaces.isEmpty()) {
             for (BeanDefInfo x : ic.superInterfaces) {
-                System.out.println("SuperI===" + x.typeElement);
                 addReference(x.typeElement, ic.typeElement.asType(), referenced);
             }
         }

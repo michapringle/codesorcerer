@@ -90,10 +90,7 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, L
         //Register
         ic.beanDefFieldInfos
                 .stream()
-                .filter(x -> {
-                    System.out.println(x.returnType + " == " + ic.immutableClassName);
-                    return !x.returnType.equals(ic.immutableClassName);
-                })  //Dont import youself!
+                .filter(x -> !x.returnType.equals(ic.immutableClassName))  //Dont import youself!
                 .forEach(i -> addReferences(i.getter, result.te.asType(), referenced));
         String imports = TSUtils.convertToImportStatements(ic.pkg, referenced, mappings, processingEnvironment);
         String x = sb.toString().replace("*IMPORTS*", imports);

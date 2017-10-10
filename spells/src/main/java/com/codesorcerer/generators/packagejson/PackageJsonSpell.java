@@ -53,7 +53,7 @@ public class PackageJsonSpell extends AbstractSpell<TypescriptRoot, PackageJsonI
         final Set<TypescriptMapping> mappings = Collector.get("mappings");
         for (TypescriptMapping tm : mappings) {
             if (!tm.typescriptPackageName().isEmpty()) {
-                packageJson.peerDependencies.put(tm.typescriptPackageName(), tm.typescriptPackageVersion());
+                packageJson.dependencies.put(tm.typescriptPackageName(), tm.typescriptPackageVersion());
             }
         }
 

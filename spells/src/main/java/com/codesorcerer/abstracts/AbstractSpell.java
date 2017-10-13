@@ -70,6 +70,13 @@ public abstract class AbstractSpell<T extends Annotation, Input, Output> impleme
         return res;
     }
 
+
+    public static Set<AnnotationMirror> getAllAnnotationMirrors(Element te) {
+        Set<AnnotationMirror> res = Sets.newHashSet();
+        getAllAnnotationMirrors(te, res);
+        return res;
+    }
+
     public static void getAllAnnotations(Element te, Set<String> res) {
         for (AnnotationMirror am : te.getAnnotationMirrors()) {
             String annFQN = am.getAnnotationType().toString();
@@ -79,10 +86,30 @@ public abstract class AbstractSpell<T extends Annotation, Input, Output> impleme
         }
     }
 
-    public static boolean hasAnnotation(Element te, Class<? extends Annotation> ann) {
+    public static void getAllAnnotationMirrors(Element te, Set<AnnotationMirror> res) {
+        for (AnnotationMirror am : te.getAnnotationMirrors()) {
+            if (res.add(am)) {
+                getAllAnnotationMirrors(am.getAnnotationType().asElement(), res);
+            }
+        }
+    }
+
+    public static boolean hasAnnotation(Element te, Class<? extends Annotation> ann)
+    {
         return getAllAnnotations(te)
                 .stream()
                 .anyMatch(a -> a.equals(ann.getName()));
     }
+
+
+
+    public static AnnotationMirror getAnnotationMirror(Element te, Class<? extends Annotation> ann) {
+        return getAllAnnotationMirrors(te)
+                .stream()
+                .filter(a -> a.getAnnotationType().toString().equals(ann.getName()))
+                .findFirst()
+                .orElse(null);
+    }
+
 
 }

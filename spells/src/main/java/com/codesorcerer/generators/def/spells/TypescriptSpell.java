@@ -12,15 +12,14 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import org.apache.commons.io.FileUtils;
 
+import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import java.io.File;
 import java.nio.charset.Charset;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, List<TypescriptSpell.Out>> {
@@ -52,7 +51,7 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, L
         BeanDefInfo ic = result.input;
         File dir = TSUtils.getDirToWriteInto(ic.pkg);
         for (Out o : result.output) {
-            //System.out.println("res.out " + result.output);
+//            System.out.println("res.out " + result.output + " " + dir.getAbsolutePath());
             FileUtils.write(new File(dir, ic.immutableClassName + ".ts"), o.ts, Charset.defaultCharset());
         }
     }
@@ -70,10 +69,20 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, L
         sb.append("import {Mappable, deserialize} from '@c1/leanusecase-client';\n");
         sb.append("*IMPORTS*");
 
-        if(BeanDefInputBuilder.isBBBCompliant(ic.typeElement)) {
+        AnnotationMirror bbbTypescriptAnn = getAnnotationMirror(ic.typeElement, BBBTypescript.class);
+        Map<? extends ExecutableElement, ? extends AnnotationValue> vals = bbbTypescriptAnn.getElementValues();
+        Boolean interfaceOnlyVal = vals.entrySet()
+                .stream()
+                .filter(e -> e.getKey().getSimpleName().toString().equals("interfaceOnly"))
+                .map(e -> (Boolean)e.getValue().getValue())
+                .findFirst()
+                .orElse(Boolean.FALSE);
+
+        if(!interfaceOnlyVal) {
             buildBuilder(ic, sb, mappings);
             buildClass(ic, sb, mappings);
         }
+
         buildInterface(ic, sb, mappings);
 
         //Add references to super class/intefaces

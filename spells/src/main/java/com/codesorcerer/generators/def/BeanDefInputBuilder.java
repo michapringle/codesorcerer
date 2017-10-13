@@ -74,12 +74,17 @@ public class BeanDefInputBuilder extends AbstractInputBuilder<BeanDefInfo> {
                 .build();
 
         ic.superInterfaces = hier.stream()
-                .filter(x ->  isExportedToTypescript(x))
+                .filter(x ->  {
+  //                  System.out.println(x + " isExported " + isExportedToTypescript(x));
+                    return isExportedToTypescript(x);
+                })
                 .map(this::buildInput)
                 .collect(toList());
 
         if (MoreTypes.isType(te.getSuperclass())) {
             TypeElement superTe = MoreTypes.asTypeElement(te.getSuperclass());
+
+//            System.out.println(superTe + " isExported " + isExportedToTypescript(superTe));
             if (isExportedToTypescript(superTe)) {
                 ic.superClass = buildInput(superTe);
             }

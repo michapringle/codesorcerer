@@ -54,7 +54,7 @@ public class PackageJsonSpell extends AbstractSpell<TypescriptRoot, PackageJsonI
         final Set<TypescriptMapping> mappings = Collector.get("mappings");
         for (TypescriptMapping tm : mappings) {
             if (StringUtils.isNotBlank(tm.typescriptPackageName())) {
-                System.out.println("Adding dependency " + tm.typescriptPackageName() + " to " + result.input.pkg);
+                //System.out.println("Adding dependency " + tm.typescriptPackageName() + " to " + result.input.pkg);
                 packageJson.dependencies.put(tm.typescriptPackageName(), tm.typescriptPackageVersion());
             }
         }

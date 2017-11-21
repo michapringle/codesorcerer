@@ -184,6 +184,7 @@ public final class TSUtils {
             }
         }
 
+        Collector.COLLECTOR.putAll("mappings", used);
         return used;
     }
 

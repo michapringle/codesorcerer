@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 
+@TypescriptMapping(javaClass = Object.class, typescriptClassName = "any")
+
 //Primitives
 @TypescriptMapping(javaClass = int.class, typescriptClassName = "number")
 @TypescriptMapping(javaClass = long.class, typescriptClassName = "number")
@@ -22,7 +24,7 @@ import java.util.*;
 @TypescriptMapping(javaClass = LinkedList.class, typescriptClassName = "Array")
 
 @TypescriptMapping(javaClass = Map.class, typescriptClassName = "Map")
-@TypescriptMapping(javaClass = HashMap.class, typescriptClassName = "Set")
+@TypescriptMapping(javaClass = HashMap.class, typescriptClassName = "Map")
 
 @TypescriptMapping(javaClass = Set.class, typescriptClassName = "Set")
 @TypescriptMapping(javaClass = HashSet.class, typescriptClassName = "Set")

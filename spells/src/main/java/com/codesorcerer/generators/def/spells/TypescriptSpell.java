@@ -27,7 +27,7 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, L
     public static class Out {
         BeanDefInfo ic;
         String ts;
-        Set<TypeMirror> mappings;
+  //      Set<TypeMirror> mappings;
     }
 
     @Override
@@ -83,7 +83,7 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, L
             buildClass(ic, sb, mappings);
         }
 
-        buildInterface(ic, sb, mappings);
+        buildInterface(ic, sb, mappings, interfaceOnlyVal);
 
         //Add references to super class/intefaces
         if (ic.superClass != null) {
@@ -107,7 +107,7 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, L
         Out out = new Out();
         out.ts = x;
         out.ic = ic;
-        out.mappings = referenced;
+        //out.mappings = referenced;
 
         //TODO:
         //referenced.clear();
@@ -118,9 +118,15 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, L
         result.output = ImmutableList.of(out);
     }
 
-    private void buildInterface(BeanDefInfo ic, StringBuilder sb, Set<TypescriptMapping> mappings) {
+    private void buildInterface(BeanDefInfo ic, StringBuilder sb, Set<TypescriptMapping> mappings, Boolean interfaceOnlyVal)
+    {
 
-        sb.append("export interface " + ic.typeDef.simpleName() + " ");
+        if (interfaceOnlyVal) {
+            sb.append("export interface " + ic.typeImmutable.simpleName() + " ");
+        }
+        else {
+            sb.append("export interface " + ic.typeDef.simpleName() + " ");
+        }
 
         if (!ic.superInterfaces.isEmpty()) {
             String intrfaces = ic.superInterfaces

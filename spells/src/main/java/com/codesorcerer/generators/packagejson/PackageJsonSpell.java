@@ -9,6 +9,7 @@ import com.codesorcerer.targets.TypescriptRoot;
 import com.codesorcerer.typescript.PackageJson;
 import com.codesorcerer.typescript.TSUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.nio.charset.Charset;
@@ -19,8 +20,8 @@ public class PackageJsonSpell extends AbstractSpell<TypescriptRoot, PackageJsonI
 
     @Override
     public int getRunOrder() {
-        return 1;
-    }
+        return 80000;
+    } //This happpens at the end
 
 
     @Override
@@ -52,7 +53,8 @@ public class PackageJsonSpell extends AbstractSpell<TypescriptRoot, PackageJsonI
         //Add devDependencies
         final Set<TypescriptMapping> mappings = Collector.get("mappings");
         for (TypescriptMapping tm : mappings) {
-            if (!tm.typescriptPackageName().isEmpty()) {
+            if (StringUtils.isNotBlank(tm.typescriptPackageName())) {
+                System.out.println("Adding dependency " + tm.typescriptPackageName() + " to " + result.input.pkg);
                 packageJson.dependencies.put(tm.typescriptPackageName(), tm.typescriptPackageVersion());
             }
         }

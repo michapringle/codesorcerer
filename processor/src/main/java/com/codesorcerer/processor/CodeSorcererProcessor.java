@@ -104,7 +104,7 @@ public class CodeSorcererProcessor extends javax.annotation.processing.AbstractP
     }
 
     private void fillAllInputs() throws Exception {
-        File f = new File(FileUtils.getTempDirectory(), "code-sorcerer-allInputs.txt");
+        File f = new File(System.getProperty("user.home") + "/.code-sorcerer-allInputs.txt");
         final boolean recentlyCreated = (System.currentTimeMillis() - f.lastModified()) < 30 * 1000;
 
         if (f.exists() && recentlyCreated) {
@@ -147,7 +147,7 @@ public class CodeSorcererProcessor extends javax.annotation.processing.AbstractP
     }
 
     private void fillAllGenerators() throws IOException {
-        File f = new File(FileUtils.getTempDirectory(), "code-sorcerer-allGens.txt");
+        File f = new File(System.getProperty("user.home") + "/.code-sorcerer-allGens.txt");
         final boolean recentlyCreated = (System.currentTimeMillis() - f.lastModified()) < 30 * 1000;
 
         if (f.exists() && recentlyCreated) {

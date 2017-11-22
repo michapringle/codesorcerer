@@ -1,4 +1,8 @@
 # BeanBuilder
+
+## Deprecated
+This tool (written in Scala, generating Java code) has been deprecated in favor of this tool https://github.com/fyrewall77/beanbuilder (written in Java, generating Java code).
+
 ## Introduction
 Welcome to BeanBuilder, a tool to build fluent immutable beans from templates.
 

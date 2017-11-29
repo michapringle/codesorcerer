@@ -93,7 +93,7 @@ public class CodeSorcererProcessor extends javax.annotation.processing.AbstractP
       if (!headerPrinted) {
         headerPrinted = true;
         printHeader();
-        //printInfo();
+        printInfo();
       }
 
     } catch (Exception e) {

@@ -49,7 +49,7 @@ public class MutableSpell extends AbstractJavaBeanSpell<BBBMutable> {
     }
 
     @Override
-    public void modify(Result<AbstractSpell<BBBMutable, BeanDefInfo, TypeSpec.Builder>, BeanDefInfo, TypeSpec.Builder> result, Collection<Result> results) throws Exception {
+    public void postbuild(Result<AbstractSpell<BBBMutable, BeanDefInfo, TypeSpec.Builder>, BeanDefInfo, TypeSpec.Builder> result, Collection<Result> results) throws Exception {
         BeanDefInfo bi = result.input;
         ClassName typeMutable = ClassName.get(bi.pkg, bi.immutableClassName + "Mutable");
 

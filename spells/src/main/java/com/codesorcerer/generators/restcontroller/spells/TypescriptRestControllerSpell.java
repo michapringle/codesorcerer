@@ -41,8 +41,14 @@ public class TypescriptRestControllerSpell extends AbstractSpell<TypescriptContr
     }
 
     @Override
-    public void modify(Result<AbstractSpell<TypescriptController, RestControllerInfo, String>, RestControllerInfo, String> result, Collection<Result> results) throws Exception {
+    public void postbuild(Result<AbstractSpell<TypescriptController, RestControllerInfo, String>, RestControllerInfo, String> result, Collection<Result> results) throws Exception {
 
+    }
+
+    @Override
+    public void prebuild(
+        Result<AbstractSpell<TypescriptController, RestControllerInfo, String>, RestControllerInfo, String> result,
+        Collection<Result> results) throws Exception {
     }
 
     @Override

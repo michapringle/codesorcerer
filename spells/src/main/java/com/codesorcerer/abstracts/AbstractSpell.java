@@ -39,9 +39,11 @@ public abstract class AbstractSpell<T extends Annotation, Input, Output> impleme
 
     public abstract int getRunOrder();
 
+    public abstract void prebuild(Result<AbstractSpell<T, Input, Output>, Input, Output> result, Collection<Result> results) throws Exception;
+
     public abstract void build(Result<AbstractSpell<T, Input, Output>, Input, Output> result) throws Exception;
 
-    public abstract void modify(Result<AbstractSpell<T, Input, Output>, Input, Output> result, Collection<Result> results) throws Exception;
+    public abstract void postbuild(Result<AbstractSpell<T, Input, Output>, Input, Output> result, Collection<Result> results) throws Exception;
 
     public abstract void write(Result<AbstractSpell<T, Input, Output>, Input, Output> result) throws Exception;
 
@@ -96,6 +98,9 @@ public abstract class AbstractSpell<T extends Annotation, Input, Output> impleme
 
     public static boolean hasAnnotation(Element te, Class<? extends Annotation> ann)
     {
+        if(te == null) {
+            return false;
+        }
         return getAllAnnotations(te)
                 .stream()
                 .anyMatch(a -> a.equals(ann.getName()));

@@ -30,8 +30,14 @@ public class PackageJsonSpell extends AbstractSpell<TypescriptRoot, PackageJsonI
 
 
     @Override
-    public void modify(Result<AbstractSpell<TypescriptRoot, PackageJsonInfo, PackageJson>, PackageJsonInfo, PackageJson> result, Collection<Result> results) throws Exception {
+    public void postbuild(Result<AbstractSpell<TypescriptRoot, PackageJsonInfo, PackageJson>, PackageJsonInfo, PackageJson> result, Collection<Result> results) throws Exception {
 
+    }
+
+    @Override
+    public void prebuild(
+        Result<AbstractSpell<TypescriptRoot, PackageJsonInfo, PackageJson>, PackageJsonInfo, PackageJson> result,
+        Collection<Result> results) throws Exception {
     }
 
     @Override

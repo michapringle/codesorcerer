@@ -11,7 +11,6 @@ import com.google.common.reflect.ClassPath;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.function.Function;
 import org.apache.commons.io.FileUtils;
@@ -31,9 +30,7 @@ import javax.tools.Diagnostic;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Modifier;
-import java.nio.charset.Charset;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
@@ -267,29 +264,11 @@ public class CodeSorcererProcessor extends javax.annotation.processing.AbstractP
               + ConsoleColors.CYAN_BOLD + result.te.getQualifiedName() + ConsoleColors.RESET);
     }, "Debug");
 
-//        runFunction(notYetProcessed, (result) -> {
-//            result.spell.build(result);
-//            result.spell.modify(result, results.values());
-//            result.spell.write(result);
-//        }, "All");
-
+    runFunction(notYetProcessed, (result) -> result.spell.prebuild(result, results.values()), "PreBuild");
     runFunction(notYetProcessed, (result) -> result.spell.build(result), "Build");
-    runFunction(notYetProcessed, (result) -> result.spell.modify(result, results.values()),
-        "Modify");
+    runFunction(notYetProcessed, (result) -> result.spell.postbuild(result, results.values()),"Modify");
     runFunction(notYetProcessed, (result) -> result.spell.write(result), "Write");
     runFunction(notYetProcessed, (result) -> result.spell.processingOver(results.values()), "Over");
-
-//
-//        //Print Summary
-//        if (roundEnv.processingOver()) {
-//            Long outputCount = results.values()
-//                    .stream()
-//                    .filter(r -> r.output != null)
-//                    .collect(Collectors.counting());
-//
-//            System.out.println("Conjured " + outputCount + " code files!");
-//        }
-
     return false;
 
   }

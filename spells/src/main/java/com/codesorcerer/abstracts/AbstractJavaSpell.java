@@ -3,6 +3,7 @@ package com.codesorcerer.abstracts;
 import com.google.common.reflect.TypeToken;
 import com.squareup.javapoet.*;
 
+import com.squareup.javapoet.TypeSpec.Builder;
 import javax.annotation.Generated;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
@@ -25,7 +26,13 @@ public abstract class AbstractJavaSpell<T extends Annotation, Input> extends Abs
     }
 
     @Override
-    public void modify(Result<AbstractSpell<T, Input, TypeSpec.Builder>, Input, TypeSpec.Builder> result, Collection<Result> results) throws Exception {
+    public void postbuild(Result<AbstractSpell<T, Input, TypeSpec.Builder>, Input, TypeSpec.Builder> result, Collection<Result> results) throws Exception {
+        //Do nothing?
+    }
+
+    @Override
+    public void prebuild(Result<AbstractSpell<T, Input, Builder>, Input, Builder> result,
+        Collection<Result> results) throws Exception {
         //Do nothing?
     }
 

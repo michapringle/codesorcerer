@@ -23,7 +23,7 @@ public class JacksonSpell extends AbstractJavaBeanSpell<BBBJson> {
     }
 
     @Override
-    public void modify(Result<AbstractSpell<BBBJson, BeanDefInfo, TypeSpec.Builder>, BeanDefInfo, TypeSpec.Builder> result, Collection<Result> results) throws Exception {
+    public void postbuild(Result<AbstractSpell<BBBJson, BeanDefInfo, TypeSpec.Builder>, BeanDefInfo, TypeSpec.Builder> result, Collection<Result> results) throws Exception {
         BeanDefInfo ic = result.input;
         ClassName typeJackson = ClassName.get(ic.pkg, ic.immutableClassName + "Jackson");
         addJsonSerializationAnnotations(ic, getResult(ImmutableSpell.class, result.te, results).output, typeJackson);

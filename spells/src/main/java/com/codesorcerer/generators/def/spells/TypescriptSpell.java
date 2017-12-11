@@ -25,8 +25,8 @@ import java.util.stream.Collectors;
 public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, List<TypescriptSpell.Out>> {
 
     public static class Out {
-        BeanDefInfo ic;
-        String ts;
+        public BeanDefInfo ic;
+        public String ts;
   //      Set<TypeMirror> mappings;
     }
 
@@ -42,8 +42,13 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, L
 
 
     @Override
-    public void modify(Result<AbstractSpell<BBBTypescript, BeanDefInfo, List<Out>>, BeanDefInfo, List<Out>> result, Collection<Result> results) throws Exception {
+    public void postbuild(Result<AbstractSpell<BBBTypescript, BeanDefInfo, List<Out>>, BeanDefInfo, List<Out>> result, Collection<Result> results) throws Exception {
+    }
 
+    @Override
+    public void prebuild(
+        Result<AbstractSpell<BBBTypescript, BeanDefInfo, List<Out>>, BeanDefInfo, List<Out>> result,
+        Collection<Result> results) throws Exception {
     }
 
     @Override
@@ -67,6 +72,7 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, L
 
         StringBuilder sb = new StringBuilder();
         sb.append("import {Mappable, deserialize} from '@c1/leanusecase-client';\n");
+        sb.append("//Extension-Import\n");
         sb.append("*IMPORTS*");
 
         AnnotationMirror bbbTypescriptAnn = getAnnotationMirror(ic.typeElement, BBBTypescript.class);
@@ -101,6 +107,7 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, L
                 .stream()
                 .filter(x -> !x.returnType.equals(ic.immutableClassName))  //Dont import youself!
                 .forEach(i -> addReferences(i.getter, result.te.asType(), referenced));
+
         String imports = TSUtils.convertToImportStatements(ic.pkg, referenced, mappings, processingEnvironment);
         String x = sb.toString().replace("*IMPORTS*", imports);
 
@@ -149,7 +156,9 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, L
 
     private void buildClass(BeanDefInfo ic, StringBuilder sb, Set<TypescriptMapping> mappings) {
 
-        sb.append("export class " + ic.immutableClassName + "  implements " + ic.immutableClassName + "Def");
+        sb.append("export class " + ic.immutableClassName + "\n");
+        sb.append("  //Extension-ClassExtends\n");
+        sb.append("  implements " + ic.immutableClassName + "Def");
 
 
         sb.append(" {\n");
@@ -322,7 +331,8 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, L
     }
 
     private void buildPrivateConstructor(StringBuilder sb) {
-        sb.append("public constructor() {}\n");
+        sb.append("public constructor() {\n");
+        sb.append("}\n");
         sb.append("\n");
     }
 
@@ -333,6 +343,7 @@ public class TypescriptSpell extends AbstractSpell<BBBTypescript, BeanDefInfo, L
 
 
         sb.append("public constructor( " + allParams + ") {\n");
+        sb.append("  //Extension-ClassConstructorTop\n");
         for (BeanDefFieldInfo i : ic.beanDefFieldInfos) {
             sb.append("  this." + i.nameMangled + " = " + i.nameMangled + ";\n");
         }

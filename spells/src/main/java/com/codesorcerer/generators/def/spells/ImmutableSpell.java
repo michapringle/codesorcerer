@@ -10,6 +10,7 @@ import com.google.auto.common.MoreTypes;
 import com.google.common.collect.Lists;
 import com.squareup.javapoet.*;
 
+import com.sun.tools.javac.code.Type.UnknownType;
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
@@ -33,6 +34,9 @@ public class ImmutableSpell extends AbstractJavaBeanSpell<BBBImmutable>
 
     public static boolean isBBB(BeanDefFieldInfo i) {
         final TypeMirror returnTypeMirror = i.returnTypeMirror;
+        if(i.returnTypeMirror == null || i.returnTypeMirror instanceof UnknownType) {
+            return false;
+        }
 
         return !BeanDefInputBuilder.isPrimitive(returnTypeMirror) &&
                 !BeanDefInputBuilder.isArray(returnTypeMirror) &&

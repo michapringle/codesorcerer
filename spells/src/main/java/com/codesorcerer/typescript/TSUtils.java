@@ -1,32 +1,42 @@
 package com.codesorcerer.typescript;
 
-import com.codesorcerer.Collector;
-import com.codesorcerer.generators.def.BeanDefInputBuilder;
-import com.codesorcerer.targets.TypescriptMapping;
+import static com.google.common.collect.Sets.newHashSet;
+import static java.util.stream.Collectors.joining;
+import static org.apache.commons.lang3.StringUtils.countMatches;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.removeStart;
+import static org.apache.commons.lang3.StringUtils.repeat;
+
 import com.google.auto.common.MoreTypes;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
+
+import com.codesorcerer.Collector;
+import com.codesorcerer.generators.def.BeanDefInputBuilder;
+import com.codesorcerer.targets.TypescriptMapping;
 import com.sun.tools.javac.code.Type;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.*;
-import javax.lang.model.type.MirroredTypeException;
-import javax.lang.model.type.TypeMirror;
-import javax.lang.model.type.WildcardType;
-import javax.lang.model.util.Types;
 import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Set;
 
-import static com.google.common.collect.Sets.newHashSet;
-import static java.util.stream.Collectors.joining;
-import static org.apache.commons.lang3.StringUtils.*;
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.MirroredTypeException;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.WildcardType;
+import javax.lang.model.util.Types;
 
 public final class TSUtils {
 
@@ -137,14 +147,10 @@ public final class TSUtils {
 
     String fqClassName = "";
     try {
-      if (tm.javaClass() == null) {
-        return "???";
-      }
       fqClassName = tm.javaClass().getName();
     } catch (MirroredTypeException e) {
       fqClassName = e.getTypeMirror().toString();
     }
-
     return fqClassName.equals("void")
         ? tm.javaClassName().toString()
         : fqClassName;

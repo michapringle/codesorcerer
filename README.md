@@ -1,8 +1,4 @@
 # BeanBuilder
-
-## Deprecated
-This tool (written in Scala, generating Java code) has been deprecated in favor of this tool https://github.com/fyrewall77/beanbuilder (written in Java, generating Java code).
-
 ## Introduction
 Welcome to BeanBuilder, a tool to build fluent immutable beans from templates.
 
@@ -67,31 +63,42 @@ This tool is intended for generating implementations of beans, pojo's, or data c
 ### With Maven
 Include the following dependencies in your project. When you deploy your artifact(s), the actual overhead of the BeanBuilder jar is about 4k.
 ``` 
-<dependency>
-   <groupId>com.bbb</groupId>
-   <artifactId>bbb</artifactId>
-   <version>0.0.0.0.0-SNAPSHOT</version>
-</dependency>
- 
-<dependency>
-    <groupId>com.bbb</groupId>
-    <artifactId>bbb-processor</artifactId>
-    <version>0.0.0.0.0-SNAPSHOT</version>
-    <scope>provided</scope>
-</dependency>
+    <dependencies>
+        <dependency>
+            <groupId>com.codesorcerer</groupId>
+            <artifactId>codesorcerer-processor</artifactId>
+            <version>2.4.3</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.codesorcerer</groupId>
+            <artifactId>codesorcerer-spells</artifactId>
+            <version>2.4.3</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
 ```
 
 The compiler plugin is required to build the source.
 ```
-<build>
-    <plugins>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <version>3.6.1</version>
-        </plugin>
-    </plugins>
-</build>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.7.0</version>
+                <configuration>
+                    <annotationProcessors>
+                        <annotationProcessor>
+                            com.codesorcerer.processor.CodeSorcererProcessor
+                        </annotationProcessor>
+                    </annotationProcessors>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 ```
 
 ### With Gradle
@@ -106,10 +113,19 @@ The bean builder generates several classes based on your template. Suppose you n
 - FooMutable - This is a mutable implementation from the template, so you can play nice with frameworks that require mutable beans. Methods are provided in Foo to easily convert to and from FooMutable.
 - FooGuava - Stuck on Java7 or under? This class provides pseudo-functional code a la Google Guava.
 
+### A Note on Available Annotations
+```
+@BBBImmutable - Use this annotation on an interface you want an immutable bean generated from
+@BBBJson  - Use this annotation on an interface you want a json compatible bean generated from
+@BBBMutable  - Use this annotation on an interface you want a mutable bean generated from
+@BBBGuava  - Use this annotation on an interface you want gauva adapters generated from
+@BeautifulBean - Use this annotation on an interface you want everything above generated from
+```
+
 ### Creating a Simple Bean
 David requires a person class for a project he is working on. Initially his person is very simple, having only 3 fields. He chooses the BeanBuilder tool because he expects his class to get more complex as the project grows.
 ```java
-@BeanTemplate
+@BBBImmutable
 public interface PersonDef
 {
     @Nonnull

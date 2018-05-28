@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.codesorcerer</groupId>
-    <artifactId>codesorcerer-processor</artifactId>
+    <artifactId>codesorcerer-spells</artifactId>
     <version>2.4.3</version>
     <name>${project.groupId}.${project.artifactId}</name>
 
@@ -23,7 +23,7 @@
 
         <dependency>
             <groupId>com.codesorcerer</groupId>
-            <artifactId>codesorcerer-spells</artifactId>
+            <artifactId>codesorcerer-targets</artifactId>
             <version>2.4.3</version>
         </dependency>
 
@@ -43,6 +43,13 @@
             <groupId>com.squareup</groupId>
             <artifactId>javapoet</artifactId>
             <version>1.8.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.testing.compile</groupId>
+            <artifactId>compile-testing</artifactId>
+            <version>0.8</version>
+            <scope>test</scope>
         </dependency>
 
 

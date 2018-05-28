@@ -68,81 +68,27 @@ This tool is intended for generating implementations of beans, pojo's, or data c
 Include the following dependencies in your project. When you deploy your artifact(s), the actual overhead of the BeanBuilder jar is about 4k.
 ``` 
 <dependency>
-   <groupId>ca.pandp</groupId>
-   <artifactId>builder</artifactId>
-   <version>1.0-SNAPSHOT</version>
+   <groupId>com.bbb</groupId>
+   <artifactId>bbb</artifactId>
+   <version>0.0.0.0.0-SNAPSHOT</version>
 </dependency>
  
 <dependency>
-    <groupId>ca.pandp</groupId>
-    <artifactId>processor</artifactId>
-    <version>1.0-SNAPSHOT</version>
-    <scope>compile</scope>
+    <groupId>com.bbb</groupId>
+    <artifactId>bbb-processor</artifactId>
+    <version>0.0.0.0.0-SNAPSHOT</version>
+    <scope>provided</scope>
 </dependency>
 ```
 
-The compiler plugin is required to build the source. The compiler argument turns off annotation processing.
-Although it is not strictly necessary, the following build plugins are recommended. 
-- The processor plugin is recommended to explicitly specify the output directories of the generated source.
-- The build helper plugin is recommended when you have defined BeanTemplates in other jars, and want to compose them with new BeanTemplates in your existing jar.
+The compiler plugin is required to build the source.
 ```
 <build>
     <plugins>
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-compiler-plugin</artifactId>
-            <version>3.5.1</version>
-            <configuration>
-                <compilerArgument>-proc:none</compilerArgument>
-            </configuration>
-        </plugin>
-        <plugin>
-            <groupId>org.bsc.maven</groupId>
-            <artifactId>maven-processor-plugin</artifactId>
-            <version>3.1.0</version>
-            <configuration>
-                <failOnError>false</failOnError>
-                <outputDiagnostics>false</outputDiagnostics>
-                <processors>
-                    <processor>ca.pandp.processor.BeanProcessor</processor>
-                </processors>
-                <includes><include>**/*Def.java</include></includes>
-            </configuration>
-            <executions>
-                <execution>
-                    <id>process</id>
-                    <goals>
-                        <goal>process</goal>
-                    </goals>
-                    <phase>generate-sources</phase>
-                </execution>
-                <execution>
-                    <id>process-test</id>
-                    <goals>
-                        <goal>process-test</goal>
-                    </goals>
-                    <phase>generate-test-sources</phase>
-                </execution>
-            </executions>
-        </plugin>
-        <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>build-helper-maven-plugin</artifactId>
-            <version>1.10</version>
-            <executions>
-                <execution>
-                    <id>add-generated-source</id>
-                    <phase>initialize</phase>
-                    <goals>
-                        <goal>add-source</goal>
-                    </goals>
-                    <configuration>
-                        <sources>
-                            <source>${project.build.directory}/generated-sources/apt</source>
-                        </sources>
-                    </configuration>
-                </execution>
-            </executions>
+            <version>3.6.1</version>
         </plugin>
     </plugins>
 </build>

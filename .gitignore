@@ -2,6 +2,9 @@ spells/typescript/
 /typescript/
 integration-tests/typescript/
 .idea
+.classpath
+.project
+.settings/
 .DS_Store
 .cache
 *.iml

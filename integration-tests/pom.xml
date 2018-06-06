@@ -4,9 +4,8 @@
 
     <groupId>com.codesorcerer</groupId>
     <artifactId>codesorcerer-integration-tests</artifactId>
-    <version>2.4.3</version>
+    <version>2.4.4-SNAPSHOT</version>
     <name>${project.groupId}.${project.artifactId}</name>
-
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -15,37 +14,44 @@
     </properties>
 
     <dependencies>
+
         <dependency>
             <groupId>com.codesorcerer</groupId>
             <artifactId>codesorcerer-spells</artifactId>
-            <version>2.4.3</version>
-            <scope>provided</scope>
+            <version>2.4.4-SNAPSHOT</version>
+            <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>com.codesorcerer</groupId>
             <artifactId>codesorcerer-processor</artifactId>
-            <version>2.4.3</version>
-            <scope>provided</scope>
+            <version>2.4.4-SNAPSHOT</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
+            <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>jsr305</artifactId>
+            <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
         </dependency>
-
 
         <dependency>
             <groupId>com.google.testing.compile</groupId>
@@ -54,17 +60,26 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- for Google equals verifier for testing -->
         <dependency>
             <groupId>nl.jqno.equalsverifier</groupId>
             <artifactId>equalsverifier</artifactId>
             <version>2.1.8</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>io.reactivex.rxjava2</groupId>
+            <artifactId>rxjava</artifactId>
+            <version>2.0.6</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <dependencyManagement>
+
         <dependencies>
+
             <dependency>
                 <groupId>io.spring.platform</groupId>
                 <artifactId>platform-bom</artifactId>
@@ -72,25 +87,28 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
         </dependencies>
+
     </dependencyManagement>
 
     <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.6.1</version>
-                    <configuration>
-                        <annotationProcessors>
-                            <annotationProcessor>com.codesorcerer.processor.CodeSorcererProcessor</annotationProcessor>
-                        </annotationProcessors>
-                    </configuration>
 
-                </plugin>
-            </plugins>
-        </pluginManagement>
+        <plugins>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.6.1</version>
+                <configuration>
+                    <annotationProcessors>
+                        <annotationProcessor>com.codesorcerer.processor.CodeSorcererProcessor</annotationProcessor>
+                    </annotationProcessors>
+                </configuration>
+            </plugin>
+
+        </plugins>
+
     </build>
 
 </project>

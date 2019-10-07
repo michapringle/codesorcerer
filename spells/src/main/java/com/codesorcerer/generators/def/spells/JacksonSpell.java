@@ -35,9 +35,9 @@ public class JacksonSpell extends AbstractJavaBeanSpell<BBBJson> {
                 .build());
 
         classBuilder.addAnnotation(AnnotationSpec.builder(JsonTypeInfo.class)
-                .addMember("use", "$T.Id.CLASS", JsonTypeInfo.class)
+                .addMember("use", "$T.Id.MINIMAL_CLASS", JsonTypeInfo.class)
                 .addMember("include", "$T.As.PROPERTY", JsonTypeInfo.class)
-                .addMember("property", "\"clazz\"")
+                .addMember("property", "\"className\"")
                 .build());
     }
 
